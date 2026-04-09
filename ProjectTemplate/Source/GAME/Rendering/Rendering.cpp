@@ -1,4 +1,3 @@
-#include "C:/FSU/dev4/dev4-starting-materials-v1-1-JOFullSail/ProjectTemplate/build/CMakeFiles/PPIV.dir/Release/cmake_pch.hxx"
 #include "Rendering.h"
 #include "../GameComponents.h"
 #include "../../DRAW/DrawComponents.h"
