@@ -56,10 +56,10 @@ void GraphicsBehavior(entt::registry& registry)
 	using namespace GW::AUDIO;
 	GAudio& gAudio = registry.ctx().emplace<GAudio>();
 	gAudio.Create();
-	gAudio.SetMasterVolume(0.8f);
+	gAudio.SetMasterVolume(0.1f);
 
 	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	gMusic.Create("The Fifth Quadrant.wav", gAudio);
+	gMusic.Create("..\\Dev5 Sounds\\Music\\The Fifth Quadrant.wav", gAudio);
 	gMusic.Play(true);
 
 	// Add an entity to handle all the graphics data
