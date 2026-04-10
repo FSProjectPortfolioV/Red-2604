@@ -71,16 +71,6 @@ void Physics::Velocity(entt::registry& registry, float dt)
 		transform.matrix = newMat;
 		float currentSpeed;
 		GW::MATH::GVector::MagnitudeF(vel.direction, currentSpeed);
-
-		const EnemyConfig& cfg = registry.ctx().get<EnemyConfig>();
-		if (currentSpeed < cfg.speed)
-		{
-			float accel = 2.0f * dt;
-			float ratio = currentSpeed / cfg.speed;
-			float boost = 1.0f + accel * (1.0f - ratio);
-
-			GW::MATH::GVector::ScaleF(vel.direction, boost, vel.direction);
-		}
 	}
 }
 
