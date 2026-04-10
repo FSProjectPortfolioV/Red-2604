@@ -23,10 +23,9 @@ namespace GAME
 		Physics::Collision(registry);
 
 		Gameplay::PlayerTimers(registry, dt);
-		Gameplay::Shatter(registry, registry.ctx().get<EnemyConfig>());
 		Rendering::SyncTransforms(registry);
 
-		Gameplay::GameOver(registry, self);
+//		Gameplay::GameOver(registry, self); --- Keep this disabled until we have our new win condition set up.
 		Cleanup::Destroy(registry);
 	}
 
