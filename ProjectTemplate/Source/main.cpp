@@ -55,7 +55,7 @@ void GraphicsBehavior(entt::registry& registry)
 	auto display = registry.create();
 
 	// Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
-	//registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
+	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
 
 	// Emplace and initialize Window component
 	int windowWidth = (*config).at("Window").at("width").as<int>();
@@ -87,7 +87,7 @@ void GraphicsBehavior(entt::registry& registry)
 	registry.emplace<DRAW::VulkanRenderer>(display);
 	
 	// Emplace GPULevel
-	//registry.emplace<DRAW::GPULevel>(display);
+	registry.emplace<DRAW::GPULevel>(display);
 
 	// Register for Vulkan clean up
 	GW::CORE::GEventResponder shutdown;
@@ -124,6 +124,34 @@ void GameplayBehavior(entt::registry& registry)
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
+	// Create player
+	entt::entity player = registry.create();
+	registry.emplace<GAME::Player>(player);
+	auto& playerCollection = registry.emplace<DRAW::MeshCollection>(player);
+	auto& playerTransform = registry.emplace<GAME::Transform>(player);
+	registry.emplace<GAME::Collidable>(player);
+	auto& pHP = registry.emplace<GAME::Health>(player);
+	pHP.HP = (*config).at("Player").at("hitpoints").as<int>();
+
+	// Create game manager
+	entt::entity gm = registry.create();
+	registry.emplace<GAME::GameManager>(gm);
+
+	// Get model manager
+	auto& manager = registry.ctx().get<DRAW::ModelManager>();
+
+	// Look up model names from config
+	std::string playerModelName = config->at("Player").at("model").as<std::string>();
+	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
+
+	// Clone meshes
+	CloneModelToEntity(
+		registry,
+		manager.collections[playerModelName],
+		playerCollection,
+		playerTransform
+	);
+
 }
 
 // This function will be called by the main loop to update the main loop
@@ -148,7 +176,7 @@ void MainLoopBehavior(entt::registry& registry)
 		}
 		deltaTime = elapsed;
 
-		// TODO : Update Game
+		//Update Game
 		auto gmView = registry.view<GAME::GameManager>();
 		for (auto gm : gmView)
 			registry.patch<GAME::GameManager>(gm);
