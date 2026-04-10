@@ -51,6 +51,17 @@ void GraphicsBehavior(entt::registry& registry)
 {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
+	// Add Gateware Audio System, for music and sound effects
+
+	using namespace GW::AUDIO;
+	GAudio& gAudio = registry.ctx().emplace<GAudio>();
+	gAudio.Create();
+	gAudio.SetMasterVolume(0.8f);
+
+	GMusic& gMusic = registry.ctx().emplace<GMusic>();
+	gMusic.Create("The Fifth Quadrant.wav", gAudio);
+	gMusic.Play(true);
+
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
 
