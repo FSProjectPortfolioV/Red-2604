@@ -54,8 +54,8 @@ void GraphicsBehavior(entt::registry& registry)
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
 
-	// TODO: Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
-	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
+	// Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
+	//registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
 
 	// Emplace and initialize Window component
 	int windowWidth = (*config).at("Window").at("width").as<int>();
@@ -63,7 +63,7 @@ void GraphicsBehavior(entt::registry& registry)
 	int startX = (*config).at("Window").at("xstart").as<int>();
 	int startY = (*config).at("Window").at("ystart").as<int>();
 	registry.emplace<APP::Window>(display,
-		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "Crimson Millenia"});
+		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "2851 by Crimson Millenia"});
 
 
 	// Create the input
@@ -86,8 +86,8 @@ void GraphicsBehavior(entt::registry& registry)
 			{ {0.2f, 0.2f, 0.25f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
 	registry.emplace<DRAW::VulkanRenderer>(display);
 	
-	// TODO : Emplace GPULevel
-	registry.emplace<DRAW::GPULevel>(display);
+	// Emplace GPULevel
+	//registry.emplace<DRAW::GPULevel>(display);
 
 	// Register for Vulkan clean up
 	GW::CORE::GEventResponder shutdown;
@@ -123,72 +123,6 @@ void GameplayBehavior(entt::registry& registry)
 		registry.ctx().emplace<DRAW::ModelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
-
-	// Create player
-	entt::entity player = registry.create();
-	registry.emplace<GAME::Player>(player);
-	auto& playerCollection = registry.emplace<DRAW::MeshCollection>(player);
-	auto& playerTransform = registry.emplace<GAME::Transform>(player);
-	registry.emplace<GAME::Collidable>(player);
-	auto& pHP = registry.emplace<GAME::Health>(player);
-	pHP.HP = (*config).at("Player").at("hitpoints").as<int>();
-
-	// Create enemy
-	// TODO: Change this section to use helper function
-	entt::entity enemy = registry.create();
-	registry.emplace<GAME::Enemy>(enemy);
-	auto& enemyVel = registry.emplace<GAME::Velocity>(enemy);
-	enemyVel.direction = UTIL::GetRandomVelocityVector();
-	float enemySpeed = config->at("Enemy1").at("speed").as<float>();
-	enemyVel.direction.x *= enemySpeed;
-	enemyVel.direction.z *= enemySpeed;
-	auto& enemyCollection = registry.emplace<DRAW::MeshCollection>(enemy);
-	auto& enemyTransform = registry.emplace<GAME::Transform>(enemy);
-	registry.emplace<GAME::Collidable>(enemy);
-	auto& eHP = registry.emplace<GAME::Health>(enemy);
-	eHP.HP = (*config).at("Enemy1").at("hitpoints").as<int>();
-	auto& eShatter = registry.emplace<GAME::Shatters>(enemy);
-	eShatter.remaining = (*config).at("Enemy1").at("initialShatterCount").as<int>();
-	eShatter.clones = (*config).at("Enemy1").at("shatterAmount").as<int>();
-	eShatter.scaleDown = (*config).at("Enemy1").at("shatterScale").as<float>();
-
-	// Create game manager
-	entt::entity gm = registry.create();
-	registry.emplace<GAME::GameManager>(gm);
-
-	// Create enemy config
-	EnemyConfig cfg;
-	cfg.speed = (*config).at("Enemy1").at("speed").as<float>();
-	cfg.hitpoints = (*config).at("Enemy1").at("hitpoints").as<int>();
-	cfg.initialShatterCount = (*config).at("Enemy1").at("initialShatterCount").as<int>();
-	cfg.shatterAmount = (*config).at("Enemy1").at("shatterAmount").as<int>();
-	cfg.shatterScale = (*config).at("Enemy1").at("shatterScale").as<float>();
-	cfg.modelName = (*config).at("Enemy1").at("model").as<std::string>();
-
-	registry.ctx().emplace<EnemyConfig>(cfg);
-
-
-	// Get model manager
-	auto& manager = registry.ctx().get<DRAW::ModelManager>();
-
-	// Look up model names from config
-	std::string playerModelName = config->at("Player").at("model").as<std::string>();
-	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
-
-	// Clone meshes
-	CloneModelToEntity(
-		registry,
-		manager.collections[playerModelName],
-		playerCollection,
-		playerTransform
-	);
-
-	CloneModelToEntity(
-		registry,
-		manager.collections[enemyModelName],
-		enemyCollection,
-		enemyTransform
-	);
 
 }
 
