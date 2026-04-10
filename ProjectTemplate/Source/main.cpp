@@ -63,7 +63,7 @@ void GraphicsBehavior(entt::registry& registry)
 	int startX = (*config).at("Window").at("xstart").as<int>();
 	int startY = (*config).at("Window").at("ystart").as<int>();
 	registry.emplace<APP::Window>(display,
-		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "Jarret Olsen - Assignment 4"});
+		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "Crimson Millenia"});
 
 
 	// Create the input
