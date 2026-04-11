@@ -59,7 +59,8 @@ void GraphicsBehavior(entt::registry& registry)
 	gAudio.SetMasterVolume(0.1f);
 
 	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	gMusic.Create("..\\Dev5 Sounds\\Music\\The Fifth Quadrant.wav", gAudio);
+	const char* bgMusic = (*config).at("Sounds").at("music").as<const char*>();
+	gMusic.Create(bgMusic, gAudio, 0.1f);
 	gMusic.Play(true);
 
 	// Add an entity to handle all the graphics data
