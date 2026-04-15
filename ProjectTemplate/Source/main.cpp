@@ -59,7 +59,7 @@ void GraphicsBehavior(entt::registry& registry)
 	gAudio.SetMasterVolume(0.1f);
 
 	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	const char* bgMusic = (*config).at("Sounds").at("music").as<const char*>();
+	const char* bgMusic = (*config).at("Sounds").at("gpmusic").as<const char*>();
 	gMusic.Create(bgMusic, gAudio, 0.1f);
 	gMusic.Play(true);
 
