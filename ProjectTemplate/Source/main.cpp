@@ -7,6 +7,7 @@
 #include "GAME/GameComponents.h"
 #include "APP/Window.hpp"
 #include "DRAW/CloneEntity.h"
+#include "GAME/Gameplay/ScoreSystem/ScoreSystem.h"
 
 
 
@@ -21,6 +22,8 @@ int main()
 
 	// All components, tags, and systems are stored in a single registry
 	entt::registry registry;	
+
+	registry.ctx().emplace<ScoreSystem>();
 
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
