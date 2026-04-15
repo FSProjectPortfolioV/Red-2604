@@ -81,6 +81,7 @@ void GraphicsBehavior(entt::registry& registry)
 	// Create the input
 	auto& input =  registry.ctx().emplace<UTIL::Input>();
 	auto& window = registry.get<GW::SYSTEM::GWindow>(display);
+	window.ChangeWindowStyle(GW::SYSTEM::GWindowStyle::WINDOWEDLOCKED);
 	input.bufferedInput.Create(window);
 	input.immediateInput.Create(window);
 	input.gamePads.Create();
