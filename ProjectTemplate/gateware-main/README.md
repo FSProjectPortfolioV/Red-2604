@@ -1,7 +1,7 @@
 <img src="GatewareLogo.png" width="507">
 
 ## What is Gateware?
-* Gateware is an opensource C++ single header platform abstraction library for graphics, sound, input and more!
+* Gateware is an open-source C++ single header platform abstraction library for graphics, sound, input and more!
 * The project was started to support programmers interested in developing 3D games/software from the ground up. 
 * It is designed to be as easy as possible to deploy to new and existing projects. (Minimal dependencies)
 * It is modular, you only compile the specific libraries you want by **#define**ing their namespaces.
@@ -13,7 +13,7 @@
 * People learning C++ who want to dip their toes into real-time 2D/3D graphics.
 	* Gateware can initialize: OpenGL, Vulkan, Direct3D11/12 and even raw pixel graphics for you.
 * Programmers who need a straightforward input/audio/etc.. library **right now** with minimal time/effort.
-* Fans of opensource projects looking for a new C++11 library to play with and/or contribute to.
+* Fans of open-source projects looking for a new C++11 library to play with and/or contribute to.
 * University professors looking for a platform agnostic way to teach low-level programming skills.
 
 ## Who may want to skip it?
@@ -39,8 +39,8 @@
 	* Loading and playing audio files for both music streaming and sound effects.
 	* Creating a platform-agnostic window and attaching a 2D/3D Graphics API to it.
 	* Doing various common linear algebra computations: Vector/Matrix/Quaternion.
-	* Detecting 2D and 3D collissions between various types of shapes/volumes.
-	* UTF-8 File I/O, Error Logging, Thread/Task Managment/Scheduling.
+	* Detecting 2D and 3D collisions between various types of shapes/volumes.
+	* UTF-8 File I/O, Error Logging, Thread/Task Management/Scheduling.
 * There is more planned, but the focus for now is more on bug-fixes/stability/porting.
 
 ## Where do I download?
