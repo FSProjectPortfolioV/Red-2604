@@ -39,19 +39,19 @@ SOFTWARE.
 static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 // The Major version is auto-generated based on the current year.
-#define GATEWARE_MAJOR 24
+#define GATEWARE_MAJOR 25
 // The Minor version is auto-generated based on the current day of the year.
-#define GATEWARE_MINOR 68
+#define GATEWARE_MINOR 5
 // The Patch version is auto-generated based on the current UTC hour of the day.
-#define GATEWARE_PATCH 21
+#define GATEWARE_PATCH 20
 // Pulled directly from GIT  
 #define GATEWARE_BRANCH "master"
 // Pulled directly from GIT
-#define GATEWARE_COMMIT_HASH 0x9422a94
+#define GATEWARE_COMMIT_HASH 0x721e75d
 // Standard Window Title Bar
-#define GATEWARE_VERSION_STRING "Gateware v24.68.21"
+#define GATEWARE_VERSION_STRING "Gateware v25.5.20"
 // Window Title Bar displayed in DEBUG builds
-#define GATEWARE_VERSION_STRING_LONG "Gateware v24.68.21 (master) [9422a94]"
+#define GATEWARE_VERSION_STRING_LONG "Gateware v25.5.20 (master) [721e75d]"
 
 // Distinguishes the platform Gateware is compiling for
 //#include "GEnvironment.hpp"
@@ -113,6 +113,7 @@ namespace GW
 			MSAA_16X_SUPPORT		= 0x200,	
 			MSAA_32X_SUPPORT		= 0x400,	
 			MSAA_64X_SUPPORT		= 0x800,	
+			BINDLESS_SUPPORT		= 0x1000,	
 		};
 
 		enum GRasterUpdateFlags
@@ -1446,7 +1447,7 @@ namespace GW
 
 
 // Maximum thread pool size allocated by thread pool. Only actual available hardware thread count is used.
-#define G_MAX_THREAD_POOL_SIZE		64
+#define G_MAX_THREAD_POOL_SIZE		1024
 // default amount of time in microseconds to nap threads that should release resources
 #define G_THREAD_DEFAULT_SLEEP		5000
 // amount of time in microseconds below which daemons are spin-locked for launch
@@ -3818,14 +3819,13 @@ namespace internal {
 
 /**
  *  Simple ThreadPool that creates `MaxThreadCount` threads upon its creation or
- *  std::thread::hardware_concurrency() whichever is less 
- *  and pulls from a queue to get new jobs. The default is 32 threads.
+ *  std::thread::hardware_concurrency() whichever is less and pulls from a queue to get new jobs. 
  *  This class has been modified slightly for Gateware's needs, do not instantiate more than
  *  one of these classes. The class now uses thread_local vars for deadlock detection/prevention.
  *
  *  This class requires a number of c++11 features be present in your compiler.
  */
-template <unsigned MaxThreadCount = 32>
+template <const unsigned MaxThreadCount>
 class ThreadPool {
 
     // (Gateware custom) added this array for queries about running threadIds
@@ -3992,9 +3992,11 @@ public:
             bailout = true;
             job_available_var.notify_all();
 
-            for( auto &x : threads )
-                if( x.joinable() )
-                    x.join();
+            for (unsigned i = 0; i < ThreadCount; ++i) {
+                if (threads[i].joinable()) {
+                    threads[i].join();
+                }
+            }
             finished = true;
         }
     }
@@ -9571,7 +9573,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary reading mode
-				if ((err = fopen_s(&binaryFile, tempDir, "rb")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "rb, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -9599,7 +9601,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary writing mode
-				if ((err = fopen_s(&binaryFile, tempDir, "wb")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "wb, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -9627,7 +9629,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary appending mode
-				if ((err = fopen_s(&binaryFile, tempDir, "ab")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "ab, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -11380,7 +11382,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary reading mode
-				if ((err = fopen_s(&binaryFile, tempDir, "rb")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "rb, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -11408,7 +11410,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary writing mode
-				if ((err = fopen_s(&binaryFile, tempDir, "wb")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "wb, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -11436,7 +11438,7 @@ namespace GW
 				strcat_s(tempDir, _file);
 
 				//using fopen_s to securely open the file in binary appending mode
-				if ((err = fopen_s(&binaryFile, tempDir, "ab")) != 0)
+				if ((err = fopen_s(&binaryFile, tempDir, "ab, ccs=UTF-8")) != 0)
 				{
 					if (err == 2)
 						return GReturn::FILE_NOT_FOUND;
@@ -12169,6 +12171,7 @@ namespace GW
 #undef closedir
 #undef rewinddir
 
+
 	#endif
 #endif
 ///#error MISSING IMPLEMENTATION: This build of Gateware has not been ported to your platform! 
@@ -12332,7 +12335,7 @@ namespace internal_gw // DEVS: Only allowed on approval, favor static class memb
 
 #include <vector>
 
-// Make the implentation belong to the proper gateware namespace
+// Make the implementation belong to the proper gateware namespace
 // We cannot use "using" here as this is an HPP and supports header only deployments
 namespace GW {
 	namespace I {
@@ -12347,9 +12350,6 @@ namespace GW {
 			std::atomic_flag working = ATOMIC_FLAG_INIT;
 			// HAS A relationship allows for safe lifetime access in external threads
 			CORE::GEventGenerator generator;
-			// prevents DEADLOCKS by tracking threads currently used by this class
-			CORE::GThreadShared vectorlock;
-			std::vector<std::thread::id> runners;
 			// this class creates a message when it falls out of scope (uses shared_ptr)
 			// solves the issue on how to notify when all parallel threads complete
 			struct ScopedEvent {
@@ -12365,28 +12365,6 @@ namespace GW {
 						me.Push(send); // Notify anyone who is listening the Parallel Task has completed
 				}
 			};
-			// deadlock detection and prevention functions
-			void deadlockRegisterThread()
-			{
-				vectorlock.LockSyncWrite();
-					runners.push_back(std::this_thread::get_id());
-				vectorlock.UnlockSyncWrite();
-			}
-			void deadlockUnregisterThread()
-			{
-				vectorlock.LockSyncWrite();
-					std::remove(runners.begin(), runners.end(), std::this_thread::get_id());
-				vectorlock.UnlockSyncWrite();
-			}
-			// return true if the current thread is in use (would cause a deadlock)
-			bool deadlockScanCurrentThread()
-			{
-				auto deadlock = runners.end();
-				vectorlock.LockAsyncRead();
-					deadlock = std::find(runners.begin(), runners.end(), std::this_thread::get_id());
-				vectorlock.UnlockAsyncRead();
-				return deadlock != runners.end();
-			}
 			
 		public:
 			// required for HAS-A relationship
@@ -12414,7 +12392,6 @@ namespace GW {
 				suppressEvents = _supressEvents;
 				tasksProcessing = 0;
 				taskSubmissionIndex = 0;
-				vectorlock.Create();
 				return generator.Create();
 			}
 			GReturn BranchSingular(std::function<void()> _singleTask) override
@@ -12443,7 +12420,6 @@ namespace GW {
 				// The task itself & a few other items must be copied as they will fall out of scope.
 				internal_gw::GatewareThreadPool().AddJob([&, _singleTask, suppress, safe,
 															einfo, start]() mutable {
-					deadlockRegisterThread();// ensure we don't Converge() on this thread.
 					_singleTask(); // execute job while within the thread pool
 					// send any event that still must be sent
 					if (suppress == false)
@@ -12460,7 +12436,6 @@ namespace GW {
 					CORE::GEventGenerator::burst_w alive = *safe;
 					if (alive)
 					{
-						deadlockUnregisterThread();// this thread is now safe to wait on.
 						--tasksProcessing; // tasks are also considered processing until all event responders have completed
 						if (tasksProcessing == 0) // disable spin-lock
 							std::atomic_flag_clear_explicit(&working, std::memory_order_release);
@@ -12542,7 +12517,6 @@ namespace GW {
 					internal_gw::GatewareThreadPool().AddJob([&, _parallelTask, _inStride, _inputArray, 
 																_outStride, _outputArray, _userData, 
 																einfo, suppress, waitForDeath, safe]() mutable {
-						deadlockRegisterThread();// ensure we don't Converge() on this thread.
 						// used for timing individual sections to help find performance bottlenecks.
 						std::chrono::time_point<std::chrono::steady_clock> start;
 						if (suppress == false)
@@ -12573,7 +12547,6 @@ namespace GW {
 						CORE::GEventGenerator::burst_w alive = *safe;
 						if (alive)
 						{
-							deadlockUnregisterThread();// this thread is now safe to wait on.
 							--tasksProcessing; // tasks are considered processing until all responders have reacted
 							if (tasksProcessing == 0) // disable spin-lock
 								std::atomic_flag_clear_explicit(&working, std::memory_order_release);
@@ -14839,19 +14812,19 @@ namespace internal_gw
 static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 // The Major version is auto-generated based on the current year.
-#define GATEWARE_MAJOR 24
+#define GATEWARE_MAJOR 25
 // The Minor version is auto-generated based on the current day of the year.
-#define GATEWARE_MINOR 68
+#define GATEWARE_MINOR 5
 // The Patch version is auto-generated based on the current UTC hour of the day.
-#define GATEWARE_PATCH 21
+#define GATEWARE_PATCH 20
 // Pulled directly from GIT  
 #define GATEWARE_BRANCH "master"
 // Pulled directly from GIT
-#define GATEWARE_COMMIT_HASH 0x9422a94
+#define GATEWARE_COMMIT_HASH 0x721e75d
 // Standard Window Title Bar
-#define GATEWARE_VERSION_STRING "Gateware v24.68.21"
+#define GATEWARE_VERSION_STRING "Gateware v25.5.20"
 // Window Title Bar displayed in DEBUG builds
-#define GATEWARE_VERSION_STRING_LONG "Gateware v24.68.21 (master) [9422a94]"
+#define GATEWARE_VERSION_STRING_LONG "Gateware v25.5.20 (master) [721e75d]"
 
 // Distinguishes the platform Gateware is compiling for
 //// This file contains defines for platform-specific code
@@ -16256,19 +16229,19 @@ namespace internal_gw
 static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 // The Major version is auto-generated based on the current year.
-#define GATEWARE_MAJOR 24
+#define GATEWARE_MAJOR 25
 // The Minor version is auto-generated based on the current day of the year.
-#define GATEWARE_MINOR 68
+#define GATEWARE_MINOR 5
 // The Patch version is auto-generated based on the current UTC hour of the day.
-#define GATEWARE_PATCH 21
+#define GATEWARE_PATCH 20
 // Pulled directly from GIT  
 #define GATEWARE_BRANCH "master"
 // Pulled directly from GIT
-#define GATEWARE_COMMIT_HASH 0x9422a94
+#define GATEWARE_COMMIT_HASH 0x721e75d
 // Standard Window Title Bar
-#define GATEWARE_VERSION_STRING "Gateware v24.68.21"
+#define GATEWARE_VERSION_STRING "Gateware v25.5.20"
 // Window Title Bar displayed in DEBUG builds
-#define GATEWARE_VERSION_STRING_LONG "Gateware v24.68.21 (master) [9422a94]"
+#define GATEWARE_VERSION_STRING_LONG "Gateware v25.5.20 (master) [721e75d]"
 
 // Distinguishes the platform Gateware is compiling for
 //// This file contains defines for platform-specific code
@@ -16356,6 +16329,9 @@ static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 	}\
 	while (!g_success && g_retries <= MAX_RETRIES)
 
+#define _NET_WM_STATE_ADD 1l
+#define _NET_WM_STATE_REMOVE 0l
+
 namespace GW
 {
 	namespace I
@@ -16369,30 +16345,42 @@ namespace GW
 
 			bool destroyEventIsSentByXButton;
 			bool windowIsRunning;
-			Atom prop_type;
-			Atom prop_full;
-			Atom prop_hMax;
-			Atom prop_vMax;
-			Atom prop_strut;
-			//Atom prop_strutPartial; // Similar to prop_strut.
-			//Atom prop_workArea; // Use to get dimensions across multiple screens.
-			Atom prop_client;
-			Atom prop_hints;
-			Atom prop_hidden;
-			Atom prop_active;
-			Atom prop_extents;
-			Atom prop_close;
-			Atom wmDeleteMessage;
+			struct
+			{
+				Atom _NET_WM_STATE;
+				Atom _NET_WM_STATE_HIDDEN;
+				Atom _NET_WM_STATE_FOCUSED;
+				Atom _NET_WM_STATE_MAXIMIZED_VERT;
+				Atom _NET_WM_STATE_MAXIMIZED_HORZ;
+				Atom _NET_WM_STATE_FULLSCREEN;
+				Atom _NET_WM_STATE_ABOVE;
+				Atom _NET_WM_STATE_SKIP_TASKBAR;
+				Atom _NET_WM_STATE_SKIP_PAGER;
+				Atom _NET_WM_STATE_MODAL;
+				Atom _NET_WM_MOVERESIZE;
+				Atom _NET_WM_ALLOWED_ACTIONS;
+				Atom _NET_WM_ACTION_FULLSCREEN;
+				Atom _NET_WM_NAME;
+				Atom _NET_WM_ICON_NAME;
+				Atom _NET_WM_ICON;
+				Atom _NET_WM_PING;
+				Atom _NET_WM_WINDOW_OPACITY;
+				Atom _NET_WM_USER_TIME;
+				Atom _NET_ACTIVE_WINDOW;
+				Atom _NET_FRAME_EXTENTS;
+				Atom _MOTIF_WM_HINTS;
+				Atom _NET_WM_STRUT;
+				Atom WM_DELETE_WINDOW;
+			} atoms;
 
-			struct Hint
+			struct
 			{
 				unsigned long flags;
 				unsigned long functions;
 				unsigned long decorations;
 				long inputMode;
 				unsigned long status;
-
-			} hint;
+			} hints;
 
 			int m_WindowX;
 			int m_WindowY;
@@ -16408,6 +16396,29 @@ namespace GW
 
 			unsigned long* m_iconPixels;
 			int m_iconPixelsCount;
+
+			// Syncs window operations with the X server. This is primarily used to ensure that the window is properly
+			// resized or maximized before the next operation is performed. This is necessary because the X server may
+			// not have finished processing the previous operation before the next operation is performed.
+			// NOTE: Timeout is in milliseconds and 100 is normally fine, but maximized can take abnormally long to process.
+			//		 So, use a value higher than 100 if you're having issues with maximized.
+			void X11_SyncWindow(const int timeout = 100)
+			{
+				const unsigned int max_retries = timeout / 10;
+				unsigned int retries = 0;
+				while (true)
+				{
+					XSync(display, False);
+					ProcessWindowEvents();
+					if (XPending(display) == 0)
+						break;
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(timeout / 10));
+					++retries;
+					if (retries >= max_retries)
+						break;
+				}
+			}
 			
 #if defined(GWINDOW_DEBUG_LINUX_OUTPUT_EVENTS)
 			void DebugOutputGWindowEvent(EVENT_DATA _eventData)
@@ -16524,38 +16535,39 @@ namespace GW
 			{
 				if (display && window)
 					return GReturn::REDUNDANT;
-				
+
+				// Initialize the threads in the event they aren't already.
 				XInitThreads();
-				XSetWindowAttributes attributes;
-				XSizeHints rect;
 				
 				display = XOpenDisplay(NULL);
 				if (!display)
 					return GReturn::FAILURE;
-					
+
 				int screen = DefaultScreen(display);
 				int depth = DefaultDepth(display, screen);
-				
-				unsigned long valueMask = CWBackPixel | CWBorderPixel | CWEventMask;
-								
-				attributes.background_pixel = XWhitePixel(display, 0);
-				attributes.border_pixel = XBlackPixel(display, 0);
-				attributes.event_mask = SubstructureNotifyMask | PropertyChangeMask | ExposureMask | StructureNotifyMask;
+				int valueMask = CWOverrideRedirect | CWBackPixel | CWBorderPixel | CWEventMask | CWBackingStore;
+
+				XSetWindowAttributes attributes;
+				attributes.override_redirect = False; // Unless we want to create a window that bypasses the window manager.
+				attributes.backing_store     = NotUseful;
+				attributes.background_pixel  = XWhitePixel(display, screen);
+				attributes.border_pixel      = XBlackPixel(display, screen);
+				attributes.event_mask        = SubstructureNotifyMask | PropertyChangeMask | ExposureMask | StructureNotifyMask;
 
 				m_iconPixels = nullptr;
 				m_iconPixelsCount = 0;
 
 // If OpenGL is enabled then we need to make sure we create a window with a 32-bit color buffer.
 #if defined(GATEWARE_ENABLE_GRAPHICS) && !defined(GATEWARE_DISABLE_GOPENGLSURFACE)
-				
+
 				constexpr int colorBufferSize = 32;
-				
+
 				XVisualInfo visualTemplate;
 				visualTemplate.screen = screen;
-				
+
 				int visualListCount = 0;
 				XVisualInfo *visualList = XGetVisualInfo(display, VisualScreenMask, &visualTemplate, &visualListCount);
-				
+
 				// Search through the list of visuals for a match with our target depth and color buffer.
 				XVisualInfo* visualInfo = nullptr;
 				for (int i = 0; i < visualListCount; ++i)
@@ -16564,15 +16576,15 @@ namespace GW
 					{
 						int bufferSizeAtIndex;
 						glXGetConfig(display, &visualList[i], GLX_BUFFER_SIZE, &bufferSizeAtIndex);
-						
+
 						if (bufferSizeAtIndex == colorBufferSize)
 						{
 							visualInfo = &visualList[i];
 							break;
 						}
-					}						
+					}
 				}
-				
+
 				if (!visualInfo)
 				{
 					XFree(visualList);
@@ -16585,24 +16597,34 @@ namespace GW
 
 				window = XCreateWindow(display, XRootWindow(display, screen), m_WindowX, m_WindowY, m_WindowWidth, m_WindowHeight, 5,
 					visualInfo->depth, InputOutput, visualInfo->visual, valueMask, &attributes);
-				
+
 				// No longer need visual info
 				XFree(visualList);
 				visualInfo = nullptr;
-				
+
 #else // Use the color buffer size from the parent if OpenGL is not being used.
 
-				window = XCreateWindow(display, XRootWindow(display, screen), m_WindowX, m_WindowY, m_WindowWidth, m_WindowHeight, 5,
-					depth, InputOutput, CopyFromParent, valueMask, &attributes);
+				window = XCreateWindow(display,
+										RootWindow(display, screen),
+										m_WindowX,
+										m_WindowY,
+										m_WindowWidth,
+										m_WindowHeight,
+										5,
+										depth,
+										InputOutput,
+										CopyFromParent,
+										valueMask,
+										&attributes);
 
 #endif
-				
+
 				if (!window)
 				{
 					XCloseDisplay(display);
 					return GReturn::FAILURE;
 				}
-				
+
 				prevX = m_WindowX;
 				prevY = m_WindowY;
 				prevWidth = m_WindowWidth;
@@ -16616,60 +16638,98 @@ namespace GW
 				XStoreName(display, window, GATEWARE_WINDOW_NAME);
 #undef GATEWARE_WINDOW_NAME
 
-				// Set rect hints
-				memset(&rect, 0, sizeof(rect));
-				rect.flags = PSize | PPosition;
-				
-				XSetWMNormalHints(display, window, &rect);
+				// Initialize the window size, position, and hints.
+				XSizeHints *size_hints = XAllocSizeHints();
+				size_hints->flags      = PSize | PPosition;
+				size_hints->x          = m_WindowX;
+				size_hints->y          = m_WindowY;
+				size_hints->width      = m_WindowWidth;
+				size_hints->height     = m_WindowHeight;
+
+				if (m_WindowStyle == SYSTEM::GWindowStyle::WINDOWEDLOCKED)
+				{
+					size_hints->flags |= PMinSize | PMaxSize;
+					size_hints->min_width = size_hints->max_width = m_WindowWidth;
+					size_hints->min_height = size_hints->max_height = m_WindowHeight;
+				}
+
+				XSetWMNormalHints(display, window, size_hints);
+
+				const Atom _NET_WM_WINDOW_TYPE = XInternAtom(display, "_NET_WM_WINDOW_TYPE", False);
+				Atom wintype = XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", False); // This can be changed in the future to support other window types.
+				XChangeProperty(display, window, _NET_WM_WINDOW_TYPE, XA_ATOM, 32, PropModeReplace, reinterpret_cast<unsigned char *>(&wintype), 1);
+
+				Atom protocols[3];
+				int proto_count = 0;
+				protocols[proto_count++] = XInternAtom(display, "WM_DELETE_WINDOW", False); // Allow window to be deleted by the WM
+				protocols[proto_count++] = XInternAtom(display, "_NET_WM_PING", False); // This is used to check if the window is still alive.
+				XSetWMProtocols(display, window, protocols, proto_count);
+				XSetErrorHandler(HandleError);
+
+				// Free the allocated hints.
+				XFree(size_hints);
 
 				if (XMapWindow(display, window))
 				{
 					m_prevEvent = Events::EVENTS_PROCESSED;
 					SetupAtom();
-
-					// The window manager may not create the window at the desired position.
-					// This call to XMoveWindow ensures that the window ends up at the desired positon.
-					XMoveWindow(display, window, m_WindowX, m_WindowY);
 					
-					if (m_WindowStyle == SYSTEM::GWindowStyle::WINDOWEDLOCKED)
+					if (m_WindowStyle == SYSTEM::GWindowStyle::WINDOWEDBORDERLESS || m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERLESS)
 					{
-						memset(&rect, 0, sizeof(rect));
-						rect.flags = PMinSize | PMaxSize;
-						rect.min_width = rect.max_width = m_WindowWidth;
-						rect.min_height = rect.max_height = m_WindowHeight;
-						XSetWMNormalHints(display, window, &rect);
-					}
-					else if (m_WindowStyle == SYSTEM::GWindowStyle::WINDOWEDBORDERLESS || m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERLESS)
-					{						
-						hint.flags = 2; //2
-						hint.decorations = 0; //0
-						XChangeProperty(display, window, prop_hints, prop_hints, 32, PropModeReplace, (unsigned char*)&hint, 5);
+						hints.flags = 2;
+						hints.decorations = 0;
+						hints.functions = 0;
+						XChangeProperty(display, window, atoms._MOTIF_WM_HINTS, atoms._MOTIF_WM_HINTS, 32, PropModeReplace, reinterpret_cast<unsigned char *>(&hints), 5);
 					}
 					else if (m_WindowStyle == SYSTEM::GWindowStyle::MINIMIZED)
 					{
 						if (!XIconifyWindow(display, window, DefaultScreen(display)))
+						{
+							XDestroyWindow(display, window);
+							XCloseDisplay(display);
 							return GReturn::FAILURE;
+						}
 					}
-					
-					if (m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERED || m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERLESS)
+
+					if (m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERLESS)
 					{
-						Screen* screen = DefaultScreenOfDisplay(display);
-						if (!XMoveResizeWindow(display, window, 0, 0, screen->width, screen->height))
-							return GReturn::FAILURE;
+						// Fullscreen window
+						XEvent ev               = {};
+						ev.xany.type            = ClientMessage;
+						ev.xclient.message_type = atoms._NET_WM_STATE;
+						ev.xclient.format       = 32;
+						ev.xclient.window       = window;
+						ev.xclient.data.l[0]    = _NET_WM_STATE_ADD;
+						ev.xclient.data.l[1]    = atoms._NET_WM_STATE_FULLSCREEN;
+						ev.xclient.data.l[3]    = 0;
+						XSendEvent(display, RootWindow(display, screen), False, SubstructureNotifyMask | SubstructureRedirectMask, &ev);
 					}
-					
-					XSetWMProtocols(display, window, &wmDeleteMessage, 1);
-					XSetErrorHandler(HandleError);
+					else if (m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERED)
+					{
+						// Maximize window
+						XEvent ev               = {};
+						ev.xany.type            = ClientMessage;
+						ev.xclient.message_type = atoms._NET_WM_STATE;
+						ev.xclient.format       = 32;
+						ev.xclient.window       = window;
+						ev.xclient.data.l[0]    = _NET_WM_STATE_ADD;
+						ev.xclient.data.l[1]    = atoms._NET_WM_STATE_MAXIMIZED_VERT;
+						ev.xclient.data.l[2]    = atoms._NET_WM_STATE_MAXIMIZED_HORZ;
+						ev.xclient.data.l[3]    = 0;
+						XSendEvent(display, RootWindow(display, screen), False, SubstructureNotifyMask | SubstructureRedirectMask, &ev);
+					}
+
+					X11_SyncWindow(); // This is a nice spot to put this
 
 					windowIsRunning = true;
 					destroyEventIsSentByXButton = false;
+
 					return GReturn::SUCCESS;
 				}
-				else
-				{
-					XCloseDisplay(display);
-					return GReturn::FAILURE;
-				}
+
+				XDestroyWindow(display, window);
+				XCloseDisplay(display);
+				return GReturn::FAILURE;
 			}
 			
 			// Handles errors reported by X. This is needed to capture unsuccessful calls
@@ -16687,38 +16747,57 @@ namespace GW
 			
 			void SetupAtom()
 			{
-				prop_type = XInternAtom(display, "_NET_WM_STATE", False);
-				prop_full = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
-				prop_hMax = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
-				prop_vMax = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
-				prop_strut = XInternAtom(display, "_NET_WM_STRUT", False);
-				// These aren't needed now but might be needed in the future.
-				//prop_strutPartial = XInternAtom(display, "_NET_WM_STRUT_PARTIAL", False);
-				//prop_workArea = XInternAtom(display, "_NET_WM_WORKAREA", False);
-				prop_client = XInternAtom(display, "_NET_CLIENT_LIST", False);
-				prop_hints = XInternAtom(display, "_MOTIF_WM_HINTS", False);
-				prop_hidden = XInternAtom(display, "_NET_WM_STATE_HIDDEN", False);
-				prop_active = XInternAtom(display, "_NET_ACTIVE_WINDOW", True);
-				prop_extents = XInternAtom(display, "_NET_FRAME_EXTENTS", False);
-				prop_close = XInternAtom(display, "WM_DESTROY_WINDOW", False);
-				wmDeleteMessage = XInternAtom(display, "WM_DELETE_WINDOW", False);
+				atoms._NET_WM_STATE = XInternAtom(display, "_NET_WM_STATE", False);
+				atoms._NET_WM_STATE_HIDDEN = XInternAtom(display, "_NET_WM_STATE_HIDDEN", False);
+				atoms._NET_WM_STATE_FOCUSED = XInternAtom(display, "_NET_WM_STATE_FOCUSED", False);
+				atoms._NET_WM_STATE_MAXIMIZED_VERT = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
+				atoms._NET_WM_STATE_MAXIMIZED_HORZ = XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
+				atoms._NET_WM_STATE_FULLSCREEN = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", False);
+				atoms._NET_WM_STATE_ABOVE = XInternAtom(display, "_NET_WM_STATE_ABOVE", False);
+				atoms._NET_WM_STATE_SKIP_TASKBAR = XInternAtom(display, "_NET_WM_STATE_SKIP_TASKBAR", False);
+				atoms._NET_WM_STATE_SKIP_PAGER = XInternAtom(display, "_NET_WM_STATE_SKIP_PAGER", False);
+				atoms._NET_WM_STATE_MODAL = XInternAtom(display, "_NET_WM_STATE_MODAL", False);
+				atoms._NET_WM_MOVERESIZE = XInternAtom(display, "_NET_WM_MOVERESIZE", False);
+				atoms._NET_WM_ALLOWED_ACTIONS = XInternAtom(display, "_NET_WM_ALLOWED_ACTIONS", False);
+				atoms._NET_WM_ACTION_FULLSCREEN = XInternAtom(display, "_NET_WM_ACTION_FULLSCREEN", False);
+				atoms._NET_WM_NAME = XInternAtom(display, "_NET_WM_NAME", False);
+				atoms._NET_WM_ICON_NAME = XInternAtom(display, "_NET_WM_ICON_NAME", False);
+				atoms._NET_WM_ICON = XInternAtom(display, "_NET_WM_ICON", False);
+				atoms._NET_WM_PING = XInternAtom(display, "_NET_WM_PING", False);
+				atoms._NET_WM_WINDOW_OPACITY = XInternAtom(display, "_NET_WM_WINDOW_OPACITY", False);
+				atoms._NET_WM_USER_TIME = XInternAtom(display, "_NET_WM_USER_TIME", False);
+				atoms._NET_ACTIVE_WINDOW = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
+				atoms._NET_FRAME_EXTENTS = XInternAtom(display, "_NET_FRAME_EXTENTS", False);
+				atoms._MOTIF_WM_HINTS = XInternAtom(display, "_MOTIF_WM_HINTS", False);
+				atoms._NET_WM_STRUT = XInternAtom(display, "_NET_WM_STRUT", False);
+				atoms.WM_DELETE_WINDOW = XInternAtom(display, "WM_DELETE_WINDOW", False);
 
 #if defined(GWINDOW_DEBUG_LINUX_OUTPUT_SETUPATOM)
-				printf("SetupAtom() prop_type:%lu prop_full:%lu prop_hMax:%lu prop_vMax:%lu\n"
-					"            prop_strut:%lu prop_client:%lu prop_hints:%lu prop_hidden:%lu\n"
-					"            prop_active:%lu prop_extents:%lu prop_close:%lu wmDeleteMessage:%lu\n",
-					prop_type,
-					prop_full,
-					prop_hMax,
-					prop_vMax,
-					prop_strut,
-					prop_client,
-					prop_hints,
-					prop_hidden,
-					prop_active,
-					prop_extents,
-					prop_close,
-					wmDeleteMessage);
+				printf("Configured Atoms\n");
+				printf("_NET_WM_STATE: %lu\n", atoms._NET_WM_STATE);
+				printf("_NET_WM_STATE_HIDDEN: %lu\n", atoms._NET_WM_STATE_HIDDEN);
+				printf("_NET_WM_STATE_FOCUSED: %lu\n", atoms._NET_WM_STATE_FOCUSED);
+				printf("_NET_WM_STATE_MAXIMIZED_VERT: %lu\n", atoms._NET_WM_STATE_MAXIMIZED_VERT);
+				printf("_NET_WM_STATE_MAXIMIZED_HORZ: %lu\n", atoms._NET_WM_STATE_MAXIMIZED_HORZ);
+				printf("_NET_WM_STATE_FULLSCREEN: %lu\n", atoms._NET_WM_STATE_FULLSCREEN);
+				printf("_NET_WM_STATE_ABOVE: %lu\n", atoms._NET_WM_STATE_ABOVE);
+				printf("_NET_WM_STATE_SKIP_TASKBAR: %lu\n", atoms._NET_WM_STATE_SKIP_TASKBAR);
+				printf("_NET_WM_STATE_SKIP_PAGER: %lu\n", atoms._NET_WM_STATE_SKIP_PAGER);
+				printf("_NET_WM_STATE_MODAL: %lu\n", atoms._NET_WM_STATE_MODAL);
+				printf("_NET_WM_MOVERESIZE: %lu\n", atoms._NET_WM_MOVERESIZE);
+				printf("_NET_WM_ALLOWED_ACTIONS: %lu\n", atoms._NET_WM_ALLOWED_ACTIONS);
+				printf("_NET_WM_ACTION_FULLSCREEN: %lu\n", atoms._NET_WM_ACTION_FULLSCREEN);
+				printf("_NET_WM_NAME: %lu\n", atoms._NET_WM_NAME);
+				printf("_NET_WM_ICON_NAME: %lu\n", atoms._NET_WM_ICON_NAME);
+				printf("_NET_WM_ICON: %lu\n", atoms._NET_WM_ICON);
+				printf("_NET_WM_PING: %lu\n", atoms._NET_WM_PING);
+				printf("_NET_WM_WINDOW_OPACITY: %lu\n", atoms._NET_WM_WINDOW_OPACITY);
+				printf("_NET_WM_USER_TIME: %lu\n", atoms._NET_WM_USER_TIME);
+				printf("_NET_ACTIVE_WINDOW: %lu\n", atoms._NET_ACTIVE_WINDOW);
+				printf("_NET_FRAME_EXTENTS: %lu\n", atoms._NET_FRAME_EXTENTS);
+				printf("_MOTIF_WM_HINTS: %lu\n", atoms._MOTIF_WM_HINTS);
+				printf("_NET_WM_STRUT: %lu\n", atoms._NET_WM_STRUT);
+				printf("WM_DELETE_WINDOW: %lu\n", atoms.WM_DELETE_WINDOW);
 #endif
 			}
 			// Brings the window out of the minimize (aka iconified) state to the restore state only
@@ -16729,9 +16808,9 @@ namespace GW
 				memset(&evUnMinEvent, 0, sizeof evUnMinEvent);
 				evUnMinEvent.type = ClientMessage;
 				evUnMinEvent.window = window;
-				evUnMinEvent.message_type = prop_active;
+				evUnMinEvent.message_type = atoms._NET_ACTIVE_WINDOW;
 				evUnMinEvent.format = 32;
-				evUnMinEvent.data.l[0] = 1;
+				evUnMinEvent.data.l[0] = _NET_WM_STATE_ADD;
 				evUnMinEvent.data.l[1] = CurrentTime;
 				evUnMinEvent.data.l[2] = evUnMinEvent.data.l[3] = evUnMinEvent.data.l[4] = 0;
 
@@ -16751,13 +16830,12 @@ namespace GW
 				XEvent unMaxEvent;
 				unMaxEvent.type = ClientMessage;
 				unMaxEvent.xclient.window = window;
-				unMaxEvent.xclient.message_type = prop_type;
+				unMaxEvent.xclient.message_type = atoms._NET_WM_STATE;
 				unMaxEvent.xclient.format = 32;
-				unMaxEvent.xclient.data.l[0] = 0;
-				unMaxEvent.xclient.data.l[1] = prop_hMax;
-				unMaxEvent.xclient.data.l[2] = prop_vMax;
-				unMaxEvent.xclient.data.l[3] = 0;
-				unMaxEvent.xclient.data.l[4] = 0;
+				unMaxEvent.xclient.data.l[0] = _NET_WM_STATE_REMOVE;
+				unMaxEvent.xclient.data.l[1] = atoms._NET_WM_STATE_MAXIMIZED_HORZ;
+				unMaxEvent.xclient.data.l[2] = atoms._NET_WM_STATE_MAXIMIZED_VERT;
+				unMaxEvent.xclient.data.l[3] = unMaxEvent.xclient.data.l[4]  = 0;
 
 				return static_cast<bool>(XSendEvent(
 					display, 
@@ -16775,7 +16853,7 @@ namespace GW
 				if (_style == SYSTEM::GWindowStyle::MINIMIZED)
 					return false;
 				
-				memset(&hint, 0, sizeof(hint));
+				memset(&hints, 0, sizeof(hints));
 				
 				switch (_style)
 				{
@@ -16783,15 +16861,15 @@ namespace GW
 				case SYSTEM::GWindowStyle::FULLSCREENBORDERED:
 				case SYSTEM::GWindowStyle::WINDOWEDLOCKED:
 				{
-					hint.flags = 2;
-					hint.decorations = 5;
+					hints.flags = 2;
+					hints.decorations = 5;
 					break;
 				}
 				case SYSTEM::GWindowStyle::WINDOWEDBORDERLESS:
 				case SYSTEM::GWindowStyle::FULLSCREENBORDERLESS:
 				{
-					hint.flags = 2;
-					hint.decorations = 0;
+					hints.flags = 2;
+					hints.decorations = 0;
 					break;
 				}
 				}
@@ -16799,35 +16877,36 @@ namespace GW
 				return static_cast<bool>(XChangeProperty(
 					display,
 					window,
-					prop_hints,
-					prop_hints,
+					atoms._MOTIF_WM_HINTS,
+					atoms._MOTIF_WM_HINTS,
 					32,
 					PropModeReplace,
-					(unsigned char*)&hint,
+					reinterpret_cast<unsigned char *>(&hints),
 					5
 				));
 			}
 			
 			// Permits the window to be resized by mouse or programmatically.
 			void EnableWindowResizing()
-			{				
-				XSizeHints rect;
-				memset(&rect, 0, sizeof(rect));
-				rect.flags = PMinSize | PMaxSize;
-				rect.min_width = rect.min_height = 0;
-				rect.max_width = rect.max_height = std::numeric_limits<int>::max(); // max int value
-				XSetWMNormalHints(display, window, &rect); // Returns void, so hopefully x does this for us.
+			{
+				// This is the default behavior of a window.
+				XSizeHints *rect = XAllocSizeHints();
+				rect->flags = PMinSize | PMaxSize;
+				rect->min_width = rect->min_height = 0;
+				rect->max_width = rect->max_height = USHRT_MAX;
+				XSetWMNormalHints(display, window, rect);
+				XFree(rect);
 			}
 			
 			// Restricts resizing of the window by mouse or programmatically.
 			void DisableWindowResizing()
 			{				
-				XSizeHints rect;
-				memset(&rect, 0, sizeof(rect));
-				rect.flags = PMinSize | PMaxSize;
-				rect.min_width = rect.max_width = m_WindowWidth;
-				rect.min_height = rect.max_height = m_WindowHeight;
-				XSetWMNormalHints(display, window, &rect);
+				XSizeHints *rect = XAllocSizeHints();
+				rect->flags = PMinSize | PMaxSize;
+				rect->min_width = rect->max_width = m_WindowWidth;
+				rect->min_height = rect->max_height = m_WindowHeight;
+				XSetWMNormalHints(display, window, rect);
+				XFree(rect);
 			}
 			
 			// Minimizes the window. Returns if successful.
@@ -16837,10 +16916,10 @@ namespace GW
 				memset(&ev, 0, sizeof ev);
 				ev.type = PropertyNotify;
 				ev.xclient.window = window;
-				ev.xclient.message_type = prop_hidden;
+				ev.xclient.message_type = atoms._NET_WM_STATE_HIDDEN;
 				ev.xclient.format = 32;
-				ev.xclient.data.l[0] = 1; // _NET_WM_STATE_ADD
-				ev.xclient.data.l[1] = prop_hidden;
+				ev.xclient.data.l[0] = _NET_WM_STATE_ADD;
+				ev.xclient.data.l[1] = atoms._NET_WM_STATE_HIDDEN;
 				
 				return static_cast<bool>(XSendEvent(
 					display, 
@@ -16858,11 +16937,11 @@ namespace GW
 				memset(&ev, 0, sizeof ev);
 				ev.type = ClientMessage;
 				ev.xclient.window = window;
-				ev.xclient.message_type = prop_type;
+				ev.xclient.message_type = atoms._NET_WM_STATE;
 				ev.xclient.format = 32;
-				ev.xclient.data.l[0] = 1; // _NET_WM_STATE_ADD
-				ev.xclient.data.l[1] = prop_hMax;
-				ev.xclient.data.l[2] = prop_vMax;
+				ev.xclient.data.l[0] = _NET_WM_STATE_ADD;
+				ev.xclient.data.l[1] = atoms._NET_WM_STATE_MAXIMIZED_HORZ;
+				ev.xclient.data.l[2] = atoms._NET_WM_STATE_MAXIMIZED_VERT;
 				
 				return static_cast<bool>(XSendEvent(
 					display, 
@@ -16875,15 +16954,30 @@ namespace GW
 			
 			// Moves and resize the window. Returns if successful.
 			bool MoveAndResizeWindow(int _x, int _y, int _width, int _height)
-			{	
-				return static_cast<bool>(XMoveResizeWindow(
-					display, 
-					window, 
-					_x, 
-					_y, 
-					_width, 
+			{
+				if (XMoveResizeWindow(
+					display,
+					window,
+					_x,
+					_y,
+					_width,
 					_height
-				));
+				))
+				{
+					// Launch an event to notify the window has been moved.
+					XEvent ev;
+					memset(&ev, 0, sizeof ev);
+					ev.type = PropertyNotify;
+					ev.xclient.window = window;
+					ev.xclient.message_type = atoms._NET_WM_STATE;
+					ev.xclient.format = 32; // 32-bit cardinal
+
+					XSendEvent(display, window, False, PropertyChangeMask, &ev);
+
+					return true;
+				}
+
+				return false;
 			}
 			
 			// Gets the window border sizes. Returns if successful.
@@ -16912,7 +17006,7 @@ namespace GW
 					unsigned long nItems;
 					unsigned long bytesAfter;
 					unsigned char* extents = nullptr;				
-					int result = XGetWindowProperty(display, window, prop_extents, 
+					int result = XGetWindowProperty(display, window, atoms._NET_FRAME_EXTENTS,
 													0L, 4L, false, 
 													AnyPropertyType, &actualType, &actualFormat,
 													&nItems, &bytesAfter, &extents);
@@ -16977,7 +17071,7 @@ namespace GW
 				unsigned long nItems;
 				unsigned long bytesAfter;
 				unsigned char* extents = nullptr;				
-				int result = XGetWindowProperty(display, window, prop_extents, 
+				int result = XGetWindowProperty(display, window, atoms._NET_FRAME_EXTENTS,
 												0L, 4L, false, 
 												AnyPropertyType, &actualType, &actualFormat,
 												&nItems, &bytesAfter, &extents);
@@ -17088,7 +17182,7 @@ namespace GW
 					int actualFormat;
 					unsigned long nItems, bytesAfter;
 					unsigned char* extents = nullptr;
-					int status = XGetWindowProperty(display, _window, prop_strut, 
+					int status = XGetWindowProperty(display, _window, atoms._NET_WM_STRUT,
 													0, 12, False, XA_CARDINAL,
 													&actualType, &actualFormat, &nItems, &bytesAfter, &extents);
 
@@ -17289,7 +17383,7 @@ namespace GW
 						unsigned char* propRet = nullptr;
 						
 						// PropertyNotify, when a client wants info about property changes for a specified window.
-						int status = XGetWindowProperty(xEvent.xproperty.display, xEvent.xproperty.window, prop_type, 0L, sizeof(Atom),
+						int status = XGetWindowProperty(xEvent.xproperty.display, xEvent.xproperty.window, atoms._NET_WM_STATE, 0L, sizeof(Atom),
 							false, AnyPropertyType, &actual_type, &actual_format, &nitems, &bytes_after, &propRet);
 						
 						if (status == Success && propRet && nitems > 0)
@@ -17309,11 +17403,11 @@ namespace GW
 							{
 								Atom prop = reinterpret_cast<Atom*>(propRet)[index];
 
-								if (prop == prop_vMax)
+								if (prop == atoms._NET_WM_STATE_MAXIMIZED_VERT)
 									verticalMaximizedFlag = true;
-								else if (prop == prop_hMax)
+								else if (prop == atoms._NET_WM_STATE_MAXIMIZED_HORZ)
 									horizontalMaximizedFlag = true;
-								else if (prop == prop_hidden)
+								else if (prop == atoms._NET_WM_STATE_HIDDEN)
 								{
 									hiddenFlag = true;
 									verticalMaximizedFlag = false;
@@ -17339,16 +17433,16 @@ namespace GW
 								eventData.eventFlags = Events::MINIMIZE;
 							else if (isWindowMaximizing)
 								eventData.eventFlags = Events::MAXIMIZE;
-							else if (isWindowTheSame && prop != prop_hidden && xEvent.xclient.message_type != prop_hidden)
+							else if (isWindowTheSame && prop != atoms._NET_WM_STATE_HIDDEN && xEvent.xclient.message_type != atoms._NET_WM_STATE_HIDDEN)
 								break;
 							else
 							{
-								if ((prop == prop_hidden && m_prevEvent != Events::MINIMIZE) || xEvent.xclient.message_type == prop_hidden) // Minimize button pressed.
+								if ((prop == atoms._NET_WM_STATE_HIDDEN && m_prevEvent != Events::MINIMIZE) || xEvent.xclient.message_type == atoms._NET_WM_STATE_HIDDEN) // Minimize button pressed.
 									eventData.eventFlags = Events::MINIMIZE;
 								else if (prop == 362 || // This seems to be received whenever the user clicking on any window frame button.
-										prop == prop_full || // Received the the frame fills the unreserved screen space.
-										prop == prop_hMax || // Received the horizontal area of the frame fills the unreserved screen space.
-										prop == prop_vMax) // Received the vertical area of the frame fills the unreserved screen space.
+										prop == atoms._NET_WM_STATE_FULLSCREEN || // Received the the frame fills the unreserved screen space.
+										prop == atoms._NET_WM_STATE_MAXIMIZED_HORZ || // Received the horizontal area of the frame fills the unreserved screen space.
+										prop == atoms._NET_WM_STATE_MAXIMIZED_VERT) // Received the vertical area of the frame fills the unreserved screen space.
 								{
 									if (prop == 362)
 									{
@@ -17433,7 +17527,7 @@ namespace GW
 						// Primarily used for transferring selection data,
 						// also might be used in a private inter-client
 						// protocol
-						if (xEvent.xclient.message_type == prop_hidden)
+						if (xEvent.xclient.message_type == atoms._NET_WM_STATE_HIDDEN)
 						{
 							int windowFrameX, windowFrameY, windowClientX, windowClientY;
 							unsigned int windowFrameWidth, windowFrameHeight, windowClientWidth, windowClientHeight;
@@ -17456,7 +17550,7 @@ namespace GW
 							prevHeight = windowClientHeight; 
 							prevWidth = windowClientWidth;
 						}
-						else if (xEvent.xclient.message_type == prop_full)
+						else if (xEvent.xclient.message_type == atoms._NET_WM_STATE_FULLSCREEN)
 						{
 							int windowFrameX, windowFrameY, windowClientX, windowClientY;
 							unsigned int windowFrameWidth, windowFrameHeight, windowClientWidth, windowClientHeight;
@@ -17490,7 +17584,7 @@ namespace GW
 							prevHeight = windowClientHeight; 
 							prevWidth = windowClientWidth;							
 						}
-						else if (xEvent.xclient.data.l[0] == wmDeleteMessage)
+						else if (xEvent.xclient.data.l[0] == atoms.WM_DELETE_WINDOW)
 						{							
 							windowIsRunning = false;
 							destroyEventIsSentByXButton = true;
@@ -17595,7 +17689,11 @@ namespace GW
 					if (previousX != _x || previousY != _y || previousWidth != _width || previousHeight != _height)
 					{
 						if (MoveAndResizeWindow(_x, _y, _width, _height))
+						{
+							SetInteralData(_x, _y, _width, _height, _style);
+							X11_SyncWindow();
 							return GReturn::SUCCESS;
+						}
 						else
 							return GReturn::FAILURE;
 					}
@@ -17657,7 +17755,7 @@ namespace GW
 						
 						if (!MoveAndResizeWindow(_x, _y, _width, _height))
 							return GReturn::FAILURE;
-						
+
 						if (!StylizeWindow(SYSTEM::GWindowStyle::WINDOWEDLOCKED)) 
 							return GReturn::FAILURE;
 						
@@ -17706,6 +17804,8 @@ namespace GW
 					break;
 					}
 				}
+
+				X11_SyncWindow();
 				
 				return GReturn::SUCCESS;
 			}
@@ -17726,14 +17826,8 @@ namespace GW
 				if (!display || !window)
 					return GReturn::FAILURE;
 				
-				if (_argbPixels == nullptr)
+				if (_argbPixels == nullptr || _width <= 0 || _height <= 0)
 					return GReturn::INVALID_ARGUMENT;
-				else if (_width <= 0 || _height <= 0)
-					return GReturn::INVALID_ARGUMENT;
-				
-				Atom netWMIcon = XInternAtom(display, "_NET_WM_ICON", false);
-				if (!netWMIcon)
-					return GReturn::FAILURE;
 				
 				Atom cardinal = XInternAtom(display, "CARDINAL", false);
 				if (!cardinal)
@@ -17800,7 +17894,7 @@ namespace GW
 				
 				// The window system will choose the icon whose size is closest to the icon display area. 
 				// Icons will automatically be stretched or squashed as needed.
-				XChangeProperty(display, window, netWMIcon, cardinal, 32, PropModeReplace, (const unsigned char*)m_iconPixels, m_iconPixelsCount);
+				XChangeProperty(display, window, atoms._NET_WM_ICON, cardinal, 32, PropModeReplace, (const unsigned char*)m_iconPixels, m_iconPixelsCount);
 
 				return GReturn::SUCCESS;
 			}
@@ -17822,8 +17916,8 @@ namespace GW
 					memset(&ev, 0, sizeof ev);
 					ev.type = PropertyNotify;
 					ev.xclient.window = window;
-					ev.xclient.message_type = prop_type;
-					ev.xclient.format = 32;
+					ev.xclient.message_type = atoms._NET_WM_STATE;
+					ev.xclient.format = 32; // 32-bit cardinal
 					
 					XSendEvent(display, window, False, PropertyChangeMask, &ev);
 					return GReturn::SUCCESS;
@@ -17843,6 +17937,8 @@ namespace GW
 						m_WindowStyle = SYSTEM::GWindowStyle::WINDOWEDBORDERED;
 					else if (m_WindowStyle == SYSTEM::GWindowStyle::FULLSCREENBORDERLESS)
 						m_WindowStyle = SYSTEM::GWindowStyle::WINDOWEDBORDERLESS;
+
+					X11_SyncWindow();
 
 					return GReturn::SUCCESS;
 				}
@@ -18068,6 +18164,9 @@ namespace GW
 	}
 }
 
+#undef _NET_WM_STATE_ADD
+#undef _NET_WM_STATE_REMOVE
+
 
 #elif defined(_WIN32)
     #include <winapifamily.h>
@@ -18086,19 +18185,19 @@ namespace GW
 static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 // The Major version is auto-generated based on the current year.
-#define GATEWARE_MAJOR 24
+#define GATEWARE_MAJOR 25
 // The Minor version is auto-generated based on the current day of the year.
-#define GATEWARE_MINOR 68
+#define GATEWARE_MINOR 5
 // The Patch version is auto-generated based on the current UTC hour of the day.
-#define GATEWARE_PATCH 21
+#define GATEWARE_PATCH 20
 // Pulled directly from GIT  
 #define GATEWARE_BRANCH "master"
 // Pulled directly from GIT
-#define GATEWARE_COMMIT_HASH 0x9422a94
+#define GATEWARE_COMMIT_HASH 0x721e75d
 // Standard Window Title Bar
-#define GATEWARE_VERSION_STRING "Gateware v24.68.21"
+#define GATEWARE_VERSION_STRING "Gateware v25.5.20"
 // Window Title Bar displayed in DEBUG builds
-#define GATEWARE_VERSION_STRING_LONG "Gateware v24.68.21 (master) [9422a94]"
+#define GATEWARE_VERSION_STRING_LONG "Gateware v25.5.20 (master) [721e75d]"
 
 // Distinguishes the platform Gateware is compiling for
 //// This file contains defines for platform-specific code
@@ -54633,12 +54732,107 @@ namespace GW
     #endif
 #elif defined(__linux__)
     #include <atomic>
-#include <math.h>
+#include <cmath>
 #include <cfloat>
 #include <cstring>
+#include <memory>
 #include <pulse/thread-mainloop.h>
-#include <pulse/mainloop-api.h>
 #include <pulse/context.h>
+
+namespace internal_gw
+{
+	class AudioState
+	{
+		static void close_context(pa_context *context)
+		{
+			if (context == nullptr) return;
+			pa_context_disconnect(context);
+			pa_context_unref(context);
+		}
+
+		static void close_main_loop(pa_threaded_mainloop *main_loop)
+		{
+			if (main_loop == nullptr) return;
+			pa_threaded_mainloop_free(main_loop);
+		}
+
+	  public:
+		std::unique_ptr<pa_threaded_mainloop, decltype(&AudioState::close_main_loop)>
+			main_loop{nullptr, &AudioState::close_main_loop};
+		std::unique_ptr<pa_context, decltype(&AudioState::close_context)> context{nullptr, &AudioState::close_context};
+		std::atomic_int													  pa_ready{};
+
+		AudioState() = default;
+		~AudioState()
+		{
+			context	  = nullptr;
+			main_loop = nullptr;
+		}
+	};
+
+	static void OnStateChange(const pa_context *c, void *userdata)
+	{
+		std::atomic<int> *pa_ready = static_cast<std::atomic<int> *>(userdata);
+
+		switch (pa_context_get_state(c)) {
+		case PA_CONTEXT_FAILED:
+		case PA_CONTEXT_TERMINATED: {
+			*pa_ready = -1;
+			break;
+		}
+		case PA_CONTEXT_READY: {
+			*pa_ready = 1;
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	inline bool get_audio_state(std::shared_ptr<AudioState> &ptr)
+	{
+		// Contain a weak_ptr of the audio state
+		static std::weak_ptr<AudioState> state;
+
+		// We check for nullptr here to see if the state has already been created
+		if (state.expired()) {
+			// If the state is null, we create a new state and configure it
+			std::shared_ptr<AudioState> new_state(new AudioState());
+			pa_threaded_mainloop	   *main_loop = pa_threaded_mainloop_new();
+			if (main_loop == nullptr) return false;
+
+			pa_context *context = pa_context_new(pa_threaded_mainloop_get_api(main_loop), "main_audio");
+			if (context == nullptr) {
+				pa_threaded_mainloop_free(main_loop);
+				return false;
+			}
+
+			pa_context_set_state_callback(context,
+										  reinterpret_cast<pa_context_notify_cb_t>(OnStateChange),
+										  &new_state->pa_ready);
+
+			if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFLAGS, nullptr) < 0) {
+				pa_context_unref(context);
+				pa_threaded_mainloop_free(main_loop);
+				return false;
+			}
+
+			pa_threaded_mainloop_start(main_loop);
+
+			new_state->main_loop.reset(main_loop);
+			new_state->context.reset(context);
+
+			// After configuring, we set the weak_ptr to point to this new state then return the state by copy
+			state = new_state;
+			ptr	  = new_state;
+			return true;
+		}
+
+		// If the state isn't null, we just return the locked shared state we have
+		ptr = state.lock();
+		return true;
+	}
+} // namespace internal_gw
 
 namespace GW
 {
@@ -54654,13 +54848,13 @@ namespace GW
 			float soundsChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 			float musicChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
-			virtual ~GAudioImplementation()
+			~GAudioImplementation() override
 			{
 				// Broadcast DESTROY here
 				GEvent gEvent;
 				// EVENT_DATA is not required for this event
 				gEvent.Write(Events::DESTROY, std::nullptr_t());
-				this->Push(gEvent);
+				this->GEventGeneratorImplementation::Push(gEvent);
 			}
 
 			// Main class
@@ -54668,30 +54862,27 @@ namespace GW
 			{
 				// check for available hardware
 				pa_threaded_mainloop* myMainLoop = pa_threaded_mainloop_new();
-				if (myMainLoop == NULL)
+				if (myMainLoop == nullptr)
 					return GReturn::HARDWARE_UNAVAILABLE;
 
-				pa_threaded_mainloop_lock(myMainLoop);
+				pa_context* myContext = pa_context_new(pa_threaded_mainloop_get_api(myMainLoop), "AudioHardware");
+				if (myContext == nullptr)
 				{
-					pa_context* myContext = pa_context_new(pa_threaded_mainloop_get_api(myMainLoop), "AudioHardware");
-					if (myContext == NULL)
-					{
-						pa_threaded_mainloop_unlock(myMainLoop);
-						pa_threaded_mainloop_free(myMainLoop);
-						return GReturn::HARDWARE_UNAVAILABLE;
-					}
-					if (pa_context_connect(myContext, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
-					{
-						pa_context_unref(myContext);
-						pa_threaded_mainloop_unlock(myMainLoop);
-						pa_threaded_mainloop_free(myMainLoop);
-						return GReturn::HARDWARE_UNAVAILABLE;
-					}
-
-					pa_context_disconnect(myContext);
-					pa_context_unref(myContext);
+					pa_threaded_mainloop_unlock(myMainLoop);
+					pa_threaded_mainloop_free(myMainLoop);
+					return GReturn::HARDWARE_UNAVAILABLE;
 				}
-				pa_threaded_mainloop_unlock(myMainLoop);
+
+				if (pa_context_connect(myContext, nullptr, PA_CONTEXT_NOFLAGS, nullptr) < 0)
+				{
+					pa_context_unref(myContext);
+					pa_threaded_mainloop_unlock(myMainLoop);
+					pa_threaded_mainloop_free(myMainLoop);
+					return GReturn::HARDWARE_UNAVAILABLE;
+				}
+
+				pa_context_disconnect(myContext);
+				pa_context_unref(myContext);
 				pa_threaded_mainloop_free(myMainLoop);
 
 				// Initialize GAudio's volumes
@@ -54702,7 +54893,7 @@ namespace GW
 				return GEventGeneratorImplementation::Create();
 			}
 
-			GReturn SetMasterVolume(float _value) override
+			GReturn SetMasterVolume(const float _value) override
 			{
 				if (_value < 0.0f)
 					return GReturn::INVALID_ARGUMENT;
@@ -54713,7 +54904,7 @@ namespace GW
 				masterVolume = (_value > 1.0f) ? 1.0f : _value;
 
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				// Set the first value of a passed array to our actual master volume
 				eventData.channelVolumes[0] = masterVolume;
 				eventData.numOfChannels = 0; // we are not using channels in this event
@@ -54722,7 +54913,7 @@ namespace GW
 				return this->Push(gEvent);
 			}
 
-			GReturn SetGlobalSoundVolume(float _value) override
+			GReturn SetGlobalSoundVolume(const float _value) override
 			{
 				if (_value < 0.0f)
 					return GReturn::INVALID_ARGUMENT;
@@ -54733,7 +54924,7 @@ namespace GW
 				soundsVolume = (_value > 1.0f) ? 1.0f : _value;
 
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				// Set the first value of a passed array to our actual master volume
 				eventData.channelVolumes[0] = soundsVolume;
 				eventData.numOfChannels = 0; // we are not using channels in this event
@@ -54742,7 +54933,7 @@ namespace GW
 				return this->Push(gEvent);
 			}
 
-			GReturn SetGlobalMusicVolume(float _value) override
+			GReturn SetGlobalMusicVolume(const float _value) override
 			{
 				if (_value < 0.0f)
 					return GReturn::INVALID_ARGUMENT;
@@ -54753,7 +54944,7 @@ namespace GW
 				musicVolume = (_value > 1.0f) ? 1.0f : _value;
 
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				// Set the first value of a passed array to our actual master volume
 				eventData.channelVolumes[0] = musicVolume;
 				eventData.numOfChannels = 0; // we are not using channels in this event
@@ -54762,7 +54953,7 @@ namespace GW
 				return this->Push(gEvent);
 			}
 
-			GReturn SetSoundsChannelVolumes(const float* _values, unsigned int _numChannels) override
+			GReturn SetSoundsChannelVolumes(const float* _values, const unsigned int _numChannels) override
 			{
 				if (_values == nullptr)
 					return GReturn::INVALID_ARGUMENT;
@@ -54776,7 +54967,7 @@ namespace GW
 				}
 
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				memcpy(eventData.channelVolumes, soundsChannelVolumes, 6 * sizeof(float));
 				eventData.numOfChannels = _numChannels;
 				gEvent.Write(Events::SOUND_CHANNEL_VOLUMES_CHANGED, eventData);
@@ -54784,7 +54975,7 @@ namespace GW
 				return this->Push(gEvent);
 			}
 
-			GReturn SetMusicChannelVolumes(const float* _values, unsigned int _numChannels) override
+			GReturn SetMusicChannelVolumes(const float* _values, const unsigned int _numChannels) override
 			{
 				if (_values == nullptr)
 					return GReturn::INVALID_ARGUMENT;
@@ -54798,7 +54989,7 @@ namespace GW
 				}
 
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				memcpy(eventData.channelVolumes, musicChannelVolumes, 6 * sizeof(float));
 				eventData.numOfChannels = _numChannels;
 				gEvent.Write(Events::MUSIC_CHANNEL_VOLUMES_CHANGED, eventData);
@@ -55497,9 +55688,7 @@ namespace GW
 }
 
 #elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-    #include <math.h>
-
-namespace GW
+    namespace GW
 {
 	namespace I
 	{
@@ -55521,7 +55710,7 @@ namespace GW
 			{
 				MATH::GMATRIXF listener = MATH::GIdentityMatrixF;
 				MATH::GMATRIXF transform = MATH::GIdentityMatrixF;
-				MATH::GQUATERNIONF orientation;
+				MATH::GQUATERNIONF orientation{};
 				orientation.x = _orientation.x;
 				orientation.y = _orientation.y;
 				orientation.z = _orientation.z;
@@ -55538,7 +55727,7 @@ namespace GW
 					return GReturn::FAILURE;
 				
 				GEvent gEvent;
-				EVENT_DATA eventData;
+				EVENT_DATA eventData{};
 				eventData.position = listener.row4;
 				eventData.quaternion = _orientation;
 				gEvent.Write(Events::UPDATE_LISTENER, eventData);
@@ -56387,14 +56576,441 @@ namespace GW
 #include <pulse/context.h>
 #include <pulse/volume.h>
 #include <pulse/stream.h>
-#include <pulse/error.h>
-#include <pulse/scache.h>
 #include <pulse/introspect.h>
-#include <pulse/subscribe.h>
 
 #include <thread>
+#include <atomic>
 
 #define G_NUM_OF_OUTPUTS 2 // Currently set to forced Stereo
+
+// Cork defines
+#define G_AUDIO_PAUSED 1
+#define G_AUDIO_RESUMED 0
+
+#ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
 
 
 
@@ -56405,279 +57021,68 @@ namespace GW
         class GSoundImplementation : public virtual GSoundInterface,
             protected GThreadSharedImplementation
         {
-            /* this enum is here to prevent compiler warning -Wmultichar
-             * previously, this file used a series of #defines that caused
-             * the warning to occur in a switch statement later on. So instead
-             * of the #defines (initializing an int to a series of 4 chars),
-             * i just declare them here to be the integer they would be
-             * interpreted as by the compiler internally. */
-            enum WaveTag {
-                RIFF = 1179011410, // = 'FFIR'
-                DATA = 1635017060, // = 'atad'
-                FMT = 544501094, // = ' tmf'
-                WAVE = 1163280727, // = 'EVAW'
-                JUNK = 1263424842, // = 'KNUJ'
-                XWMA = 1095587672, // = 'AMWX'
-                DPDS = 1935962212  // = 'sdpd'
-            };
-
-            struct PCM_FORMAT_INFO
-            {
-                unsigned short mFormatTag = 0;
-                unsigned short mNumChannels = 0;
-                unsigned int mSamples = 0;
-                unsigned int mAvgBytesPerSec = 0;
-                unsigned short mBlockAlign = 0;
-                unsigned short mBitsPerSample = 0;
-                unsigned short mCbSize = 22;
-            };
-
-            struct PCM_BUFFER
-            {
-                uint32_t byteSize = 0;
-                uint8_t* bytes = nullptr;
-            };
-
-            struct WAVE_FILE
-            {
-                PCM_FORMAT_INFO myFormat;
-                PCM_BUFFER myBuffer;
-                bool isSigned = false;
-            };
-
-            std::atomic<int> pa_ready;
-            std::atomic_bool atomic_isPlaying;
-            std::atomic_bool atomic_isPaused;
-            std::atomic_bool atomic_isComplete;
-            std::atomic_bool atomic_stopFlag;
+            std::atomic_bool atomic_isPlaying{};
+            std::atomic_bool atomic_isPaused{};
+            std::atomic_bool atomic_isComplete{};
+            std::atomic_bool atomic_stopFlag{};
             float masterVolume = 1.0f; // global master volume
             float globalSoundsVolume = 1.0f; // global sounds volume
             float volume = 1.0f; // volume of this sound
             uint32_t sinkIndex = UINT32_MAX;
-            pa_context* myContext = nullptr;
-            pa_channel_map* myMap = nullptr;
-            pa_stream* myStream = nullptr;
-            pa_threaded_mainloop* myMainLoop = nullptr;
+            std::unique_ptr<pa_channel_map> myMap{nullptr};
 
-            pa_sample_format myPulseFormat;
-            pa_cvolume vol;
+            std::function<void(pa_stream*)> streamDestructor = [&](pa_stream* _stream)
+            {
+                if (_stream)
+                {
+                    if (audio_state->main_loop) pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                    pa_stream_disconnect(_stream);
+                    pa_stream_unref(_stream);
+                    if (audio_state->main_loop) pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+                }
+            };
+            std::unique_ptr<pa_stream, decltype(streamDestructor)> myStream{nullptr, streamDestructor};
+
+			std::shared_ptr<internal_gw::AudioState> audio_state;
+
+			pa_sample_spec mySampleSpec = { PA_SAMPLE_INVALID, 0, 0 };
+            pa_cvolume vol = { 0, { PA_VOLUME_NORM, PA_VOLUME_NORM } };
 
             float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
             float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
             GW::AUDIO::GAudio gAudio;
             GW::CORE::GEventReceiver gReceiver;
             GW::SYSTEM::GConcurrent gConcurrent;
-            WAVE_FILE myFile;
+            WavReader myWavReader;
 
             void Destroy()
             {
-                if (myMainLoop) pa_threaded_mainloop_lock(myMainLoop);
-                {
-                    // Disconnects and decrements/unreferences the stream
-                    if (myStream)
-                    {
-                        pa_stream_disconnect(myStream);
-                        pa_stream_unref(myStream);
-                        myStream = nullptr;
-                    }
-
-                    // Disconnects and decrements/unreferences the context
-                    if (myContext)
-                    {
-                        pa_context_kill_sink_input(myContext, sinkIndex, NULL, NULL);
-                        pa_context_disconnect(myContext);
-                        pa_context_unref(myContext);
-                        myContext = nullptr;
-                    }
-                }
-                if (myMainLoop) pa_threaded_mainloop_unlock(myMainLoop);
-
-                // Stops the mainloop (after the context is disconnected) and releases memory
-                if (myMainLoop)
-                {
-                    pa_threaded_mainloop_stop(myMainLoop);
-                    pa_threaded_mainloop_free(myMainLoop);
-                    myMainLoop = nullptr;
-                }
-
-                if (myMainLoop) pa_threaded_mainloop_lock(myMainLoop);
-                {
-                    if (myMap)
-                    {
-                        delete myMap;
-                        myMap = nullptr;
-                    }
-                }
-                if (myMainLoop) pa_threaded_mainloop_unlock(myMainLoop);
-
-                if (myFile.myBuffer.bytes)
-                {
-                    delete[] myFile.myBuffer.bytes;
-                    myFile.myBuffer.bytes = nullptr;
-                }
+                myStream = nullptr;
+                myMap = nullptr;
             }
 
-            GReturn LoadWav(const char* path, WAVE_FILE& returnedWave)
+            static void FinishedDrainOp(pa_stream*, int, void* userdata)
             {
-                // default the return value
-                GReturn result = GReturn::SUCCESS;
-
-                // create our gfile object
-                GW::SYSTEM::GFile file;
-                file.Create();
-
-                // open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-                if (-file.OpenBinaryRead(path)) {
-                    result = GReturn::FILE_NOT_FOUND;
-                    return result;
-                }
-
-                // variables for determining data information
-                unsigned long dwChunktype = 0;
-                unsigned long dwChunkDataSize = 0;
-                unsigned long dwRiffDataSize = 0;
-                unsigned long dwFileType = 0;
-                unsigned long dwIsWave = 0;
-                unsigned long throwAwayValue = 0;
-                bool foundAudioData = false;
-
-                while (result == GReturn::SUCCESS && foundAudioData == false)
-                {
-                    if (-file.Read(reinterpret_cast<char*>(&dwChunktype), 4)) {
-                        // could not acquire chunk type
-                        result = GReturn::FAILURE;
-                        break;
-                    }
-
-                    if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-                        // could not acquire chunk size
-                        result = GReturn::FAILURE;
-                        break;
-                    }
-
-                    switch (dwChunktype) {
-                    case WaveTag::RIFF:
-                    {
-                        dwRiffDataSize = dwChunkDataSize;
-                        dwChunkDataSize = 4;
-
-                        if (-file.Read(reinterpret_cast<char*>(&dwFileType), dwChunkDataSize)) {
-                            // could not acquire the file type
-                            result = GReturn::FAILURE;
-                            break;
-                        }
-                        break;
-                    }
-
-                    case WaveTag::WAVE:
-                    {
-
-                        if (-file.Read(reinterpret_cast<char*>(&dwIsWave), dwChunkDataSize)) {
-                            // the file is not a wav file
-                            result = GReturn::FAILURE;
-                            break;
-                        }
-                        break;
-                    }
-
-                    case WaveTag::FMT:
-                    {
-                        if (-file.Read(reinterpret_cast<char*>(&returnedWave.myFormat.mFormatTag), dwChunkDataSize)) {
-                            // could not read the chunk data
-                            result = GReturn::FAILURE;
-                            break;
-                        }
-                        break;
-                    }
-
-                    case WaveTag::DATA:
-                    {
-                        returnedWave.myBuffer.bytes = new uint8_t[dwChunkDataSize];
-                        if (-file.Read(reinterpret_cast<char*>(returnedWave.myBuffer.bytes), dwChunkDataSize)) {
-                            // could not read the audio data
-                            result = GReturn::FAILURE;
-                            break;
-                        }
-
-                        returnedWave.myBuffer.byteSize = dwChunkDataSize;	// contains size of the audio buffer in bytes
-                        foundAudioData = true;
-                        break;
-                    }
-
-                    default:
-                    {
-                        char* pThrowawayDataBuffer = new char[dwChunkDataSize];
-                        if (-file.Read(pThrowawayDataBuffer, dwChunkDataSize)) {
-                            // something unknown happened that caused the data to not be read
-                            result = GReturn::FAILURE;
-                        }
-
-                        delete[] pThrowawayDataBuffer;
-                        break;
-                    }
-                    }
-                }
-                file.CloseFile();
-                returnedWave.isSigned = (returnedWave.myFormat.mBitsPerSample != 8);
-                return result;
-            }
-
-            static void OnStateChange(pa_context* c, void* userdata)
-            {
-                std::atomic<int>* pa_ready = (std::atomic<int>*)userdata;
-
-                switch (pa_context_get_state(c))
-                {
-                case PA_CONTEXT_UNCONNECTED:
-                {
-                    break;
-                }
-                case PA_CONTEXT_CONNECTING:
-                {
-                    break;
-                }
-                case PA_CONTEXT_AUTHORIZING:
-                {
-                    break;
-                }
-                case PA_CONTEXT_SETTING_NAME:
-                {
-                    break;
-                }
-                case PA_CONTEXT_FAILED:
-                {
-                    *pa_ready = -1;
-                    break;
-                }
-                case PA_CONTEXT_TERMINATED:
-                {
-                    *pa_ready = -1;
-                    break;
-                }
-                case PA_CONTEXT_READY:
-                {
-                    *pa_ready = 1;
-                    break;
-                }
-                }
-            }
-
-            static void FinishedDrainOp(pa_stream* s, int success, void* userdata)
-            {
-                GSoundImplementation* impl = reinterpret_cast<GSoundImplementation*>(userdata);
+                GSoundImplementation* impl = static_cast<GSoundImplementation*>(userdata);
                 impl->atomic_isComplete = true;
             }
 
-        public:
-            virtual ~GSoundImplementation()
+            static void FlushOpCallback(pa_stream*, int, void* userdata)
             {
-                Stop();
-                LockSyncWrite();
-                Destroy();
-                UnlockSyncWrite();
+                const GSoundImplementation* impl = static_cast<GSoundImplementation*>(userdata);
+                pa_threaded_mainloop_signal(impl->audio_state->main_loop.get(), 0);
             }
 
-            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+        public:
+            ~GSoundImplementation() override
+            {
+                GSoundImplementation::Stop();
+                GSoundImplementation::LockSyncWrite();
+                Destroy();
+                GSoundImplementation::UnlockSyncWrite();
+            }
+
+            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
             {
                 if (!_path || !_audio)
                     return GReturn::INVALID_ARGUMENT;
@@ -56690,92 +57095,68 @@ namespace GW
                     return result;
 
                 gAudio = _audio;
-                auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+                const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
 
-                if (-LoadWav(_path, myFile))
+                if (-myWavReader.ReadWAV(_path))
                     return GReturn::FILE_NOT_FOUND;
 
-                myMainLoop = pa_threaded_mainloop_new();
+				if (!internal_gw::get_audio_state(audio_state)) return GReturn::FAILURE;
 
-                if (myMainLoop == NULL)
-                    return GReturn::FAILURE;
-
-                pa_threaded_mainloop_lock(myMainLoop);
-                {
-                    myContext = pa_context_new(pa_threaded_mainloop_get_api(myMainLoop), "Sound");
-
-                    if (myContext == NULL)
-                    {
-                        pa_threaded_mainloop_unlock(myMainLoop);
-                        return GReturn::FAILURE;
-                    }
-
-                    pa_ready = 0;
-                    pa_context_connect(myContext, NULL, PA_CONTEXT_NOFLAGS, NULL);
-                    pa_context_set_state_callback(myContext, OnStateChange, &pa_ready);
-                }
-                pa_threaded_mainloop_unlock(myMainLoop);
-
-                pa_threaded_mainloop_start(myMainLoop);
-
-                while (pa_ready == 0)
+				while (audio_state->pa_ready == 0)
                     std::this_thread::yield();
 
-                if (pa_ready != 1)
+                if (audio_state->pa_ready != 1)
                     return GReturn::FAILURE;
 
-                switch (myFile.myFormat.mBitsPerSample)
+                const auto header = myWavReader.GetHeader();
+                switch (header.format.bitsPerSample)
                 {
                 case 8:
-                    myPulseFormat = PA_SAMPLE_U8;
+                    mySampleSpec.format = PA_SAMPLE_U8;
                     break;
                 case 16:
-                    myPulseFormat = PA_SAMPLE_S16LE;
+                    mySampleSpec.format = PA_SAMPLE_S16LE;
                     break;
                 case 24:
-                    myPulseFormat = PA_SAMPLE_S24LE;
+                    mySampleSpec.format = PA_SAMPLE_S24LE;
                     break;
                 case 32:
-                    myPulseFormat = (myFile.myFormat.mFormatTag > 1) ? PA_SAMPLE_FLOAT32LE : PA_SAMPLE_S32LE; // Float type for IEEE and Signed 32int for PCM
+                    mySampleSpec.format = (header.format.formatTag > 1) ? PA_SAMPLE_FLOAT32LE : PA_SAMPLE_S32LE; // Float type for IEEE and Signed 32int for PCM
                     break;
                 default:
-                    myPulseFormat = PA_SAMPLE_INVALID;
+                    mySampleSpec.format = PA_SAMPLE_INVALID;
                     return GReturn::FAILURE;
-                    break;
                 }
 
-                pa_sample_spec mySampleSpec;
-                mySampleSpec.format = myPulseFormat;
-                mySampleSpec.rate = myFile.myFormat.mSamples;
-                mySampleSpec.channels = myFile.myFormat.mNumChannels;
+                mySampleSpec.rate = header.format.sampleRate;
+                mySampleSpec.channels = header.format.channels;
 
                 if (pa_channels_valid(mySampleSpec.channels) == 0)
                     return GReturn::FAILURE;
 
-                pa_threaded_mainloop_lock(myMainLoop);
+                pa_threaded_mainloop_lock(audio_state->main_loop.get());
                 {
-                    myMap = new pa_channel_map();
-                    myMap = pa_channel_map_init_extend(myMap, mySampleSpec.channels, PA_CHANNEL_MAP_WAVEEX);
-                    if (myMap == nullptr)
+                    myMap.reset(new pa_channel_map());
+                    if (pa_channel_map_init_extend(myMap.get(), mySampleSpec.channels, PA_CHANNEL_MAP_WAVEEX) == nullptr)
                     {
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                         return GReturn::FAILURE;
                     }
 
-                    myStream = pa_stream_new(myContext, "GSound", &mySampleSpec, myMap);
+                    myStream.reset(pa_stream_new(audio_state->context.get(), "GSound", &mySampleSpec, myMap.get()));
                     if (myStream == nullptr)
                     {
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                         return GReturn::FAILURE;
                     }
 
-                    if (pa_stream_connect_playback(myStream, NULL, NULL, (pa_stream_flags_t)0, NULL, NULL) != 0)
+                    if (pa_stream_connect_playback(myStream.get(), nullptr, nullptr, static_cast<pa_stream_flags_t>(0), nullptr, nullptr) != 0)
                     {
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                         return GReturn::FAILURE;
                     }
                 }
-                pa_threaded_mainloop_unlock(myMainLoop);
+                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 globalSoundsVolume = audioImplementation->soundsVolume;
                 masterVolume = audioImplementation->masterVolume;
@@ -56803,60 +57184,60 @@ namespace GW
                         switch (audioEvent)
                         {
                         case GW::AUDIO::GAudio::Events::DESTROY:
-                        {
-                            Stop();
-                            LockSyncWrite();
-                            Destroy();
-                            UnlockSyncWrite();
-                            break;
-                        }
+                            {
+                                Stop();
+                                LockSyncWrite();
+                                Destroy();
+                                UnlockSyncWrite();
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::PLAY_SOUNDS:
-                        {
-                            Play();
-                            break;
-                        }
+                            {
+                                Play();
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::PAUSE_SOUNDS:
-                        {
-                            Pause();
-                            break;
-                        }
+                            {
+                                Pause();
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::RESUME_SOUNDS:
-                        {
-                            Resume();
-                            break;
-                        }
+                            {
+                                Resume();
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::STOP_SOUNDS:
-                        {
-                            Stop();
-                            break;
-                        }
+                            {
+                                Stop();
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::MASTER_VOLUME_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            masterVolume = audioEventData.channelVolumes[0];
-                            // Update the current volume with a new master volume
-                            SetVolume(volume);
-                            break;
-                        }
+                            {
+                                gEvent.Read(audioEventData);
+                                masterVolume = audioEventData.channelVolumes[0];
+                                // Update the current volume with a new master volume
+                                SetVolume(volume);
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::SOUNDS_VOLUME_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            globalSoundsVolume = audioEventData.channelVolumes[0];
-                            // Update the current volume with a new master volume
-                            SetVolume(volume);
-                            break;
-                        }
+                            {
+                                gEvent.Read(audioEventData);
+                                globalSoundsVolume = audioEventData.channelVolumes[0];
+                                // Update the current volume with a new master volume
+                                SetVolume(volume);
+                                break;
+                            }
                         case GW::AUDIO::GAudio::Events::SOUND_CHANNEL_VOLUMES_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            memcpy(masterChannelVolumes, audioEventData.channelVolumes, audioEventData.numOfChannels * sizeof(float));
-                            SetChannelVolumes(channelVolumes, audioEventData.numOfChannels);
-                            break;
-                        }
+                            {
+                                gEvent.Read(audioEventData);
+                                memcpy(masterChannelVolumes, audioEventData.channelVolumes, static_cast<int>(audioEventData.numOfChannels * sizeof(float)));
+                                SetChannelVolumes(channelVolumes, audioEventData.numOfChannels);
+                                break;
+                            }
                         default:
-                        {
-                            break;
-                        }
+                            {
+                                break;
+                            }
                         }
                     });
             }
@@ -56869,7 +57250,7 @@ namespace GW
                 if (_numChannels == 0 || _numChannels > 6 || _values == nullptr)
                     return GReturn::INVALID_ARGUMENT;
 
-                float adjustedVolume = volume * masterVolume * globalSoundsVolume;
+                const float adjustedVolume = volume * masterVolume * globalSoundsVolume;
                 for (unsigned int i = 0; i < _numChannels; i++)
                 {
                     if (_values[i] < 0.0f)
@@ -56878,41 +57259,46 @@ namespace GW
                     // 5.1 to stereo fallback
                     if (_numChannels > G_NUM_OF_OUTPUTS)
                     {
-                        channelVolumes[i] = (_values[i] > 1.0f) ? 1.0f : _values[i];
+                        channelVolumes[i] = std::min(_values[i], 1.0f);
 
                         switch (i)
                         {
                         case 2: // Front Center
                         {
-                            channelVolumes[0] += channelVolumes[2] * 0.5f;
-                            channelVolumes[1] += channelVolumes[2] * 0.5f;
+                            channelVolumes[0] += channelVolumes[i] * 0.5f;
+                            channelVolumes[1] += channelVolumes[i] * 0.5f;
                             break;
                         }
                         case 3: // LFE
                         {
-                            channelVolumes[0] += channelVolumes[3] * 0.3f;
-                            channelVolumes[1] += channelVolumes[3] * 0.3f;
+                            channelVolumes[0] += channelVolumes[i] * 0.3f;
+                            channelVolumes[1] += channelVolumes[i] * 0.3f;
                             break;
                         }
                         case 4: // Rear Left
                         {
-                            channelVolumes[0] += channelVolumes[4] * 0.7f;
+                            channelVolumes[0] += channelVolumes[i] * 0.7f;
                             break;
                         }
                         case 5: //Rear Right
                         {
-                            channelVolumes[1] += channelVolumes[5] * 0.7f;
+                            channelVolumes[1] += channelVolumes[i] * 0.7f;
                             break;
                         }
+                        default:
+                            break;
                         }
 
                         // clamp stereo to max of 1.0f
                         if (i == _numChannels - 1)
                         {
-                            channelVolumes[0] = (channelVolumes[0] > 1.0f) ? 1.0f : channelVolumes[0];
-                            channelVolumes[1] = (channelVolumes[1] > 1.0f) ? 1.0f : channelVolumes[1];
-                            vol.values[0] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[0] * masterChannelVolumes[0]);
-                            vol.values[1] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[1] * masterChannelVolumes[1]);
+                            channelVolumes[0] = std::min(channelVolumes[0], 1.0f);
+                            channelVolumes[1] = std::min(channelVolumes[1], 1.0f);
+
+                            const double adjustedVolumeLeft = std::min(adjustedVolume * channelVolumes[0] * masterChannelVolumes[0], 1.0f);
+                            const double adjustedVolumeRight = std::min(adjustedVolume * channelVolumes[1] * masterChannelVolumes[1], 1.0f);
+                            vol.values[0] = pa_sw_volume_from_linear(adjustedVolumeLeft);
+                            vol.values[1] = pa_sw_volume_from_linear(adjustedVolumeRight);
                             break;
                         }
                     }
@@ -56921,35 +57307,36 @@ namespace GW
                         channelVolumes[i] = (_values[i] > 1.0f) ? 1.0f : _values[i];
 
                         // apply clamping and master volume multiplier
-                        vol.values[i] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[i] * masterChannelVolumes[i]);
+                        const double adjustedVolumeClamped = std::min(volume * channelVolumes[i] * masterChannelVolumes[i], 1.0f);
+                        vol.values[i] = pa_sw_volume_from_linear(adjustedVolumeClamped);
                     }
                 }
 
                 LockSyncWrite();
                 while (sinkIndex == UINT32_MAX)
                 {
-                    pa_threaded_mainloop_lock(myMainLoop);
-                    sinkIndex = pa_stream_get_index(myStream); //Returns the sink resp. source output index this stream is identified in the server with
-                    pa_threaded_mainloop_unlock(myMainLoop);
+                    pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                    sinkIndex = pa_stream_get_index(myStream.get()); //Returns the sink resp. source output index this stream is identified in the server with
+                    pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                 }
                 UnlockSyncWrite();
 
                 vol.channels = G_NUM_OF_OUTPUTS;
 
                 //Set the volume of a sink input stream.
-                pa_threaded_mainloop_lock(myMainLoop);
+                pa_threaded_mainloop_lock(audio_state->main_loop.get());
                 {
-                    pa_operation* o = pa_context_set_sink_input_volume(myContext, sinkIndex, &vol, NULL, NULL);
+                    pa_operation* sinkInputVolumeOp = pa_context_set_sink_input_volume(audio_state->context.get(), sinkIndex, &vol, nullptr, nullptr);
 
-                    if (!o)
+                    if (!sinkInputVolumeOp)
                     {
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                         return GReturn::FAILURE;
                     }
 
-                    pa_operation_unref(o);
+                    pa_operation_unref(sinkInputVolumeOp);
                 }
-                pa_threaded_mainloop_unlock(myMainLoop);
+                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 return GReturn::SUCCESS;
             }
@@ -56963,38 +57350,41 @@ namespace GW
                     return GReturn::INVALID_ARGUMENT;
 
                 // Clip the passed volume to max
-                _newVolume = (_newVolume > 1.0f) ? 1.0f : _newVolume;
+                _newVolume = std::min(_newVolume, 1.0f);
                 volume = _newVolume;
 
                 // Apply master volume ratio to the sound volume (Doesn't need to be normalized, since masterVolume is always < 1.0f)
                 _newVolume *= masterVolume * globalSoundsVolume;
                 vol.channels = G_NUM_OF_OUTPUTS;
                 for (int i = 0; i < vol.channels; ++i)
-                    vol.values[i] = pa_sw_volume_from_linear(_newVolume * channelVolumes[i] * masterChannelVolumes[i]);
+                {
+                    const double newVolumeClamped = std::min(_newVolume * channelVolumes[i] * masterChannelVolumes[i], 1.0f);
+                    vol.values[i] = pa_sw_volume_from_linear(newVolumeClamped);
+                }
 
                 LockSyncWrite();
                 while (sinkIndex == UINT32_MAX)
                 {
-                    pa_threaded_mainloop_lock(myMainLoop);
-                    sinkIndex = pa_stream_get_index(myStream); //Returns the sink resp. source output index this stream is identified in the server with
-                    pa_threaded_mainloop_unlock(myMainLoop);
+                    pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                    sinkIndex = pa_stream_get_index(myStream.get()); //Returns the sink resp. source output index this stream is identified in the server with
+                    pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                 }
                 UnlockSyncWrite();
 
-                pa_threaded_mainloop_lock(myMainLoop);
+                pa_threaded_mainloop_lock(audio_state->main_loop.get());
                 {
                     //Set the volume of a sink input stream.
-                    pa_operation* o = pa_context_set_sink_input_volume(myContext, sinkIndex, &vol, NULL, NULL);
+                    pa_operation* sinkInputVolumeOp = pa_context_set_sink_input_volume(audio_state->context.get(), sinkIndex, &vol, nullptr, nullptr);
 
-                    if (!o)
+                    if (!sinkInputVolumeOp)
                     {
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                         return GReturn::FAILURE;
                     }
 
-                    pa_operation_unref(o);
+                    pa_operation_unref(sinkInputVolumeOp);
                 }
-                pa_threaded_mainloop_unlock(myMainLoop);
+                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 return GReturn::SUCCESS;
             }
@@ -57006,69 +57396,85 @@ namespace GW
 
                 if (atomic_isPlaying || atomic_isComplete)
                 {
-                    GReturn result = Stop();
+                    const GReturn result = Stop();
 
                     if (result != GReturn::SUCCESS)
                         return result;
                 }
 
-                if (atomic_isPlaying == false)
+                if (!atomic_isPlaying)
                 {
                     atomic_stopFlag = false;
                     atomic_isPaused = false;
                     atomic_isPlaying = true;
                     gConcurrent.BranchSingular([&]()
+                    {
+                        unsigned int playBackPt = 0;
+                        while (true)
                         {
-                            unsigned int playBackPt = 0;
-                            pa_stream_state_t state;
-                            while (true)
+                            if (atomic_stopFlag)
                             {
-                                if (atomic_stopFlag == true)
+                                pa_threaded_mainloop_lock(audio_state->main_loop.get());
+
+                                pa_operation* flushOp = pa_stream_flush(myStream.get(), FlushOpCallback, this);
+                                if (flushOp)
                                 {
-                                    pa_threaded_mainloop_lock(myMainLoop);
-                                    pa_stream_cancel_write(myStream);
-                                    pa_threaded_mainloop_unlock(myMainLoop);
-                                    break;
+                                    while (pa_operation_get_state(flushOp) == PA_OPERATION_RUNNING)
+                                        pa_threaded_mainloop_wait(audio_state->main_loop.get());
+                                    pa_operation_unref(flushOp);
                                 }
-                                else if (atomic_isPlaying == true)
+
+                                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+                                break;
+                            }
+
+                            if (atomic_isPlaying)
+                            {
+                                pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                                const pa_stream_state_t state = pa_stream_get_state(myStream.get());
+                                // synchronous call, requires locking
+                                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+
+                                if (state == PA_STREAM_READY)
                                 {
-                                    pa_threaded_mainloop_lock(myMainLoop);
-                                    state = pa_stream_get_state(myStream); // synchronous call, requires locking
-                                    pa_threaded_mainloop_unlock(myMainLoop);
+                                    pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                                    const size_t writeableSize = pa_stream_writable_size(myStream.get());
+                                    pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
-                                    if (state == PA_STREAM_READY)
+                                    const size_t sizeRemain = myWavReader.GetBufferSize() - playBackPt;
+                                    const size_t writeSize = writeableSize > sizeRemain ? sizeRemain : writeableSize;
+
+                                    if (writeSize > 0)
                                     {
-                                        pa_threaded_mainloop_lock(myMainLoop);
-                                        const size_t writeableSize = pa_stream_writable_size(myStream);
-                                        pa_threaded_mainloop_unlock(myMainLoop);
+                                        pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                                        pa_stream_write(myStream.get(),
+                                                        myWavReader.GetBuffer().data.get() + playBackPt,
+                                                        static_cast<int>(writeSize),
+                                                        nullptr,
+                                                        0,
+                                                        PA_SEEK_RELATIVE);
+                                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
-                                        const size_t sizeRemain = myFile.myBuffer.byteSize - playBackPt;
-                                        const size_t writeSize = (sizeRemain < writeableSize ? sizeRemain : writeableSize);
-
-                                        if (writeSize > 0)
+                                        playBackPt += writeSize;
+                                    }
+                                    else if (writeableSize > 0 && !atomic_isComplete)
+                                    {
+                                        pa_threaded_mainloop_lock(audio_state->main_loop.get());
                                         {
-                                            pa_threaded_mainloop_lock(myMainLoop);
-                                            pa_stream_write(myStream, myFile.myBuffer.bytes + playBackPt, writeSize, nullptr, 0, PA_SEEK_RELATIVE);
-                                            pa_threaded_mainloop_unlock(myMainLoop);
+                                            pa_operation* drainOp = pa_stream_drain(myStream.get(), FinishedDrainOp, this);
 
-                                            playBackPt += writeSize;
-                                        }
-                                        else if (writeableSize > 0 && atomic_isComplete == false)
-                                        {
-                                            pa_threaded_mainloop_lock(myMainLoop);
+                                            if (drainOp)
                                             {
-                                                pa_operation* o = pa_stream_drain(myStream, FinishedDrainOp, this);
-
-                                                if (o)
-                                                    pa_operation_unref(o);
+                                                pa_operation_unref(drainOp);
                                             }
-                                            pa_threaded_mainloop_unlock(myMainLoop);
-                                            break;
                                         }
+                                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+                                        break;
                                     }
                                 }
                             }
-                        });
+                        }
+                    });
                 }
 
                 return GReturn::SUCCESS;
@@ -57079,27 +57485,27 @@ namespace GW
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
 
-                if (atomic_isPaused == false)
+                if (!atomic_isPaused)
                 {
-                    pa_threaded_mainloop_lock(myMainLoop);
-                    int value = pa_stream_is_corked(myStream); // 1 = paused, 0 = resumed
-                    pa_threaded_mainloop_unlock(myMainLoop);
+                    pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                    const int value = pa_stream_is_corked(myStream.get()); // 1 = paused, 0 = resumed
+                    pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
-                    if (value == 0) // if not paused
+                    if (value == G_AUDIO_RESUMED)
                     {
-                        pa_threaded_mainloop_lock(myMainLoop);
+                        pa_threaded_mainloop_lock(audio_state->main_loop.get());
                         {
-                            pa_operation* o = pa_stream_cork(myStream, 1, [](pa_stream*, int, void*) {}, NULL);
+                            pa_operation* corkOp = pa_stream_cork(myStream.get(), G_AUDIO_PAUSED, nullptr, nullptr);
 
-                            if (!o)
+                            if (!corkOp)
                             {
-                                pa_threaded_mainloop_unlock(myMainLoop);
+                                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                                 return GReturn::FAILURE;
                             }
 
-                            pa_operation_unref(o);
+                            pa_operation_unref(corkOp);
                         }
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                     }
 
                     atomic_isPaused = true;
@@ -57114,27 +57520,27 @@ namespace GW
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
 
-                if (atomic_isPaused == true)
+                if (atomic_isPaused)
                 {
-                    pa_threaded_mainloop_lock(myMainLoop);
-                    int value = pa_stream_is_corked(myStream); // 1 = paused, 0 = resumed
-                    pa_threaded_mainloop_unlock(myMainLoop);
+                    pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                    const int value = pa_stream_is_corked(myStream.get()); // 1 = paused, 0 = resumed
+                    pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
-                    if (value == 1) // if paused
+                    if (value == G_AUDIO_PAUSED)
                     {
-                        pa_threaded_mainloop_lock(myMainLoop);
+                        pa_threaded_mainloop_lock(audio_state->main_loop.get());
                         {
-                            pa_operation* o = pa_stream_cork(myStream, 0, [](pa_stream*, int, void*) {}, NULL);
+                            pa_operation* corkOp = pa_stream_cork(myStream.get(), G_AUDIO_RESUMED, nullptr, nullptr);
 
-                            if (!o)
+                            if (!corkOp)
                             {
-                                pa_threaded_mainloop_unlock(myMainLoop);
+                                pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                                 return GReturn::FAILURE;
                             }
 
-                            pa_operation_unref(o);
+                            pa_operation_unref(corkOp);
                         }
-                        pa_threaded_mainloop_unlock(myMainLoop);
+                        pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                     }
 
                     atomic_isPlaying = true;
@@ -57167,7 +57573,7 @@ namespace GW
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
 
-                returnedChannelNum = myFile.myFormat.mNumChannels;
+                returnedChannelNum = mySampleSpec.channels;
                 return GReturn::SUCCESS;
             }
 
@@ -57215,12 +57621,440 @@ namespace GW
 }// end GW
 
 #undef G_NUM_OF_OUTPUTS
+#undef G_AUDIO_PAUSED
+#undef G_AUDIO_RESUMED
 
 
 #elif defined(_WIN32)
     #include <winapifamily.h>
     #if (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
         #define G_NUM_OF_OUTPUTS 6
+
+#ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
+
 
 namespace GW
 {
@@ -57230,179 +58064,66 @@ namespace GW
 			protected GThreadSharedImplementation,
 			protected IXAudio2VoiceCallback
 		{
-			// This enum exists for parity with Linux. See GMusic_Linux.hpp for more info
-			enum WaveTag {
-				RIFF = 1179011410, // = 'FFIR'
-				DATA = 1635017060, // = 'atad'
-				FMT = 544501094, // = ' tmf'
-				WAVE = 1163280727, // = 'EVAW'
-				JUNK = 1263424842, // = 'KNUJ'
-				XWMA = 1095587672, // = 'AMWX'
-				DPDS = 1935962212  // = 'sdpd'
-			};
-
-			GReturn LoadWaveData(const char* path, WAVEFORMATEXTENSIBLE& myWFX, XAUDIO2_BUFFER& _myAudioBuffer)
-			{
-				// default the return value
-				GReturn result = GReturn::SUCCESS;
-
-				// create our gfile object
-				GW::SYSTEM::GFile file;
-				file.Create();
-
-				// open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-				if (-file.OpenBinaryRead(path)) {
-					result = GReturn::FILE_NOT_FOUND;
-					return result;
-				}
-
-				// variables for determining data information
-				unsigned long dwChunktype = 0;
-				unsigned long dwChunkDataSize = 0;
-				unsigned long dwRiffDataSize = 0;
-				unsigned long dwFileType = 0;
-				unsigned long dwIsWave = 0;
-				bool foundAudioData = false;
-
-				while (result == GReturn::SUCCESS && foundAudioData == false)
-				{
-					if (-file.Read(reinterpret_cast<char*>(&dwChunktype), 4)) {
-						// could not acquire chunk type
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-						// could not acquire chunk size
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					switch (dwChunktype) {
-						case WaveTag::RIFF:
-						{
-							dwRiffDataSize = dwChunkDataSize;
-							dwChunkDataSize = 4;
-							if (-file.Read(reinterpret_cast<char*>(&dwFileType), 4) || dwFileType != WaveTag::WAVE) {
-								// could not acquire the file type
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-						
-						case WaveTag::WAVE:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&dwIsWave), 4)) {
-								// the file is not a wav file
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-
-						case WaveTag::FMT:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&myWFX), dwChunkDataSize)) {
-								// could not read the chunk data
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-
-						case WaveTag::DATA:
-						{
-							BYTE* pDataBuffer = new BYTE[dwChunkDataSize];
-							if (-file.Read(reinterpret_cast<char*>(pDataBuffer), dwChunkDataSize)) {
-								// could not read the audio data
-								result = GReturn::FAILURE;
-								delete[] pDataBuffer;
-								break;
-							}
-
-							_myAudioBuffer.AudioBytes = dwChunkDataSize;	// contains size of the audio buffer in bytes
-							_myAudioBuffer.pAudioData = pDataBuffer;		// this buffer contains all audio data
-							_myAudioBuffer.Flags = XAUDIO2_END_OF_STREAM;	// tells source this is EOF and should stop
-							foundAudioData = true;
-							break;
-						}
-
-						default:
-						{
-							char* pBogusData = new char[dwChunkDataSize];
-							if (-file.Read(pBogusData, dwChunkDataSize)) {
-								// something unknown happened that caused the data to not be read
-								result = GReturn::FAILURE;
-								delete[] pBogusData;
-								break;
-							}
-							delete[] pBogusData;
-							break;
-						}
-					}
-				}
-				file.CloseFile();
-				return result;
-			}
-
-			void STDMETHODCALLTYPE OnStreamEnd()
+			void STDMETHODCALLTYPE OnStreamEnd() override
 			{
 				// When stream ends, the sound gets flagged as complete
 				atomic_isComplete = true;
 				atomic_isPaused = false;
 				atomic_isPlaying = false;
-				SetEvent(hStreamEndEvent);
+				SetEvent(hStreamEndEvent.get());
 			}
 			// Required studs as IXAudio2VoiceCallback is an abstract class
-			void STDMETHODCALLTYPE OnBufferEnd(void*) {}
-			void STDMETHODCALLTYPE OnBufferStart(void*) {}
-			void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) {}
-			void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() {}
-			void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) {}
-			void STDMETHODCALLTYPE OnLoopEnd(void*) {}
+			void STDMETHODCALLTYPE OnBufferEnd(void*) override {}
+			void STDMETHODCALLTYPE OnBufferStart(void*) override {}
+			void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
+			void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
+			void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) override {}
+			void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
 
-			std::atomic_bool atomic_isPlaying = false;
-			std::atomic_bool atomic_isPaused = false;
-			std::atomic_bool atomic_isComplete = false;
+			std::atomic_bool atomic_isPlaying{};
+			std::atomic_bool atomic_isPaused{};
+			std::atomic_bool atomic_isComplete{};
 			float masterVolume = 1.0f; // global master volume
 			float globalSoundsVolume = 1.0f; // global sounds volume
 			float volume = 1.0f; // volume of this sound
 			unsigned int numOfChannels = 0;
 
-			IXAudio2SourceVoice* mySourceVoice = nullptr;
-			IXAudio2SubmixVoice* mySubmixVoice = nullptr;
-			HANDLE hStreamEndEvent;
+			std::function<void(IXAudio2SourceVoice*)> sourceVoiceDeleter = [](IXAudio2SourceVoice* _sourceVoice)
+			{
+				if (_sourceVoice)
+					_sourceVoice->DestroyVoice();
+			};
+			std::unique_ptr<IXAudio2SourceVoice, decltype(sourceVoiceDeleter)> mySourceVoice{nullptr, sourceVoiceDeleter};
+
+			std::function<void(IXAudio2SubmixVoice*)> submixVoiceDeleter = [](IXAudio2SubmixVoice* _submixVoice)
+			{
+				if (_submixVoice)
+					_submixVoice->DestroyVoice();
+			};
+			std::unique_ptr<IXAudio2SubmixVoice, decltype(submixVoiceDeleter)> mySubmixVoice{nullptr, submixVoiceDeleter};
+			std::unique_ptr<void, decltype(&CloseHandle)> hStreamEndEvent{nullptr, &CloseHandle};
 
 			float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
 			float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
 			GW::AUDIO::GAudio gAudio;
 			GW::CORE::GEventReceiver gReceiver;
-			XAUDIO2_BUFFER myAudioBuffer = { 0 };
+			WavReader wavReader;
+			XAUDIO2_BUFFER buffer;
 
 		public:
-			virtual ~GSoundImplementation()
+			~GSoundImplementation() override
 			{
-				Stop();
+				GSoundImplementation::Stop();
 
 				// We do not need to check for GAudio proxy here, since those handles would get cleaned up 
 				// in the event callback if GAudio gets deleted first
-				LockSyncWrite();
-				if (mySourceVoice)
-					mySourceVoice->DestroyVoice();
-
-				if (mySubmixVoice)
-					mySubmixVoice->DestroyVoice();
-				UnlockSyncWrite();
-
-				if (myAudioBuffer.pAudioData)
-					delete[] myAudioBuffer.pAudioData;
-
-				if (hStreamEndEvent)
-					CloseHandle(hStreamEndEvent);
+				GSoundImplementation::LockSyncWrite();
+				mySourceVoice = nullptr;
+				mySubmixVoice = nullptr;
+				GSoundImplementation::UnlockSyncWrite();
 			}
 
-			GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+			GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
 			{
 				if (!_path || !_audio)
 					return GReturn::INVALID_ARGUMENT;
@@ -57410,33 +58131,41 @@ namespace GW
 				if (_volume < 0.0f || _volume > 1.0f)
 					return GReturn::INVALID_ARGUMENT;
 
-				hStreamEndEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+				hStreamEndEvent.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
 				if (!hStreamEndEvent)
 					return GReturn::FAILURE;
 
-				WAVEFORMATEXTENSIBLE wfmx;
-				if (-LoadWaveData(_path, wfmx, myAudioBuffer))
+				if (-wavReader.ReadWAV(_path))
 					return GReturn::FAILURE;
 
 				//if (wfmx.Format.nChannels > maxChannels)
 				//    maxChannels = wfmx.Format.nChannels;
 
 				gAudio = _audio;
-				auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+				const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
 
-				if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&mySubmixVoice, G_NUM_OF_OUTPUTS, wfmx.Format.nSamplesPerSec) != S_OK)
+				auto& header = wavReader.GetHeader();
+				IXAudio2SubmixVoice* submixVoice = nullptr;
+				if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&submixVoice, G_NUM_OF_OUTPUTS, header.format.sampleRate) != S_OK)
 					return GReturn::FAILURE;
+				mySubmixVoice.reset(submixVoice);
 
-				XAUDIO2_SEND_DESCRIPTOR sndSendDcsp = { 0, mySubmixVoice };
-				XAUDIO2_VOICE_SENDS sndSendList = { 1, &sndSendDcsp };
+				XAUDIO2_SEND_DESCRIPTOR sndSendDcsp = { 0, mySubmixVoice.get() };
+				const XAUDIO2_VOICE_SENDS sndSendList = { 1, &sndSendDcsp };
 
 				// Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure. (for non-PCM formats)
-				wfmx.Format.cbSize = (wfmx.Format.wFormatTag > 1) ? 22 : 0;
-				numOfChannels = static_cast<unsigned int>(wfmx.Format.nChannels);
-				if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&mySourceVoice, &wfmx.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &sndSendList) != S_OK)
-					return GReturn::FAILURE;
+				header.format.extraChunkSize = (header.format.formatTag > 1) ? 22 : 0;
+				numOfChannels = static_cast<unsigned int>(header.format.channels);
 
-				if (FAILED(mySourceVoice->SubmitSourceBuffer(&myAudioBuffer)))
+				IXAudio2SourceVoice* sourceVoice = nullptr;
+				if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&sourceVoice, reinterpret_cast<const WAVEFORMATEX*>(&header.format), 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &sndSendList) != S_OK)
+					return GReturn::FAILURE;
+				mySourceVoice.reset(sourceVoice);
+
+				buffer.AudioBytes = static_cast<UINT32>(wavReader.GetBufferSize());
+				buffer.pAudioData = static_cast<const BYTE*>(wavReader.GetBuffer().data.get());
+				buffer.Flags = XAUDIO2_END_OF_STREAM;
+				if (FAILED(mySourceVoice->SubmitSourceBuffer(&buffer)))
 					return GReturn::FAILURE;
 
 				globalSoundsVolume = audioImplementation->soundsVolume;
@@ -57472,17 +58201,8 @@ namespace GW
 							Stop();
 							// Need to cleanup XAudio handles before GAudio is deleted
 							LockSyncWrite();
-							if (mySourceVoice)
-							{
-								mySourceVoice->DestroyVoice();
-								mySourceVoice = nullptr;
-							}
-
-							if (mySubmixVoice)
-							{
-								mySubmixVoice->DestroyVoice();
-								mySubmixVoice = nullptr;
-							}
+							mySourceVoice = nullptr;
+							mySubmixVoice = nullptr;
 							UnlockSyncWrite();
 							break;
 						}
@@ -57552,7 +58272,7 @@ namespace GW
 				});
 			}
 
-			GReturn SetChannelVolumes(const float* _values, unsigned int _numChannels) override
+			GReturn SetChannelVolumes(const float* _values, const unsigned int _numChannels) override
 			{
 				if (!gAudio)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -57576,7 +58296,7 @@ namespace GW
 				{
 					if (trueIndex < _numChannels)
 					{
-						float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
+						const float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
 						matrix[i] = matrixVolume;
 						matrix[i + 1] = matrixVolume;
 						trueIndex++;
@@ -57590,7 +58310,7 @@ namespace GW
 				}
 
 				LockSyncWrite();
-				if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice, numOfChannels, G_NUM_OF_OUTPUTS, matrix)))
+				if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice.get(), numOfChannels, G_NUM_OF_OUTPUTS, matrix)))
 				{
 					UnlockSyncWrite();
 					return GReturn::FAILURE;
@@ -57600,7 +58320,7 @@ namespace GW
 				return GReturn::SUCCESS;
 			}
 
-			GReturn SetVolume(float _newVolume) override
+			GReturn SetVolume(const float _newVolume) override
 			{
 				if (!gAudio)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -57630,8 +58350,7 @@ namespace GW
 
 				if (atomic_isPlaying || atomic_isComplete)
 				{
-					GReturn result = Stop();
-
+					const GReturn result = Stop();
 					if (result != GReturn::SUCCESS)
 						return result;
 				}
@@ -57712,7 +58431,7 @@ namespace GW
 					return GReturn::FAILURE;
 				}
 				mySourceVoice->FlushSourceBuffers();
-				if (FAILED(mySourceVoice->SubmitSourceBuffer(&myAudioBuffer)))
+				if (FAILED(mySourceVoice->SubmitSourceBuffer(&buffer)))
 				{
 					UnlockSyncWrite();
 					return GReturn::FAILURE;
@@ -57778,24 +58497,435 @@ namespace GW
 	}// end I
 }// end GW
 
-#undef G_RIFFcc
-#undef G_DATAcc
-#undef G_FMTcc 
-#undef G_WAVEcc
-//#undef G_JUNKcc
-//#undef G_XWMAcc
-//#undef G_DPDScc
 #undef G_NUM_OF_OUTPUTS
 
     #elif (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-        #define G_RIFFcc 'FFIR'
-#define G_DATAcc 'atad'
-#define G_FMTcc  ' tmf'
-#define G_WAVEcc 'EVAW'
-//#define G_JUNKcc 'KNUJ'
-//#define G_XWMAcc 'AMWX'
-//#define G_DPDScc 'sdpd'
-#define G_NUM_OF_OUTPUTS 6
+        #define G_NUM_OF_OUTPUTS 6
+#ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
+
 
 namespace GW
 {
@@ -57805,158 +58935,21 @@ namespace GW
             protected GThreadSharedImplementation,
             protected IXAudio2VoiceCallback
         {
-            HRESULT LoadWaveData(const char* path, WAVEFORMATEXTENSIBLE& myWFX, XAUDIO2_BUFFER& myAudioBuffer)
-            {
-                HRESULT theResult = S_OK;
-
-                wchar_t tpath[1024];
-                MultiByteToWideChar(CP_ACP, 0, path, -1, tpath, 1024);
-
-                // if can't find file for unit tests, use : _wgetcwd to see where to put test file
-                HANDLE theFile = CreateFile2(tpath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
-
-                if (theFile == INVALID_HANDLE_VALUE)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                if (SetFilePointer(theFile, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                int result = 0; // zero is good
-                unsigned long dwChunktype = 0;
-                unsigned long dwChunkDataSize = 0;
-                unsigned long dwRiffDataSize = 0;
-                unsigned long dwFileType = 0;
-                unsigned long bytesRead = 0;
-
-                unsigned long dwIsWave = 0;
-                unsigned long throwAwayValue = 0;
-
-                bool foundAudioData = false;
-                while (result == 0 && foundAudioData == false)
-                {
-                    unsigned long dwRead = 0;
-                    if (ReadFile(theFile, &dwChunktype, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -1;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-                    if (ReadFile(theFile, &dwChunkDataSize, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -2;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-                    switch (dwChunktype)
-                    {
-                    case G_RIFFcc:
-                    {
-                        dwRiffDataSize = dwChunkDataSize;
-                        dwChunkDataSize = 4;
-                        if (ReadFile(theFile, &dwFileType, 4, &dwRead, NULL) == 0 || dwRead != 4 || dwFileType != G_WAVEcc)
-                        {
-                            result = -3;
-                            break;
-                        }
-                        bytesRead += dwRead;
-
-                        break;
-                    }
-                    case G_WAVEcc:
-                    {
-                        if (ReadFile(theFile, &dwIsWave, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                        {
-                            result = -4;
-                            break;
-                        }
-                        bytesRead += dwRead;
-
-                        break;
-                    }
-                    case G_FMTcc:
-                    {
-                        if (ReadFile(theFile, &myWFX, dwChunkDataSize, &dwRead, NULL) == 0 || dwRead != dwChunkDataSize)
-                        {
-                            result = -5;
-                            break;
-                        }
-                        bytesRead += dwRead;
-
-                        break;
-                    }
-                    case G_DATAcc:
-                    {
-                        BYTE* pDataBuffer = new BYTE[dwChunkDataSize];
-                        if (ReadFile(theFile, pDataBuffer, dwChunkDataSize, &dwRead, NULL) == 0 || dwRead != dwChunkDataSize)
-                        {
-                            result = -6;
-                            delete[] pDataBuffer;
-                            pDataBuffer = nullptr;
-                            break;
-                        }
-
-                        myAudioBuffer.AudioBytes = dwChunkDataSize;  // contains size of the audio buffer in bytes
-                        myAudioBuffer.pAudioData = pDataBuffer;		 // this buffer contains all audio data
-                        myAudioBuffer.Flags = XAUDIO2_END_OF_STREAM; // tells source this is EOF and should stop
-                        bytesRead += dwRead;
-                        foundAudioData = true;
-
-                        break;
-                    }
-                    default:
-                    {
-                        int sizeToRead = sizeof(throwAwayValue);
-                        int totalChunkData = dwChunkDataSize;
-                        while (totalChunkData > 0)
-                        {
-                            if (sizeToRead > totalChunkData)
-                                sizeToRead = totalChunkData;
-
-                            if (ReadFile(theFile, &throwAwayValue, sizeToRead, &dwRead, NULL) == 0 || dwRead != sizeToRead)
-                            {
-                                result = -7;
-                                totalChunkData = 0;
-                            }
-
-                            bytesRead += dwRead;
-                            totalChunkData -= dwRead;
-                        }
-
-                        break;
-                    }
-                    }
-
-                    if (bytesRead - 8 >= dwRiffDataSize) // excludes the first 8 byte header information
-                    {
-
-                        break;
-                    }
-                }
-                CloseHandle(theFile);
-
-                if (result < 0)
-                    theResult = S_FALSE;
-
-                return theResult;
-            }
-
-            void STDMETHODCALLTYPE OnStreamEnd()
+            void STDMETHODCALLTYPE OnStreamEnd() override
             {
                 // When stream ends, the sound gets flagged as complete
                 atomic_isComplete = true;
                 atomic_isPaused = false;
                 atomic_isPlaying = false;
-                SetEvent(hStreamEndEvent);
+                SetEvent(hStreamEndEvent.get());
             }
             // Required studs as IXAudio2VoiceCallback is an abstract class
-            void STDMETHODCALLTYPE OnBufferEnd(void*) {}
-            void STDMETHODCALLTYPE OnBufferStart(void*) {}
-            void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) {}
-            void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() {}
-            void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) {}
-            void STDMETHODCALLTYPE OnLoopEnd(void*) {}
+            void STDMETHODCALLTYPE OnBufferEnd(void*) override {}
+            void STDMETHODCALLTYPE OnBufferStart(void*) override {}
+            void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
+            void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
+            void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) override {}
+            void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
 
             std::atomic_bool atomic_isPlaying = false;
             std::atomic_bool atomic_isPaused = false;
@@ -57966,39 +58959,58 @@ namespace GW
             float volume = 1.0f; // volume of this sound
             unsigned int numOfChannels = 0;
 
-            IXAudio2SourceVoice* mySourceVoice = nullptr;
-            IXAudio2SubmixVoice* mySubmixVoice = nullptr;
-            HANDLE hStreamEndEvent;
+            std::function<void(IXAudio2SourceVoice*)> mySourceVoiceDestructor = [&](IXAudio2SourceVoice* sourceVoice)
+            {
+                if (sourceVoice)
+                    sourceVoice->DestroyVoice();
+            };
+            std::unique_ptr<IXAudio2SourceVoice, decltype(mySourceVoiceDestructor)> mySourceVoice{nullptr, mySourceVoiceDestructor};
+
+            std::function<void(IXAudio2SubmixVoice*)> mySubmixVoiceDestructor = [&](IXAudio2SubmixVoice* submixVoice)
+            {
+                if (submixVoice)
+                    submixVoice->DestroyVoice();
+            };
+            std::unique_ptr<IXAudio2SubmixVoice, decltype(mySubmixVoiceDestructor)> mySubmixVoice{nullptr, mySubmixVoiceDestructor};
+            std::unique_ptr<void, decltype(&CloseHandle)> hStreamEndEvent{nullptr, &CloseHandle};
 
             float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
             float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
             GW::AUDIO::GAudio gAudio;
             GW::CORE::GEventReceiver gReceiver;
-            XAUDIO2_BUFFER myAudioBuffer = { 0 };
+            WavReader wavReader;
+            XAUDIO2_BUFFER buffer = {}; // We need the XAudio buffer to live as long as the wav reader.
+
+            static std::unique_ptr<char> getValidPath(const char* path)
+            {
+	            const size_t size = strlen(path) + 1;
+                std::unique_ptr<char> corrected(new char[size]);
+
+                strcpy_s(corrected.get(), size, path);
+
+            	for (size_t i = 0; i < size; ++i)
+                {
+                    if (corrected.get()[i] == '/')
+                        corrected.get()[i] = '\\';
+                }
+
+                return corrected;
+            }
 
         public:
-            virtual ~GSoundImplementation()
+            ~GSoundImplementation() override
             {
-                Stop();
+	            GSoundImplementation::Stop();
 
                 // We do not need to check for GAudio proxy here, since those handles would get cleaned up 
                 // in the event callback if GAudio gets deleted first
-                LockSyncWrite();
-                if (mySourceVoice)
-                    mySourceVoice->DestroyVoice();
-
-                if (mySubmixVoice)
-                    mySubmixVoice->DestroyVoice();
-                UnlockSyncWrite();
-
-                if (myAudioBuffer.pAudioData)
-                    delete[] myAudioBuffer.pAudioData;
-
-                if (hStreamEndEvent)
-                    CloseHandle(hStreamEndEvent);
+	            GSoundImplementation::LockSyncWrite();
+                mySourceVoice = nullptr;
+                mySubmixVoice = nullptr;
+	            GSoundImplementation::UnlockSyncWrite();
             }
 
-            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
             {
                 if (!_path || !_audio)
                     return GReturn::INVALID_ARGUMENT;
@@ -58006,33 +59018,42 @@ namespace GW
                 if (_volume < 0.0f || _volume > 1.0f)
                     return GReturn::INVALID_ARGUMENT;
 
-                hStreamEndEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+                hStreamEndEvent.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
                 if (!hStreamEndEvent)
                     return GReturn::FAILURE;
 
-                WAVEFORMATEXTENSIBLE wfmx;
-                if (LoadWaveData(_path, wfmx, myAudioBuffer) != S_OK)
+                const std::unique_ptr<char> path = getValidPath(_path);
+                if (-wavReader.ReadWAV(path.get()))
                     return GReturn::FAILURE;
 
                 //if (wfmx.Format.nChannels > maxChannels)
                 //    maxChannels = wfmx.Format.nChannels;
 
                 gAudio = _audio;
-                auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+                auto& header = wavReader.GetHeader();
+                const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
 
-                if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&mySubmixVoice, G_NUM_OF_OUTPUTS, wfmx.Format.nSamplesPerSec) != S_OK)
+                IXAudio2SubmixVoice* submixVoice = nullptr;
+                if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&submixVoice, G_NUM_OF_OUTPUTS, header.format.sampleRate) != S_OK)
                     return GReturn::FAILURE;
+                mySubmixVoice.reset(submixVoice);
 
-                XAUDIO2_SEND_DESCRIPTOR sndSendDcsp = { 0, mySubmixVoice };
-                XAUDIO2_VOICE_SENDS sndSendList = { 1, &sndSendDcsp };
+                XAUDIO2_SEND_DESCRIPTOR sndSendDcsp = { 0, mySubmixVoice.get() };
+                const XAUDIO2_VOICE_SENDS sndSendList = { 1, &sndSendDcsp };
 
                 // Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure. (for non-PCM formats)
-                wfmx.Format.cbSize = (wfmx.Format.wFormatTag > 1) ? 22 : 0;
-                numOfChannels = static_cast<unsigned int>(wfmx.Format.nChannels);
-                if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&mySourceVoice, &wfmx.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &sndSendList) != S_OK)
-                    return GReturn::FAILURE;
+                header.format.extraChunkSize = (header.format.formatTag > 1) ? 22 : 0;
+                numOfChannels = static_cast<unsigned int>(header.format.channels);
 
-                if (FAILED(mySourceVoice->SubmitSourceBuffer(&myAudioBuffer)))
+                IXAudio2SourceVoice* sourceVoice = nullptr;
+                if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&sourceVoice, reinterpret_cast<const WAVEFORMATEX*>(&header.format), 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &sndSendList) != S_OK)
+                    return GReturn::FAILURE;
+                mySourceVoice.reset(sourceVoice);
+
+                buffer.AudioBytes = static_cast<UINT32>(wavReader.GetBufferSize());
+                buffer.pAudioData = static_cast<const BYTE*>(wavReader.GetBuffer().data.get());
+                buffer.Flags = XAUDIO2_END_OF_STREAM;
+                if (FAILED(mySourceVoice->SubmitSourceBuffer(&buffer)))
                     return GReturn::FAILURE;
 
                 globalSoundsVolume = audioImplementation->soundsVolume;
@@ -58068,17 +59089,8 @@ namespace GW
                             Stop();
                             // Need to cleanup XAudio handles before GAudio is deleted
                             LockSyncWrite();
-                            if (mySourceVoice)
-                            {
-                                mySourceVoice->DestroyVoice();
-                                mySourceVoice = nullptr;
-                            }
-
-                            if (mySubmixVoice)
-                            {
-                                mySubmixVoice->DestroyVoice();
-                                mySubmixVoice = nullptr;
-                            }
+                            mySourceVoice = nullptr;
+                            mySubmixVoice = nullptr;
                             UnlockSyncWrite();
                             break;
                         }
@@ -58148,7 +59160,7 @@ namespace GW
                     });
             }
 
-            GReturn SetChannelVolumes(const float* _values, unsigned int _numChannels) override
+            GReturn SetChannelVolumes(const float* _values, const unsigned int _numChannels) override
             {
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
@@ -58172,7 +59184,7 @@ namespace GW
                 {
                     if (trueIndex < _numChannels)
                     {
-                        float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
+	                    const float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
                         matrix[i] = matrixVolume;
                         matrix[i + 1] = matrixVolume;
                         trueIndex++;
@@ -58186,7 +59198,7 @@ namespace GW
                 }
 
                 LockSyncWrite();
-                if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice, numOfChannels, G_NUM_OF_OUTPUTS, matrix)))
+                if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice.get(), numOfChannels, G_NUM_OF_OUTPUTS, matrix)))
                 {
                     UnlockSyncWrite();
                     return GReturn::FAILURE;
@@ -58196,7 +59208,7 @@ namespace GW
                 return GReturn::SUCCESS;
             }
 
-            GReturn SetVolume(float _newVolume) override
+            GReturn SetVolume(const float _newVolume) override
             {
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
@@ -58226,8 +59238,7 @@ namespace GW
 
                 if (atomic_isPlaying || atomic_isComplete)
                 {
-                    GReturn result = Stop();
-
+	                const GReturn result = Stop();
                     if (result != GReturn::SUCCESS)
                         return result;
                 }
@@ -58308,7 +59319,7 @@ namespace GW
                     return GReturn::FAILURE;
                 }
                 mySourceVoice->FlushSourceBuffers();
-                if (FAILED(mySourceVoice->SubmitSourceBuffer(&myAudioBuffer)))
+                if (FAILED(mySourceVoice->SubmitSourceBuffer(&buffer)))
                 {
                     UnlockSyncWrite();
                     return GReturn::FAILURE;
@@ -58374,13 +59385,6 @@ namespace GW
     }// end I
 }// end GW
 
-#undef G_RIFFcc
-#undef G_DATAcc
-#undef G_FMTcc 
-#undef G_WAVEcc
-//#undef G_JUNKcc
-//#undef G_XWMAcc
-//#undef G_DPDScc
 #undef G_NUM_OF_OUTPUTS
 
     #endif
@@ -59287,18 +60291,441 @@ namespace internal_gw
 
     #endif
 #elif defined(__linux__)
-    #include <pulse/mainloop.h>
-#include <pulse/thread-mainloop.h>
-#include <pulse/mainloop-api.h>
+    #include <pulse/thread-mainloop.h>
 #include <pulse/channelmap.h>
 #include <pulse/context.h>
 #include <pulse/volume.h>
 #include <pulse/stream.h>
-#include <pulse/error.h>
-#include <pulse/scache.h>
 #include <pulse/introspect.h>
 
 #include <thread>
+#include <atomic>
+
+#ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
+
 
 #define G_NUM_OF_OUTPUTS 2 // Currently set to forced Stereo
 #define G_STREAMING_BUFFER_SIZE 65536
@@ -59311,339 +60738,83 @@ namespace GW
         class GMusicImplementation : public virtual GMusicInterface,
             protected GThreadSharedImplementation
         {
-			/* this enum is here to prevent compiler warning -Wmultichar
-			 * previously, this file used a series of #defines that caused
-			 * the warning to occur in a switch statement later on. So instead
-			 * of the #defines (initializing an int to a series of 4 chars), 
-			 * i just declare them here to be the integer they would be 
-			 * interpreted as by the compiler internally. */
-			enum WaveTag {
-				RIFF = 1179011410, // = 'FFIR'
-				DATA = 1635017060, // = 'atad'
-				FMT  =  544501094, // = ' tmf'
-				WAVE = 1163280727, // = 'EVAW'
-				JUNK = 1263424842, // = 'KNUJ'
-				XWMA = 1095587672, // = 'AMWX'
-				DPDS = 1935962212  // = 'sdpd'
-			};
-			
-            struct PCM_FORMAT_INFO
-            {
-                unsigned short mFormatTag = 0;
-                unsigned short mNumChannels = 0;
-                unsigned int mSamples = 0;
-                unsigned int mAvgBytesPerSec = 0;
-                unsigned short mBlockAlign = 0;
-                unsigned short mBitsPerSample = 0;
-                unsigned short mCbSize = 22;
-            };
-
-            std::atomic_bool atomic_isPlaying;
-            std::atomic_bool atomic_isPaused;
-            std::atomic_bool atomic_isComplete;
-            std::atomic_bool atomic_stopFlag;
-            std::atomic_bool atomic_loops;
-            std::atomic<int> pa_ready;
-            float masterVolume = 1.0f; // global master volume
+            std::atomic_bool atomic_isPlaying{};
+            std::atomic_bool atomic_isPaused{};
+            std::atomic_bool atomic_isComplete{};
+            std::atomic_bool atomic_stopFlag{};
+            std::atomic_bool atomic_loops{};
+			float masterVolume = 1.0f; // global master volume
             float globalMusicVolume = 1.0f; // global music volume
             float volume = 1.0f; // volume of this music
             uint32_t sinkIndex = UINT32_MAX;
-            unsigned int numOfChannels = 0;
-            unsigned long fileSize = 0;
-			unsigned long audioDataOffset = 0;
 
-            pa_channel_map* myMap = nullptr;
-            pa_stream* myStream = nullptr;
-            pa_threaded_mainloop* myMainLoop = nullptr;
-            pa_context* myContext = nullptr;
-            pa_sample_format myPulseFormat;
-            pa_cvolume vol;
+            std::function<void(pa_stream*)> streamDestructor = [&](pa_stream* _stream)
+        	{
+		        if (_stream)
+		        {
+			        if (audio_state->main_loop) pa_threaded_mainloop_lock(audio_state->main_loop.get());
+			        pa_stream_disconnect(_stream);
+			        pa_stream_unref(_stream);
+			        if (audio_state->main_loop) pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+		        }
+        	};
+            std::unique_ptr<pa_stream, decltype(streamDestructor)> myStream{nullptr, streamDestructor};
+			std::shared_ptr<internal_gw::AudioState>			   audio_state;
 
-            char* filePath = nullptr;
+			std::unique_ptr<pa_channel_map> myMap{nullptr};
+            pa_sample_spec mySampleSpec = { PA_SAMPLE_INVALID, 0, 0 };
+            pa_cvolume vol = { 0, 0 };
+
+            std::unique_ptr<char> filePath{nullptr};
             float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
             float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
             GW::AUDIO::GAudio gAudio;
             GW::CORE::GEventReceiver gReceiver;
             GW::SYSTEM::GConcurrent gConcurrent;
-            PCM_FORMAT_INFO myPCMFormat;
-            char buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE];
+            char buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE] = {};
 
             void Destroy()
             {
-                if (myMainLoop) pa_threaded_mainloop_lock(myMainLoop);
-				{
-					// Disconnects and decrements/unreferences the stream
-					if (myStream)
-					{
-						pa_stream_disconnect(myStream);
-						pa_stream_unref(myStream);
-						myStream = nullptr;
-					}
-					
-					// Disconnects and decrements/unreferences the context
-					if (myContext)
-					{
-						pa_context_disconnect(myContext);
-						pa_context_unref(myContext);
-						myContext = nullptr;
-					}					
-				}
-				if (myMainLoop) pa_threaded_mainloop_unlock(myMainLoop);
-
-                // Stops the mainloop (after the context is disconnected) and releases memory
-                if (myMainLoop)
-                {
-                    pa_threaded_mainloop_stop(myMainLoop);
-                    pa_threaded_mainloop_free(myMainLoop);
-                    myMainLoop = nullptr;
-                }
-
-                if (filePath)
-                {
-                    delete[] filePath;
-                    filePath = nullptr;
-                }
+            	// These all have to happen before the sync write lock is released
+            	myStream = nullptr;
+            	myMap = nullptr;
             }
-
-            GReturn LoadOnlyWaveHeaderData(const char* path, PCM_FORMAT_INFO& returnedInfo)
-            {
-				// default the return value
-				GReturn result = GReturn::SUCCESS;
-				
-				// create our gfile object
-				GW::SYSTEM::GFile file;
-				file.Create();
-
-				// open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-				if (-file.OpenBinaryRead(path)) {
-					result = GReturn::FILE_NOT_FOUND;
-					return result;
-				}
-				
-				// variables for determinning data information
-                unsigned long dwChunktype = 0;
-                unsigned long dwChunkDataSize = 0;
-                unsigned long dwRiffDataSize = 0;
-                unsigned long dwFileType = 0;
-				unsigned long dwIsWave = 0;
-                unsigned long throwAwayValue = 0;
-				bool foundAudioData = false;
-
-                while (result == GReturn::SUCCESS && foundAudioData == false)
-				{
-					if (-file.Read(reinterpret_cast<char*>(&dwChunktype), 4)) {
-						// could not aquire chunk type
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-						// could not aquire chunk size
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					switch (dwChunktype) {
-						case WaveTag::RIFF:
-						{
-							dwRiffDataSize = dwChunkDataSize;
-							dwChunkDataSize = 4;
-							if (-file.Read(reinterpret_cast<char*>(&dwFileType), dwChunkDataSize)) {
-								// could not aquire the file type
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-						
-						case WaveTag::WAVE:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&dwIsWave), dwChunkDataSize)) {
-								// the file is not a wav file
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-						
-						case WaveTag::FMT:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&returnedInfo.mFormatTag), dwChunkDataSize)) {
-								// could not read the chunk data
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-						
-						case WaveTag::DATA:
-						{
-							foundAudioData = true; // audio data is the last part of the file. stop looping
-							break;
-						}
-						
-						default:
-						{
-							char* pBogusData = new char[dwChunkDataSize];
-							if (-file.Read(pBogusData, dwChunkDataSize)) {
-								// something unknown happened that caused the data to not be read
-								result = GReturn::FAILURE;
-							}
-							delete[] pBogusData;
-							break;
-						}
-					}
-				}
-				file.CloseFile();
-				return result;
-			}
-			
-			GReturn FindStreamData(const char* path, unsigned long& outDataChunkSize, unsigned long& outOffset)
-			{
-				// default the return value
-				GReturn result = GReturn::SUCCESS;
-
-				// create our gfile object
-				GW::SYSTEM::GFile file;
-				file.Create();
-
-				// open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-				if (-file.OpenBinaryRead(path)) {
-					result = GReturn::FILE_NOT_FOUND;
-					return result;
-				}
-
-				unsigned long dwChunkType = 0;
-				unsigned long dwChunkDataSize = 0;
-				unsigned long bytesRead = 0;
-				bool foundAudioData = false;
-
-				while (result == GReturn::SUCCESS && foundAudioData == false) {
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkType), 4)) {
-						// could not acquire chunk type
-						result = GReturn::FAILURE;
-						break;
-					}
-					bytesRead += 4;
-
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-						// could not acquire chunk size
-						result = GReturn::FAILURE;
-						break;
-					}
-					bytesRead += 4;
-
-					switch (dwChunkType) {
-						case WaveTag::DATA:
-						{
-							outDataChunkSize = dwChunkDataSize;	// contains size of the audio buffer in bytes
-							outOffset = bytesRead;				// Sets the offset to where we are
-							foundAudioData = true;				// We found the data, now exit the function
-							break;
-						}
-						
-						case WaveTag::RIFF:
-							dwChunkDataSize = 4;
-						default:
-						{
-							char* pBogusData = new char[dwChunkDataSize];
-							if (-file.Read(pBogusData, dwChunkDataSize)) {
-								// could not read
-								result = GReturn::FAILURE;
-							}
-							delete[] pBogusData;
-							bytesRead += dwChunkDataSize;
-							break;
-						}
-					}
-				}
-
-				file.CloseFile();
-				return result;
-			}
-
 
             // PA Callbacks
-            static void OnStateChange(pa_context* _c, void* _data)
+            static void FinishedDrainOp(pa_stream*, int, void* userdata)
             {
-                pa_context_state_t state;
-                std::atomic<int>* pa_ready = (std::atomic<int>*)_data;
-				
-                state = pa_context_get_state(_c);
-
-                switch (state)
-                {
-                    case PA_CONTEXT_UNCONNECTED:
-                    {
-                        break;
-                    }
-                    case PA_CONTEXT_CONNECTING:
-                    {
-                        break;
-                    }
-                    case PA_CONTEXT_AUTHORIZING:
-                    {
-                        break;
-                    }
-                    case PA_CONTEXT_SETTING_NAME:
-                    {
-                        break;
-                    }
-                    case PA_CONTEXT_FAILED:
-                    {
-                        *pa_ready = -1;
-                        break;
-                    }
-                    case PA_CONTEXT_TERMINATED:
-                    {
-                        *pa_ready = -1;
-                        break;
-                    }
-                    case PA_CONTEXT_READY:
-                    {
-                        *pa_ready = 1;
-                        break;
-                    }
-                }
-            }
-
-            static void FinishedDrainOp(pa_stream* s, int success, void* userdata)
-            {
-                GMusicImplementation* impl = reinterpret_cast<GMusicImplementation*>(userdata);
+                GMusicImplementation* impl = static_cast<GMusicImplementation*>(userdata);
                 impl->atomic_isComplete = true;
             }
-			
-			char* CreateFilePath(const char* _constCharArray)
-			{
-				int size = 0;
-				for (; size < 1024; ++size)
-				{
-					if (_constCharArray[size] == '\0')
-					{
-						++size;
-						break;
-					}
-				}
 
+        	static void FlushOpCallback(pa_stream*, int, void* userdata)
+			{
+				const GMusicImplementation* impl = static_cast<GMusicImplementation*>(userdata);
+				pa_threaded_mainloop_signal(impl->audio_state->main_loop.get(), 0);
+			}
+
+			static std::unique_ptr<char> CreateFilePath(const char* _constCharArray)
+			{
+				const int size = strlen(_constCharArray) + 1;
 				if (size >= 1024)
 					return nullptr;
 
-				char* charArray = new char[size];
-				memcpy(charArray, _constCharArray, size); // char is 1 byte
+				std::unique_ptr<char> charArray(new char[size]);
+				memcpy(charArray.get(), _constCharArray, size); // char is 1 byte
 
 				return charArray;
 			}
 
         public:
-            virtual ~GMusicImplementation()
-            {
-                Stop();
-                LockSyncWrite();
+			~GMusicImplementation() override
+			{
+				GMusicImplementation::Stop();
+				GMusicImplementation::LockSyncWrite();
                 Destroy();
-                UnlockSyncWrite();
+				GMusicImplementation::UnlockSyncWrite();
             }
 
-            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
             {
                 if (!_path || !_audio)
                     return GReturn::INVALID_ARGUMENT;
@@ -59661,95 +60832,72 @@ namespace GW
                     return result;
 
                 gAudio = _audio;
-                auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+                const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
 
-                if (-LoadOnlyWaveHeaderData(_path, myPCMFormat))
-                    return GReturn::FAILURE;
+				WavReader myWavReader;
+				if (-myWavReader.ReadWAVOffset(_path))
+					return GReturn::FAILURE;
 
-                int len = strlen(_path) + 1;
-                filePath = new char[len];
-                strncpy(filePath, _path, len);
+                const int len = static_cast<int>(strlen(_path)) + 1;
+                filePath.reset(new char[len]);
+                strncpy(filePath.get(), _path, len);
 
-                myMainLoop = pa_threaded_mainloop_new();
+				if (!internal_gw::get_audio_state(audio_state)) return GReturn::FAILURE;
 
-                if (myMainLoop == NULL)
-                    return GReturn::FAILURE;
-
-				pa_threaded_mainloop_lock(myMainLoop);
-				{
-					myContext = pa_context_new(pa_threaded_mainloop_get_api(myMainLoop), "Sound");
-
-					if (myContext == NULL)
-					{
-						pa_threaded_mainloop_unlock(myMainLoop);
-						return GReturn::FAILURE;
-					}
-					
-					pa_ready = 0;
-					pa_context_connect(myContext, NULL, PA_CONTEXT_NOFLAGS, NULL);
-					pa_context_set_state_callback(myContext, OnStateChange, &pa_ready);				
-				}
-				pa_threaded_mainloop_unlock(myMainLoop);
-
-                pa_threaded_mainloop_start(myMainLoop);
-
-                while (pa_ready == 0)
+				while (audio_state->pa_ready == 0)
                     std::this_thread::yield();
 
-                if (pa_ready != 1)
+                if (audio_state->pa_ready != 1)
                     return GReturn::FAILURE;
 
-				switch (myPCMFormat.mBitsPerSample)
+                const auto header = myWavReader.GetHeader();
+				switch (header.format.bitsPerSample)
 				{
 					case 8:
-						myPulseFormat = PA_SAMPLE_U8;
+						mySampleSpec.format = PA_SAMPLE_U8;
 						break;
 					case 16:
-						myPulseFormat = PA_SAMPLE_S16LE;
+						mySampleSpec.format = PA_SAMPLE_S16LE;
 						break;
 					case 24:
-						myPulseFormat = PA_SAMPLE_S24LE;
+						mySampleSpec.format = PA_SAMPLE_S24LE;
 						break;
 					case 32:
-						myPulseFormat = (myPCMFormat.mFormatTag > 1) ? PA_SAMPLE_FLOAT32LE : PA_SAMPLE_S32LE; // Float type for IEEE and Signed 32int for PCM
+						mySampleSpec.format = (header.format.formatTag > 1) ? PA_SAMPLE_FLOAT32LE : PA_SAMPLE_S32LE; // Float type for IEEE and Signed 32int for PCM
 						break;
 					default:
-						myPulseFormat = PA_SAMPLE_INVALID;
+						mySampleSpec.format = PA_SAMPLE_INVALID;
 						return GReturn::FAILURE;
-						break;
 				}
 
-				pa_sample_spec mySampleSpec;
-				mySampleSpec.format = myPulseFormat;
-				mySampleSpec.rate = myPCMFormat.mSamples;
-				mySampleSpec.channels = myPCMFormat.mNumChannels;;
+				mySampleSpec.rate = header.format.sampleRate;
+				mySampleSpec.channels = header.format.channels;
 				if (pa_channels_valid(mySampleSpec.channels) == 0)				
 					return GReturn::FAILURE;
 					
-				pa_threaded_mainloop_lock(myMainLoop);
+				pa_threaded_mainloop_lock(audio_state->main_loop.get());
 				{
-					myMap = new pa_channel_map();
-					myMap = pa_channel_map_init_extend(myMap, mySampleSpec.channels, PA_CHANNEL_MAP_WAVEEX);
-					if (myMap == nullptr)
+					myMap.reset(new pa_channel_map());
+					if (pa_channel_map_init_extend(myMap.get(), mySampleSpec.channels, PA_CHANNEL_MAP_WAVEEX) == nullptr)
 					{
-						pa_threaded_mainloop_unlock(myMainLoop);
-						return GReturn::FAILURE;
-					}
-					
-					myStream = pa_stream_new(myContext, "GMusic", &mySampleSpec, myMap); //myMap
-					if (myStream == nullptr)
-					{
-						pa_threaded_mainloop_unlock(myMainLoop);
+						pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 						return GReturn::FAILURE;
 					}
 
-					if (pa_stream_connect_playback(myStream, NULL, NULL, (pa_stream_flags_t)0, NULL, NULL) != 0)
+                	myStream.reset(pa_stream_new(audio_state->context.get(), "GMusic", &mySampleSpec, myMap.get()));
+					if (myStream == nullptr)
 					{
-						pa_threaded_mainloop_unlock(myMainLoop);
+						pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+						return GReturn::FAILURE;
+					}
+
+					if (pa_stream_connect_playback(myStream.get(), nullptr, nullptr, static_cast<pa_stream_flags_t>(0), nullptr, nullptr) != 0)
+					{
+						pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 						return GReturn::FAILURE;
 					}					
 				}
-				pa_threaded_mainloop_unlock(myMainLoop);
+				pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 globalMusicVolume = audioImplementation->musicVolume;
                 masterVolume = audioImplementation->masterVolume;
@@ -59778,61 +60926,61 @@ namespace GW
 
                     switch (audioEvent)
                     {
-                        case GW::AUDIO::GAudio::Events::DESTROY:
-                        {
-                            Stop();
-                            LockSyncWrite();
-                            Destroy();
-                            UnlockSyncWrite();
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::PLAY_MUSIC:
-                        {
-                            Play();
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::PAUSE_MUSIC:
-                        {
-                            Pause();
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::RESUME_MUSIC:
-                        {
-                            Resume();
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::STOP_MUSIC:
-                        {
-                            Stop();
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::MASTER_VOLUME_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            masterVolume = audioEventData.channelVolumes[0];
-                            // Update the current volume with a new master volume
-                            SetVolume(volume);
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::MUSIC_VOLUME_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            globalMusicVolume = audioEventData.channelVolumes[0];
-                            // Update the current volume with a new master volume
-                            SetVolume(volume);
-                            break;
-                        }
-                        case GW::AUDIO::GAudio::Events::MUSIC_CHANNEL_VOLUMES_CHANGED:
-                        {
-                            gEvent.Read(audioEventData);
-                            memcpy(masterChannelVolumes, audioEventData.channelVolumes, audioEventData.numOfChannels * sizeof(float));
-                            SetChannelVolumes(channelVolumes, audioEventData.numOfChannels);
-                            break;
-                        }
-                        default:
-                        {
-                            break;
-                        }
+                    case GW::AUDIO::GAudio::Events::DESTROY:
+	                    {
+		                    Stop();
+		                    LockSyncWrite();
+		                    Destroy();
+		                    UnlockSyncWrite();
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::PLAY_MUSIC:
+	                    {
+		                    Play();
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::PAUSE_MUSIC:
+	                    {
+		                    Pause();
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::RESUME_MUSIC:
+	                    {
+		                    Resume();
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::STOP_MUSIC:
+	                    {
+		                    Stop();
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::MASTER_VOLUME_CHANGED:
+	                    {
+		                    gEvent.Read(audioEventData);
+		                    masterVolume = audioEventData.channelVolumes[0];
+		                    // Update the current volume with a new master volume
+		                    SetVolume(volume);
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::MUSIC_VOLUME_CHANGED:
+	                    {
+		                    gEvent.Read(audioEventData);
+		                    globalMusicVolume = audioEventData.channelVolumes[0];
+		                    // Update the current volume with a new master volume
+		                    SetVolume(volume);
+		                    break;
+	                    }
+                    case GW::AUDIO::GAudio::Events::MUSIC_CHANNEL_VOLUMES_CHANGED:
+	                    {
+		                    gEvent.Read(audioEventData);
+		                    memcpy(masterChannelVolumes, audioEventData.channelVolumes, static_cast<int>(audioEventData.numOfChannels * sizeof(float)));
+		                    SetChannelVolumes(channelVolumes, audioEventData.numOfChannels);
+		                    break;
+	                    }
+                    default:
+	                    {
+		                    break;
+	                    }
                     }
                 });
             }
@@ -59845,7 +60993,7 @@ namespace GW
                 if (_numChannels == 0 || _numChannels > 6 || _values == nullptr)
                     return GReturn::INVALID_ARGUMENT;
 
-                float adjustedVolume = volume * masterVolume * globalMusicVolume;
+                const float adjustedVolume = volume * masterVolume * globalMusicVolume;
                 for (unsigned int i = 0; i < _numChannels; i++)
                 {
                     if (_values[i] < 0.0f)
@@ -59854,41 +61002,46 @@ namespace GW
                     // 5.1 to stereo fallback
                     if (_numChannels > G_NUM_OF_OUTPUTS)
                     {
-                        channelVolumes[i] = (_values[i] > 1.0f) ? 1.0f : _values[i];
+                        channelVolumes[i] = std::min(_values[i], 1.0f);
 
                         switch (i)
                         {
-                            case 2: // Front Center
-                            {
-                                channelVolumes[0] += channelVolumes[2] * 0.5f;
-                                channelVolumes[1] += channelVolumes[2] * 0.5f;
-                                break;
-                            }
-                            case 3: // LFE
-                            {
-                                channelVolumes[0] += channelVolumes[3] * 0.3f;
-                                channelVolumes[1] += channelVolumes[3] * 0.3f;
-                                break;
-                            }
-                            case 4: // Rear Left
-                            {
-                                channelVolumes[0] += channelVolumes[4] * 0.7f;
-                                break;
-                            }
-                            case 5: //Rear Right
-                            {
-                                channelVolumes[1] += channelVolumes[5] * 0.7f;
-                                break;
-                            }
+                        case 2: // Front Center
+                        {
+                            channelVolumes[0] += channelVolumes[i] * 0.5f;
+                            channelVolumes[1] += channelVolumes[i] * 0.5f;
+                            break;
+                        }
+                        case 3: // LFE
+                        {
+                            channelVolumes[0] += channelVolumes[i] * 0.3f;
+                            channelVolumes[1] += channelVolumes[i] * 0.3f;
+                            break;
+                        }
+                        case 4: // Rear Left
+                        {
+                            channelVolumes[0] += channelVolumes[i] * 0.7f;
+                            break;
+                        }
+                        case 5: //Rear Right
+                        {
+                            channelVolumes[1] += channelVolumes[i] * 0.7f;
+                            break;
+                        }
+						default:
+							break;
                         }
 
                         // clamp stereo to max of 1.0f
                         if (i == _numChannels - 1)
                         {
-                            channelVolumes[0] = (channelVolumes[0] > 1.0f) ? 1.0f : channelVolumes[0];
-                            channelVolumes[1] = (channelVolumes[1] > 1.0f) ? 1.0f : channelVolumes[1];
-							vol.values[0] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[0] * masterChannelVolumes[0]);
-							vol.values[1] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[1] * masterChannelVolumes[1]);
+                            channelVolumes[0] = std::min(channelVolumes[0], 1.0f);
+                            channelVolumes[1] = std::min(channelVolumes[1], 1.0f);
+
+                        	const double adjustedVolumeLeft = std::min(adjustedVolume * channelVolumes[0] * masterChannelVolumes[0], 1.0f);
+                        	const double adjustedVolumeRight = std::min(adjustedVolume * channelVolumes[1] * masterChannelVolumes[1], 1.0f);
+							vol.values[0] = pa_sw_volume_from_linear(adjustedVolumeLeft);
+							vol.values[1] = pa_sw_volume_from_linear(adjustedVolumeRight);
                             break;
                         }
                     }
@@ -59897,35 +61050,36 @@ namespace GW
                         channelVolumes[i] = (_values[i] > 1.0f) ? 1.0f : _values[i];
 
                         // apply clamping and master volume multiplier
-						vol.values[i] = pa_sw_volume_from_linear(adjustedVolume * channelVolumes[i] * masterChannelVolumes[i]);
+                    	const double adjustedVolumeClamped = std::min(adjustedVolume * channelVolumes[i] * masterChannelVolumes[i], 1.0f);
+						vol.values[i] = pa_sw_volume_from_linear(adjustedVolumeClamped);
                     }
                 }
 
                 LockSyncWrite();
 				while (sinkIndex == UINT32_MAX)
 				{
-					pa_threaded_mainloop_lock(myMainLoop);
-						sinkIndex = pa_stream_get_index(myStream); //Returns the sink resp. source output index this stream is identified in the server with	
-					pa_threaded_mainloop_unlock(myMainLoop);
+					pa_threaded_mainloop_lock(audio_state->main_loop.get());
+						sinkIndex = pa_stream_get_index(myStream.get()); //Returns the sink resp. source output index this stream is identified in the server with
+					pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 				}
                 UnlockSyncWrite();
 
 				vol.channels = G_NUM_OF_OUTPUTS;
 					
-				pa_threaded_mainloop_lock(myMainLoop);
+				pa_threaded_mainloop_lock(audio_state->main_loop.get());
 				{
 					//Set the volume of a sink input stream.
-					pa_operation* o = pa_context_set_sink_input_volume(myContext, sinkIndex, &vol, NULL, NULL);
+					pa_operation* sinkInputVolumeOp = pa_context_set_sink_input_volume(audio_state->context.get(), sinkIndex, &vol, nullptr, nullptr);
 
-					if (!o)
+					if (!sinkInputVolumeOp)
 					{
-						pa_threaded_mainloop_unlock(myMainLoop);
+						pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 						return GReturn::FAILURE;
 					}
 
-					pa_operation_unref(o);
+					pa_operation_unref(sinkInputVolumeOp);
 				}
-				pa_threaded_mainloop_unlock(myMainLoop);
+				pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 return GReturn::SUCCESS;
             }
@@ -59939,43 +61093,46 @@ namespace GW
                     return GReturn::INVALID_ARGUMENT;
 
                 // Clip the passed volume to max
-                _newVolume = (_newVolume > 1.0f) ? 1.0f : _newVolume;
+                _newVolume = std::min(_newVolume, 1.0f);
                 volume = _newVolume;
 
                 // Apply master volume ratio to the sound volume (Doesn't need to be normalized, since masterVolume is always < 1.0f)
                 _newVolume *= masterVolume * globalMusicVolume;			
 				vol.channels = G_NUM_OF_OUTPUTS;
 				for (int i = 0; i < vol.channels; ++i)
-					vol.values[i] = pa_sw_volume_from_linear(_newVolume * channelVolumes[i] * masterChannelVolumes[i]);
+				{
+					const double newVolumeClamped = std::min(_newVolume * channelVolumes[i] * masterChannelVolumes[i], 1.0f);
+					vol.values[i] = pa_sw_volume_from_linear(newVolumeClamped);
+				}
 
                 LockSyncWrite();
 				while (sinkIndex == UINT32_MAX)
 				{
-					pa_threaded_mainloop_lock(myMainLoop);
-						sinkIndex = pa_stream_get_index(myStream); //Returns the sink resp. source output index this stream is identified in the server with
-					pa_threaded_mainloop_unlock(myMainLoop);
+					pa_threaded_mainloop_lock(audio_state->main_loop.get());
+						sinkIndex = pa_stream_get_index(myStream.get()); //Returns the sink resp. source output index this stream is identified in the server with
+					pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 				}					
                 UnlockSyncWrite();
                 
                 //Set the volume of a sink input stream.
-				pa_threaded_mainloop_lock(myMainLoop);
+				pa_threaded_mainloop_lock(audio_state->main_loop.get());
 				{
-					pa_operation* o = pa_context_set_sink_input_volume(myContext, sinkIndex, &vol, NULL, NULL);
+					pa_operation* sinkInputVolumeOp = pa_context_set_sink_input_volume(audio_state->context.get(), sinkIndex, &vol, nullptr, nullptr);
 
-					if (!o)
-					{						
-						pa_threaded_mainloop_unlock(myMainLoop);
+					if (!sinkInputVolumeOp)
+					{
+						pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 						return GReturn::FAILURE;
 					}
 
-					pa_operation_unref(o);
+					pa_operation_unref(sinkInputVolumeOp);
 				}
-				pa_threaded_mainloop_unlock(myMainLoop);
+				pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
                 return GReturn::SUCCESS;
             }
 
-            GReturn Play(bool _loop = false) override
+            GReturn Play(const bool _loop = false) override
             {
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
@@ -59984,108 +61141,96 @@ namespace GW
 
                 if (atomic_isPlaying || atomic_isComplete)
                 {
-                    GReturn result = Stop();
+	                const GReturn result = Stop();
 
                     if (result != GReturn::SUCCESS)
                         return result;
                 }
 
-                if (atomic_isPlaying == false)
+                if (!atomic_isPlaying)
                 {
                     atomic_stopFlag = false;
                     atomic_isPaused = false;
                     atomic_isPlaying = true;
 					
                     gConcurrent.BranchSingular([&]() {
-                        unsigned short CurrentDiskReadBuffer = 0;
-						unsigned long CurrentPosition = 0;
+                        unsigned short currentDiskReadBuffer = 0;
+						unsigned long currentPosition = 0;
 
-						if (-FindStreamData(filePath, fileSize, audioDataOffset))
+                    	WavReader myWavReader;
+						if (-myWavReader.ReadWAVOffset(filePath.get()))
 							return GReturn::FAILURE;
-						
-                        // probably safer to do this after the call to FindStreamData because that function creates its own GFile from the same path
-						GW::SYSTEM::GFile gfile;
-						gfile.Create();
-						
-						if (-gfile.OpenBinaryRead(filePath)) {
-							// file could not be opened
-							return GReturn::FAILURE;
-						}
 
-						// seek to the start of the audio stream data
-						unsigned int unusedPosition; // unused variable but needed for the next function
-						gfile.Seek(0, audioDataOffset, unusedPosition);
-						
-                        pa_stream_state_t state;
-						
-                        while (CurrentPosition < fileSize) {
-                            if (atomic_stopFlag == true) {
-								pa_threaded_mainloop_lock(myMainLoop);
-									pa_stream_cancel_write(myStream);
-								pa_threaded_mainloop_unlock(myMainLoop);
+						myWavReader.SeekToDataOffset();
+
+                    	const unsigned long bufferSize = myWavReader.GetBufferSize();
+                        while (currentPosition < bufferSize) {
+                            if (atomic_stopFlag) {
+								pa_threaded_mainloop_lock(audio_state->main_loop.get());
+
+                            	pa_operation* flushOp = pa_stream_flush(myStream.get(), FlushOpCallback, this);
+                            	if (flushOp)
+                            	{
+                            		while (pa_operation_get_state(flushOp) == PA_OPERATION_RUNNING)
+										pa_threaded_mainloop_wait(audio_state->main_loop.get());
+                            		pa_operation_unref(flushOp);
+                            	}
+
+								pa_threaded_mainloop_unlock(audio_state->main_loop.get());
                                 break;
                             }
-                            else {
-                                pa_threaded_mainloop_lock(myMainLoop);
-									state = pa_stream_get_state(myStream);
-                                pa_threaded_mainloop_unlock(myMainLoop);
 
-                                if (state == PA_STREAM_READY)
-                                {
-									unsigned long cbValid = (G_STREAMING_BUFFER_SIZE < (fileSize - CurrentPosition))
-										? G_STREAMING_BUFFER_SIZE // if less
-										: (fileSize - CurrentPosition); // if greater or equal
-										
-									// should already be at the correct offset. just have to read the data in now
-									if (-gfile.Read(buffers[CurrentDiskReadBuffer], cbValid))
-										continue;
-									
-									CurrentPosition += cbValid;
-									
-									if (CurrentPosition >= fileSize)
-                                    {
-										if (atomic_loops)
-										{
-											pa_threaded_mainloop_lock(myMainLoop);
-												pa_stream_write(myStream, buffers[CurrentDiskReadBuffer], cbValid, nullptr, 0, PA_SEEK_RELATIVE);
-											pa_threaded_mainloop_unlock(myMainLoop);
-											
-											++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
-											CurrentPosition = 0;
-											
-											// read until we get to the start of the audio stream data
-											gfile.Seek(0, audioDataOffset, unusedPosition);
-											
-											continue;
-										}
-										else
-										{
-											pa_threaded_mainloop_lock(myMainLoop);
-											{
-												pa_operation* o = pa_stream_drain(myStream, FinishedDrainOp, this);
+                            pa_threaded_mainloop_lock(audio_state->main_loop.get());
+                            const pa_stream_state_t state = pa_stream_get_state(myStream.get());
+                        	const size_t writeableSize = pa_stream_writable_size(myStream.get());
+                            pa_threaded_mainloop_unlock(audio_state->main_loop.get());
 
-												if (o)
-													pa_operation_unref(o);												
-											}
-											pa_threaded_mainloop_unlock(myMainLoop);
-											break;
-										}
-                                    }
-                                    else
-                                    {
-										pa_threaded_mainloop_lock(myMainLoop);
-											pa_stream_write(myStream, buffers[CurrentDiskReadBuffer], cbValid, nullptr, 0, PA_SEEK_RELATIVE);
-										pa_threaded_mainloop_unlock(myMainLoop);
-										
-										++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
-                                    }
-                                }
+                        	// If the writeable size is 0, we have no reason to write to the stream until later.
+							if (writeableSize == 0) continue;
+
+                            if (state == PA_STREAM_READY)
+                            {
+	                            unsigned long cbValid = (G_STREAMING_BUFFER_SIZE < (bufferSize - currentPosition))
+		                                                    ? G_STREAMING_BUFFER_SIZE // if less
+		                                                    : (bufferSize - currentPosition); // if greater or equal
+
+	                            // should already be at the correct offset. just have to read the data in now
+                            	if (-myWavReader.ReadDataChunk(buffers[currentDiskReadBuffer], cbValid))
+		                            continue;
+
+	                            currentPosition += cbValid;
+
+	                            if (currentPosition >= bufferSize && !atomic_loops)
+	                            {
+		                            pa_threaded_mainloop_lock(audio_state->main_loop.get());
+		                            {
+			                            pa_operation* drainOp = pa_stream_drain(myStream.get(), FinishedDrainOp, this);
+			                            if (drainOp)
+			                            {
+				                            pa_operation_unref(drainOp);
+			                            }
+		                            }
+		                            pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+		                            break;
+	                            }
+
+	                            pa_threaded_mainloop_lock(audio_state->main_loop.get());
+	                            pa_stream_write(myStream.get(), buffers[currentDiskReadBuffer], static_cast<int>(cbValid), nullptr, 0, PA_SEEK_RELATIVE);
+	                            pa_threaded_mainloop_unlock(audio_state->main_loop.get());
+
+	                            ++currentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
+
+                            	if (currentPosition >= bufferSize && atomic_loops)
+                            	{
+		                            // Seek to beginning of audio data
+		                            currentPosition = 0;
+		                            myWavReader.SeekToDataOffset();
+                            	}
                             }
                         }
-                        gfile.CloseFile();
 
-                        // This needs to be reset so it doesn't remember where it left off playing
-                        audioDataOffset = 0;
+                    	myWavReader.CloseFile();
+                    	myWavReader.Reset();
 
                         // Updates information about playback state
                         atomic_isPlaying = false;
@@ -60141,7 +61286,7 @@ namespace GW
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
 
-                returnedChannelNum = myPCMFormat.mNumChannels;
+                returnedChannelNum = mySampleSpec.channels;
                 return GReturn::SUCCESS;
             }
 
@@ -60196,7 +61341,433 @@ namespace GW
 #elif defined(_WIN32)
 #include <winapifamily.h>
     #if (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
-        #define G_NUM_OF_OUTPUTS 6
+        #ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
+
+
+#define G_NUM_OF_OUTPUTS 6
 #define G_STREAMING_BUFFER_SIZE 65536
 #define G_MAX_BUFFER_COUNT 3
 
@@ -60208,251 +61779,77 @@ namespace GW
 			protected GThreadSharedImplementation,
 			protected IXAudio2VoiceCallback
 		{
-			// This enum exists for parity with Linux. See GMusic_Linux.hpp for more info
-			enum WaveTag {
-				RIFF = 1179011410, // = 'FFIR'
-				DATA = 1635017060, // = 'atad'
-				FMT  =  544501094, // = ' tmf'
-				WAVE = 1163280727, // = 'EVAW'
-				JUNK = 1263424842, // = 'KNUJ'
-				XWMA = 1095587672, // = 'AMWX'
-				DPDS = 1935962212  // = 'sdpd'
-			};
-
-			GReturn LoadOnlyWaveHeaderData(const char* path, WAVEFORMATEXTENSIBLE& myWFX)
-			{
-				// default the return value
-				GReturn result = GReturn::SUCCESS;
-
-				// create our gfile object
-				GW::SYSTEM::GFile file;
-				file.Create();
-
-				// open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-				if (-file.OpenBinaryRead(path)) {
-					result = GReturn::FILE_NOT_FOUND;
-					return result;
-				}
-				
-				// variables for determining data information
-				unsigned long dwChunktype = 0;
-				unsigned long dwChunkDataSize = 0;
-				unsigned long dwRiffDataSize = 0;
-				unsigned long dwFileType = 0;
-				unsigned long dwIsWave = 0;
-				bool foundAudioData = false;
-
-				while (result == GReturn::SUCCESS && foundAudioData == false)
-				{
-					if (-file.Read(reinterpret_cast<char*>(&dwChunktype), 4)) {
-						// could not acquire chunk type
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-						// could not acquire chunk size
-						result = GReturn::FAILURE;
-						break;
-					}
-
-					switch (dwChunktype) {
-						case WaveTag::RIFF:
-						{
-							dwRiffDataSize = dwChunkDataSize;
-							dwChunkDataSize = 4;
-							if (-file.Read(reinterpret_cast<char*>(&dwFileType), 4) || dwFileType != WaveTag::WAVE) {
-								// could not acquire the file type
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-
-						case WaveTag::WAVE:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&dwIsWave), 4)) {
-								// the file is not a wav file
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-						
-						case WaveTag::FMT:
-						{
-							if (-file.Read(reinterpret_cast<char*>(&myWFX), dwChunkDataSize)) {
-								// could not read the chunk data
-								result = GReturn::FAILURE;
-								break;
-							}
-							break;
-						}
-
-						case WaveTag::DATA:
-						{
-							foundAudioData = true; // audio data is the last part of the file. stop looping
-							break;
-						}
-
-						default:
-						{
-							char* pBogusData = new char[dwChunkDataSize];
-							if (-file.Read(pBogusData, dwChunkDataSize)) {
-								// something unknown happened that caused the data to not be read
-								result = GReturn::FAILURE;
-							}
-							delete[] pBogusData;
-							break;
-						}
-					}
-				}
-				file.CloseFile();
-				return result;
-			}
-
-			GReturn FindStreamData(const char* path, unsigned long& outDataChunkSize, OVERLAPPED& overlap)
-			{
-				// default the return value
-				GReturn result = GReturn::SUCCESS;
-
-				// create our gfile object
-				GW::SYSTEM::GFile file;
-				file.Create();
-
-				// open the audio file in binary read mode. wav is a binary format with tags that can be interpreted as text
-				if (-file.OpenBinaryRead(path)) {
-					result = GReturn::FILE_NOT_FOUND;
-					return result;
-				}
-
-				unsigned long dwChunkType = 0;
-				unsigned long dwChunkDataSize = 0;
-				unsigned long bytesRead = 0;
-				bool foundAudioData = false;
-
-				while (result == GReturn::SUCCESS && foundAudioData == false) {
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkType), 4)) {
-						// could not acquire chunk type
-						result = GReturn::FAILURE;
-						break;
-					}
-					bytesRead += 4;
-
-					if (-file.Read(reinterpret_cast<char*>(&dwChunkDataSize), 4)) {
-						// could not acquire chunk size
-						result = GReturn::FAILURE;
-						break;
-					}
-					bytesRead += 4;
-
-					switch (dwChunkType) {
-						case WaveTag::DATA:
-						{
-							outDataChunkSize = dwChunkDataSize;	// contains size of the audio buffer in bytes
-							overlap.Offset = bytesRead;			// Sets the offset to where we are
-							foundAudioData = true;				// We found the data, now exit the function
-							break;
-						}
-
-						case WaveTag::RIFF:
-							dwChunkDataSize = 4;
-						default:
-						{
-							char* pBogusData = new char[dwChunkDataSize];
-							if (-file.Read(pBogusData, dwChunkDataSize)) {
-								// could not read
-								result = GReturn::FAILURE;
-							}
-							delete[] pBogusData;
-							bytesRead += dwChunkDataSize;
-							break;
-						}
-					}
-				}
-
-				file.CloseFile();
-				return result;
-			}
-
-			void STDMETHODCALLTYPE OnBufferStart(void*) { ResetEvent(hBufferEndEvent); }
-			void STDMETHODCALLTYPE OnBufferEnd(void*) { SetEvent(hBufferEndEvent); }
+			void STDMETHODCALLTYPE OnBufferStart(void*) override { ResetEvent(hBufferEndEvent.get()); }
+			void STDMETHODCALLTYPE OnBufferEnd(void*) override { SetEvent(hBufferEndEvent.get()); }
 			// Required studs as IXAudio2VoiceCallback is an abstract class
-			void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) {}
-			void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() {}
-			void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) {}
-			void STDMETHODCALLTYPE OnStreamEnd() {}
-			void STDMETHODCALLTYPE OnLoopEnd(void*) {}
+			void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
+			void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
+			void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) override {}
+			void STDMETHODCALLTYPE OnStreamEnd() override {}
+			void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
 
-			std::atomic_bool atomic_isPlaying = false;
-			std::atomic_bool atomic_isPaused = false;
-			std::atomic_bool atomic_isComplete = false;
-			std::atomic_bool atomic_isLooping = false;
-			std::atomic_bool atomic_stopFlag = false;
+			std::atomic_bool atomic_isPlaying{false};
+			std::atomic_bool atomic_isPaused{false};
+			std::atomic_bool atomic_isComplete{false};
+			std::atomic_bool atomic_isLooping{false};
+			std::atomic_bool atomic_stopFlag{false};
 			float masterVolume = 1.0f; // global master volume
 			float globalMusicVolume = 1.0f; // global music volume
 			float volume = 1.0f; // volume of this sound
 			unsigned int numOfChannels = 0;
 			unsigned int sampleRate = 0;
-			unsigned long fileSize = 0;
-			OVERLAPPED overlap = { 0 };
 
-			IXAudio2SourceVoice* mySourceVoice = nullptr;
-			IXAudio2SubmixVoice* mySubmixVoice = nullptr;
-			char* filePath;
-			HANDLE hBufferEndEvent;
+			std::function<void(IXAudio2SourceVoice*)> sourceVoiceDestructor = [&](IXAudio2SourceVoice* _sourceVoice)
+			{
+				if (_sourceVoice)
+					_sourceVoice->DestroyVoice();
+			};
+			std::unique_ptr<IXAudio2SourceVoice, decltype(sourceVoiceDestructor)> mySourceVoice{nullptr, sourceVoiceDestructor};
+
+			std::function<void(IXAudio2SubmixVoice*)> submixVoiceDestructor = [&](IXAudio2SubmixVoice* _submixVoice)
+			{
+				if (_submixVoice)
+					_submixVoice->DestroyVoice();
+			};
+			std::unique_ptr<IXAudio2SubmixVoice, decltype(submixVoiceDestructor)> mySubmixVoice{nullptr, submixVoiceDestructor};
+			std::unique_ptr<char> filePath{nullptr};
+
+			// This is a non-ptr variant of HANDLE which is needed for unique_ptr.
+			std::unique_ptr<void, decltype(&CloseHandle)> hBufferEndEvent{nullptr, &CloseHandle};
 
 			float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
 			float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
 			GW::AUDIO::GAudio gAudio;
 			GW::CORE::GEventReceiver gReceiver;
 			GW::SYSTEM::GConcurrent gConcurrent;
-			BYTE buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE];
+			BYTE buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE] = {};
 
-			char* CreateFilePath(const char* _constCharArray)
+			static std::unique_ptr<char> CreateFilePath(const char* _constCharArray)
 			{
-				int size = 0;
-				for (; size < 1024; ++size)
-				{
-					if (_constCharArray[size] == '\0')
-					{
-						++size;
-						break;
-					}
-				}
-
+				const size_t size = strlen(_constCharArray) + 1;
 				if (size >= 1024)
 					return nullptr;
 
-				char* charArray = new char[size];
-				memcpy(charArray, _constCharArray, size); // char is 1 byte
+				std::unique_ptr<char> charArray(new char[size]);
+				memcpy(charArray.get(), _constCharArray, size); // char is 1 byte
 
 				return charArray;
 			}
 
 		public:
-			virtual ~GMusicImplementation()
+			~GMusicImplementation() override
 			{
-				Stop();
+				GMusicImplementation::Stop();
 
 				// We do not need to check for GAudio proxy here, since those handles would get cleaned up 
 				// in the event callback if GAudio gets deleted first
-				LockSyncWrite();
-				if (mySourceVoice)
-					mySourceVoice->DestroyVoice();
-
-				if (mySubmixVoice)
-					mySubmixVoice->DestroyVoice();
-				UnlockSyncWrite();
-
-				if (filePath)
-					delete[] filePath;
-
-				if (hBufferEndEvent)
-					CloseHandle(hBufferEndEvent);
+				GMusicImplementation::LockSyncWrite();
+				mySourceVoice = nullptr;
+				mySubmixVoice = nullptr;
+				GMusicImplementation::UnlockSyncWrite();
 			}
 
-			GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+			GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
 			{
 				if (!_path || !_audio)
 					return GReturn::INVALID_ARGUMENT;
@@ -60466,27 +61863,33 @@ namespace GW
 					return GReturn::INVALID_ARGUMENT;
 
 				gAudio = _audio;
-				auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
-				hBufferEndEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
-				if (!hBufferEndEvent)
+				const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+				hBufferEndEvent.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
+				if (hBufferEndEvent == nullptr)
 					return GReturn::FAILURE;
 
-				WAVEFORMATEXTENSIBLE wfmx;
-				if (-LoadOnlyWaveHeaderData(filePath, wfmx))
+				WavReader wavReader;
+				if (-wavReader.ReadWAVOffset(filePath.get()))
 					return GReturn::FAILURE;
 
+				auto& header = wavReader.GetHeader();
 				// Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure. (for non-PCM formats)
-				wfmx.Format.cbSize = (wfmx.Format.wFormatTag > 1) ? 22 : 0;
-				numOfChannels = static_cast<unsigned int>(wfmx.Format.nChannels);
-				sampleRate = static_cast<unsigned int>(wfmx.Format.wBitsPerSample);
-				if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&mySubmixVoice, G_NUM_OF_OUTPUTS, wfmx.Format.nSamplesPerSec) != S_OK)
-					return GReturn::FAILURE;
+				header.format.extraChunkSize = (header.format.formatTag > 1) ? 22 : 0;
+				numOfChannels = static_cast<unsigned int>(header.format.channels);
+				sampleRate = static_cast<unsigned int>(header.format.bitsPerSample);
 
-				XAUDIO2_SEND_DESCRIPTOR mscSendDcsp = { 0, mySubmixVoice };
-				XAUDIO2_VOICE_SENDS mscSendList = { 1, &mscSendDcsp };
-
-				if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&mySourceVoice, &wfmx.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &mscSendList) != S_OK)
+				IXAudio2SubmixVoice* submixVoice = nullptr;
+				if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&submixVoice, G_NUM_OF_OUTPUTS, header.format.sampleRate) != S_OK)
 					return GReturn::FAILURE;
+				mySubmixVoice.reset(submixVoice);
+
+				XAUDIO2_SEND_DESCRIPTOR mscSendDcsp = { 0, mySubmixVoice.get() };
+				const XAUDIO2_VOICE_SENDS mscSendList = { 1, &mscSendDcsp };
+
+				IXAudio2SourceVoice* sourceVoice = nullptr;
+				if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&sourceVoice, reinterpret_cast<const WAVEFORMATEX*>(&header.format), 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &mscSendList) != S_OK)
+					return GReturn::FAILURE;
+				mySourceVoice.reset(sourceVoice);
 
 				globalMusicVolume = audioImplementation->musicVolume;
 				masterVolume = audioImplementation->masterVolume;
@@ -60508,8 +61911,6 @@ namespace GW
 				if (result != GReturn::SUCCESS) // Events are suppressed
 					return result;
 
-				overlap.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
 				return gReceiver.Create(_audio, [&]()
 				{
 					GW::GEvent gEvent;
@@ -60527,17 +61928,8 @@ namespace GW
 							Stop();
 							// Need to cleanup XAudio handles before GAudio is deleted
 							LockSyncWrite();
-							if (mySourceVoice)
-							{
-								mySourceVoice->DestroyVoice();
-								mySourceVoice = nullptr;
-							}
-
-							if (mySubmixVoice)
-							{
-								mySubmixVoice->DestroyVoice();
-								mySubmixVoice = nullptr;
-							}
+							mySourceVoice = nullptr;
+							mySubmixVoice = nullptr;
 							UnlockSyncWrite();
 							break;
 						}
@@ -60607,7 +61999,7 @@ namespace GW
 				});
 			}
 
-			GReturn SetChannelVolumes(const float* _values, unsigned int _numChannels) override
+			GReturn SetChannelVolumes(const float* _values, const unsigned int _numChannels) override
 			{
 				if (!gAudio)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -60634,7 +62026,7 @@ namespace GW
 				{
 					if (trueIndex < _numChannels)
 					{
-						float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
+						const float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
 						matrix[i] = matrixVolume;
 						matrix[i + 1] = matrixVolume;
 						trueIndex++;
@@ -60648,7 +62040,7 @@ namespace GW
 				}
 
 				LockSyncWrite();
-				if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice, sourceChannels, G_NUM_OF_OUTPUTS, matrix)))
+				if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice.get(), sourceChannels, G_NUM_OF_OUTPUTS, matrix)))
 				{
 					UnlockSyncWrite();
 					return GReturn::FAILURE;
@@ -60682,7 +62074,7 @@ namespace GW
 				return GReturn::SUCCESS;
 			}
 
-			GReturn Play(bool _loop = false) override
+			GReturn Play(const bool _loop = false) override
 			{
 				if (!gAudio)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -60691,8 +62083,7 @@ namespace GW
 
 				if (atomic_isPlaying || atomic_isComplete)
 				{
-					GReturn result = Stop();
-
+					const GReturn result = Stop();
 					if (result != GReturn::SUCCESS)
 						return result;
 				}
@@ -60715,29 +62106,20 @@ namespace GW
 						unsigned short CurrentDiskReadBuffer = 0;
 						unsigned long CurrentPosition = 0;
 
-						if (-FindStreamData(filePath, fileSize, overlap))
+						WavReader wavReader;
+						if (-wavReader.ReadWAVOffset(filePath.get()))
 							return GReturn::FAILURE;
 
-						// probably safer to do this after the call to FindStreamData because that function creates its own GFile from the same path
-						GW::SYSTEM::GFile gfile;
-						gfile.Create();
+						wavReader.SeekToDataOffset();
 
-						if (-gfile.OpenBinaryRead(filePath)) {
-							// file could not be opened
-							return GReturn::FAILURE;
-						}
-
-						// seek to start of the audio stream data
-						unsigned int unusedPosition; // unused variable but needed for the next function
-						gfile.Seek(0, overlap.Offset, unusedPosition);
-
-						while (CurrentPosition < fileSize && atomic_stopFlag == false)
+						const unsigned long bufferSize = wavReader.GetBufferSize();
+						while (CurrentPosition < bufferSize && atomic_stopFlag == false)
 						{
 							if (atomic_isPlaying)
 							{
-								unsigned long cbValid = (G_STREAMING_BUFFER_SIZE < (fileSize - CurrentPosition))
+								unsigned long cbValid = (G_STREAMING_BUFFER_SIZE < (bufferSize - CurrentPosition))
 									? G_STREAMING_BUFFER_SIZE // if less
-									: (fileSize - CurrentPosition); // if greater or equal
+									: (bufferSize - CurrentPosition); // if greater or equal
 
 								if (sampleRate % 6 == 0)
 								{
@@ -60746,14 +62128,14 @@ namespace GW
 									if (cbValid % 6 != 0)
 										cbValid -= (cbValid % 6);
 								}
-								// should already be at the correct offset. just have to read the data in now
-								if (-gfile.Read(reinterpret_cast<char*>(buffers[CurrentDiskReadBuffer]), cbValid))
+
+								if (-wavReader.ReadDataChunk(reinterpret_cast<char*>(buffers[CurrentDiskReadBuffer]), cbValid))
 									continue;
 
 								// update the file position to where it will be once the read finishes
 								CurrentPosition += cbValid;
 
-								XAUDIO2_VOICE_STATE state = { 0 };
+								XAUDIO2_VOICE_STATE state = { nullptr };
 
 								while (atomic_isPlaying)
 								{
@@ -60768,7 +62150,7 @@ namespace GW
 
 									if (state.BuffersQueued >= G_MAX_BUFFER_COUNT - 1)
 									{
-										if (WaitForSingleObjectEx(hBufferEndEvent, INFINITE, TRUE) == WAIT_FAILED)
+										if (WaitForSingleObjectEx(hBufferEndEvent.get(), INFINITE, TRUE) == WAIT_FAILED)
 											break; // if deadlocks on pause check here <REMINDER>
 									}
 									else break;
@@ -60783,11 +62165,11 @@ namespace GW
 								}
 								*/
 
-								XAUDIO2_BUFFER buf = { 0 };
+								XAUDIO2_BUFFER buf = {};
 								buf.AudioBytes = cbValid;
 								buf.pAudioData = buffers[CurrentDiskReadBuffer];
 
-								if (CurrentPosition >= fileSize)
+								if (CurrentPosition >= bufferSize)
 								{
 									if (atomic_isLooping)
 									{
@@ -60801,9 +62183,8 @@ namespace GW
 
 										++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
 										CurrentPosition = 0;
-										
-										// seek back to the start of the audio stream data
-										gfile.Seek(0, overlap.Offset, unusedPosition);
+
+										wavReader.SeekToDataOffset();
 
 										continue;
 									}
@@ -60822,8 +62203,8 @@ namespace GW
 								++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
 							}
 						}
-						// Close the gfile since we are no longer using it
-						gfile.CloseFile();
+
+						wavReader.CloseFile();
 
 						XAUDIO2_VOICE_STATE state;
 						LockAsyncRead();
@@ -60851,7 +62232,7 @@ namespace GW
 							UnlockAsyncRead();
 
 							// [TODO:] needs testing
-							if (WaitForSingleObjectEx(hBufferEndEvent, INFINITE, TRUE) == WAIT_FAILED)
+							if (WaitForSingleObjectEx(hBufferEndEvent.get(), INFINITE, TRUE) == WAIT_FAILED)
 								break;
 						}
 
@@ -60864,8 +62245,7 @@ namespace GW
 						}
 						UnlockSyncWrite();
 
-						// This needs to be reset so XAudio2 doesn't remember where it left off playing
-						overlap.Offset = 0;
+						wavReader.Reset();
 
 						// Updates information about playback state
 						atomic_isPlaying = false;
@@ -60897,7 +62277,7 @@ namespace GW
 
 				atomic_isPlaying = false;
 				atomic_isPaused = true;
-				SetEvent(hBufferEndEvent);
+				SetEvent(hBufferEndEvent.get());
 
 				return GReturn::SUCCESS;
 			}
@@ -60935,7 +62315,13 @@ namespace GW
 
 				LockSyncWrite();
 				if (mySourceVoice != nullptr)
-					mySourceVoice->FlushSourceBuffers();
+				{
+					if (FAILED(mySourceVoice->FlushSourceBuffers()))
+					{
+						UnlockSyncWrite();
+						return GReturn::FAILURE;
+					}
+				}
 				UnlockSyncWrite();
 
 				gConcurrent.Converge(0);
@@ -60999,29 +62385,440 @@ namespace GW
 	}// end I
 }// end GW
 
-#undef G_RIFFcc
-#undef G_DATAcc
-#undef G_FMTcc 
-#undef G_WAVEcc
-#undef G_JUNKcc
-//#undef G_XWMAcc
-//#undef G_DPDScc
 #undef G_NUM_OF_OUTPUTS
 #undef G_STREAMING_BUFFER_SIZE
 #undef G_MAX_BUFFER_COUNT
 
 
     #elif (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-        #define G_RIFFcc 'FFIR'
-#define G_DATAcc 'atad'
-#define G_FMTcc  ' tmf'
-#define G_WAVEcc 'EVAW'
-#define G_JUNKcc 'KNUJ'
-//#define G_XWMAcc 'AMWX'
-//#define G_DPDScc 'sdpd'
-#define G_NUM_OF_OUTPUTS 6
+        #define G_NUM_OF_OUTPUTS 6
 #define G_STREAMING_BUFFER_SIZE 65536
 #define G_MAX_BUFFER_COUNT 3
+
+#ifndef WAVREADER_HPP_
+#define WAVREADER_HPP_
+
+
+#include <memory>
+
+#define WR_INVALID_OFFSET 0xFFFFFFFF
+
+// WAV format defines
+#define WR_WAV_FORMAT_PCM 0x0001
+#define WR_WAV_FORMAT_IEEE_FLOAT 0x0003
+
+
+class WavReader
+{
+public:
+    // This is a Windows specific thing, can be ignored on Linux.
+    struct GUID {
+        uint32_t  Data1;
+        uint16_t Data2;
+        uint16_t Data3;
+        uint8_t  Data4[8];
+    };
+
+    struct PCM_FORMAT
+    {
+        uint16_t formatTag;
+        uint16_t channels;
+        uint32_t sampleRate;
+        uint32_t byteRate;
+        uint16_t blockAlign;
+        uint16_t bitsPerSample;
+
+        // For extra information, also known as cbSize
+        uint16_t extraChunkSize;
+    };
+
+    // This is mostly going to stick 1:1 to Windows, but shouldn't affect Linux.
+    struct PCM_HEADER
+    {
+        PCM_FORMAT format;
+
+        union 
+        {
+            uint16_t validBitsPerSample;
+            uint16_t samplesPerBlock;
+            uint16_t reserved;
+        } Samples;
+
+        uint32_t channelMask;
+        GUID subFormat;
+    };
+
+    struct PCM_BUFFER
+    {
+        size_t size;
+        std::unique_ptr<uint8_t[]> data;
+    };
+
+private:
+    enum class WaveTag
+    {
+        RIFF = 0x46464952, // = 'FFIR'
+        DATA = 0x61746164, // = 'atad'
+        FMT = 0x20746D66,  // = ' tmf'
+        WAVE = 0x45564157, // = 'EVAW'
+    };
+
+    PCM_HEADER m_header = {};
+    PCM_BUFFER m_buffer = { 0, nullptr };
+
+    bool m_isSigned = false;
+
+    // This will be set to the offset of the data chunk
+    size_t m_dataOffset = WR_INVALID_OFFSET;
+
+    GW::SYSTEM::GFile m_file;
+
+    bool m_isFileOpen = false;
+
+public:
+    WavReader()
+    {
+        m_file.Create();
+    }
+
+    ~WavReader()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    // This will read the file and store all data inside the buffer as expected.
+    GW::GReturn ReadWAV(const char* path)
+    {
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), 4))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), 4))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.data.reset(new uint8_t[chunkSize]);
+
+                // Zero out the buffer
+                memset(m_buffer.data.get(), 0, static_cast<int>(chunkSize));
+
+                if (-m_file.Read(reinterpret_cast<char*>(m_buffer.data.get()), chunkSize))
+                {
+                    // could not read the audio data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                m_buffer.size = chunkSize;
+
+
+                // contains size of the audio buffer in bytes
+                foundAudioData = true;
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> pThrowawayDataBuffer(new char[chunkSize]);
+                if (-m_file.Read(pThrowawayDataBuffer.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+                break;
+            }
+            }
+        }
+
+        CloseFile();
+
+        m_isSigned = m_header.format.bitsPerSample != 8;
+
+    	return result;
+    }
+
+    // This will read the file and store only the offset to the data chunk, keeping the file seeked to the start of the chunk.
+    GW::GReturn ReadWAVOffset(const char* path)
+    {
+#define WR_DEFAULT_CHUNK_SIZE 4
+
+        if (m_isFileOpen)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        if (-m_file.OpenBinaryRead(path))
+        {
+            return GW::GReturn::FILE_NOT_FOUND;
+        }
+
+        m_isFileOpen = true;
+
+        // variables for determining data information
+        unsigned long chunkId = 0;
+        unsigned long chunkSize = 0;
+        unsigned long wavFormat = 0;
+        unsigned long dataOffset = 0;
+        bool foundAudioData = false;
+
+        GW::GReturn result = GW::GReturn::SUCCESS;
+        while (result == GW::GReturn::SUCCESS && !foundAudioData)
+        {
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkId), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk type
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            if (-m_file.Read(reinterpret_cast<char*>(&chunkSize), WR_DEFAULT_CHUNK_SIZE))
+            {
+                // could not acquire chunk size
+                result = GW::GReturn::FAILURE;
+                break;
+            }
+
+            dataOffset += WR_DEFAULT_CHUNK_SIZE;
+
+            switch (static_cast<WaveTag>(chunkId))
+            {
+            case WaveTag::RIFF:
+            {
+                chunkSize = 4;
+                if (-m_file.Read(reinterpret_cast<char*>(&wavFormat), chunkSize))
+                {
+                    // could not acquire the file type
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // Checks if the format is a wav file, if not, it is unsupported
+                if (wavFormat != static_cast<unsigned long>(WaveTag::WAVE))
+                {
+                    // the file is not a wav file
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::FMT:
+            {
+                if (-m_file.Read(reinterpret_cast<char*>(&m_header.format), chunkSize))
+                {
+                    // could not read the chunk data
+                    result = GW::GReturn::FAILURE;
+                    break;
+                }
+
+                // 0x0001 for PCM and 0x0003 for IEEE float
+                if (m_header.format.formatTag != WR_WAV_FORMAT_PCM &&
+                    m_header.format.formatTag != WR_WAV_FORMAT_IEEE_FLOAT)
+                {
+                    // the file is not a PCM file and has some form of compression
+                    result = GW::GReturn::FORMAT_UNSUPPORTED;
+                    break;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+
+            case WaveTag::DATA:
+            {
+                m_buffer.size = chunkSize;
+                m_dataOffset = dataOffset;
+                foundAudioData = true; // audio data is the last part of the file. stop looping
+                break;
+            }
+
+            default:
+            {
+                std::unique_ptr<char> bogusData(new char[chunkSize]);
+                if (-m_file.Read(bogusData.get(), chunkSize))
+                {
+                    // something unknown happened that caused the data to not be read
+                    result = GW::GReturn::FAILURE;
+                }
+
+                dataOffset += chunkSize;
+
+                break;
+            }
+            }
+        }
+
+#undef WR_DEFAULT_CHUNK_SIZE
+
+        return result;
+    }
+
+    GW::GReturn SeekToDataOffset()
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        unsigned int unusedPosition;
+        m_file.Seek(0, m_dataOffset, unusedPosition);
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    GW::GReturn ReadDataChunk(char* buffer, size_t size)
+    {
+        if (!m_isFileOpen || m_dataOffset == WR_INVALID_OFFSET || -m_file.Read(buffer, size))
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        return GW::GReturn::SUCCESS;
+    }
+
+    void CloseFile()
+    {
+        if (m_isFileOpen)
+        {
+            m_file.CloseFile();
+            m_isFileOpen = false;
+        }
+    }
+
+    [[nodiscard]] bool IsSigned() const
+    {
+        return m_isSigned;
+    }
+
+    [[nodiscard]] PCM_BUFFER& GetBuffer() const
+    {
+        return const_cast<PCM_BUFFER&>(m_buffer);
+    }
+
+    [[nodiscard]] size_t GetBufferSize() const
+    {
+        return m_buffer.size;
+    }
+
+    // Returns a mutable reference to the header, this is only used by Windows, but could also be implemented into linux
+    // in the future.
+    [[nodiscard]] PCM_HEADER& GetHeader()
+    {
+        return m_header;
+    }
+
+    // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
+    // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
+    GW::GReturn GetOffset(size_t& offset) const
+    {
+        if (m_dataOffset == WR_INVALID_OFFSET)
+        {
+            return GW::GReturn::FAILURE;
+        }
+
+        offset = m_dataOffset;
+        return GW::GReturn::SUCCESS;
+    }
+
+    // Resets everything back to defaults, discarding any data that was read.
+    void Reset()
+    {
+        m_header = {};
+        m_buffer = {};
+        m_isSigned = false;
+        m_dataOffset = WR_INVALID_OFFSET;
+    }
+};
+
+#undef WR_WAV_FORMAT_PCM
+#undef WR_WAV_FORMAT_IEEE_FLOAT
+#undef WR_INVALID_OFFSET
+
+#endif // WAVREADER_HPP_
+
 
 
 
@@ -61033,218 +62830,14 @@ namespace GW
             protected GThreadSharedImplementation,
             protected IXAudio2VoiceCallback
         {
-            HRESULT LoadOnlyWaveHeaderData(const char* path, WAVEFORMATEXTENSIBLE& myWFX)
-            {
-                HANDLE returnedHandle;
-                wchar_t tpath[1024];
-                MultiByteToWideChar(CP_ACP, 0, path, -1, tpath, 1024);
-                // if can't find file for unit tests, use : _wgetcwd to see where to put test file
-
-                returnedHandle = CreateFile2(tpath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
-
-                if (returnedHandle == INVALID_HANDLE_VALUE)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                if (SetFilePointer(returnedHandle, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                int result = 0; // zero is good
-                unsigned long dwChunktype = 0;
-                unsigned long dwChunkDataSize = 0;
-                unsigned long dwRiffDataSize = 0;
-                unsigned long dwFileType = 0;
-                unsigned long bytesRead = 0;
-                unsigned long dwIsWave = 0;
-
-                while (result == 0)
-                {
-                    unsigned long dwRead;
-                    if (ReadFile(returnedHandle, &dwChunktype, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -1;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-                    if (ReadFile(returnedHandle, &dwChunkDataSize, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -2;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-                    switch (dwChunktype)
-                    {
-                    case G_RIFFcc:
-                    {
-                        dwRiffDataSize = dwChunkDataSize;
-                        dwChunkDataSize = 4;
-                        if (ReadFile(returnedHandle, &dwFileType, 4, &dwRead, NULL) == 0 || dwRead != 4 || dwFileType != G_WAVEcc)
-                        {
-                            result = -3;
-                            break;
-                        }
-                        bytesRead += dwRead;
-
-                        break;
-                    }
-                    case G_WAVEcc:
-                    case G_JUNKcc: // FIX: added to support WAV files exported from various applications
-                    {
-                        if (ReadFile(returnedHandle, &dwIsWave, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                        {
-                            result = -4;
-                            break;
-                        }
-                        bytesRead += dwRead;
-
-                        break;
-                    }
-                    case G_FMTcc:
-                    {
-                        if (ReadFile(returnedHandle, &myWFX, dwChunkDataSize, &dwRead, NULL) == 0 || dwRead != dwChunkDataSize)
-                        {
-                            result = -5;
-                            break;
-                        }
-                        bytesRead += dwRead;
-                        result = 1; // break us out of loop
-                        break;
-                    }
-                    }
-                }
-                CloseHandle(returnedHandle);
-
-                if (result < 0)
-                    return S_FALSE;
-
-                return S_OK;
-            }
-
-            HRESULT FindStreamData(HANDLE _file, unsigned long& _outDataChunk, OVERLAPPED& _overLap)
-            {
-                // Assumes that the file is opened.
-                if (_file == INVALID_HANDLE_VALUE)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                if (SetFilePointer(_file, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-                    return HRESULT_FROM_WIN32(GetLastError());
-
-                HRESULT theResult = S_OK;
-                WAVEFORMATEXTENSIBLE myWFX;
-
-                int result = 0; // zero is good
-                unsigned long dwChunktype = 0;
-                unsigned long dwChunkDataSize = 0;
-                unsigned long dwRiffDataSize = 0;
-                unsigned long dwFileType = 0;
-                unsigned long bytesRead = 0;
-
-                unsigned long dwIsWave = 0;
-                unsigned long throwAwayValue = 0;
-                bool foundAudioData = false;
-
-                while (result == 0 && foundAudioData == false)
-                {
-                    unsigned long dwRead;
-                    if (ReadFile(_file, &dwChunktype, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -1;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-
-                    if (ReadFile(_file, &dwChunkDataSize, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                    {
-                        result = -2;
-                        break;
-                    }
-                    bytesRead += dwRead;
-
-                    switch (dwChunktype)
-                    {
-                    case G_RIFFcc:
-                    {
-                        dwRiffDataSize = dwChunkDataSize;
-                        dwChunkDataSize = 4;
-                        if (ReadFile(_file, &dwFileType, 4, &dwRead, NULL) == 0 || dwRead != 4 || dwFileType != G_WAVEcc)
-                        {
-                            result = -3;
-                            break;
-                        }
-                        bytesRead += dwRead;
-                        break;
-                    }
-                    case G_WAVEcc:
-                    {
-                        if (ReadFile(_file, &dwIsWave, 4, &dwRead, NULL) == 0 || dwRead != 4)
-                        {
-                            result = -4;
-                            break;
-                        }
-                        bytesRead += dwRead;
-                        break;
-                    }
-                    case G_FMTcc:
-                    {
-                        if (ReadFile(_file, &myWFX, dwChunkDataSize, &dwRead, NULL) == 0 || dwRead != dwChunkDataSize)
-                        {
-                            result = -5;
-                            break;
-                        }
-                        bytesRead += dwRead;
-                        break;
-                    }
-                    case G_DATAcc:
-                    {
-                        // Found the Audio data
-                        _outDataChunk = dwChunkDataSize; // contains size of the audio buffer in bytes
-                        _overLap.Offset = bytesRead;	 // Sets the overlap to where we are
-                        foundAudioData = true;			 // We found the data now to exit the function
-                        break;
-                    }
-                    default:
-                    {
-                        int sizeToRead = sizeof(throwAwayValue);
-                        int totalChunkData = dwChunkDataSize;
-                        while (totalChunkData > 0)
-                        {
-                            if (sizeToRead > totalChunkData)
-                                sizeToRead = totalChunkData;
-
-                            if (ReadFile(_file, &throwAwayValue, sizeToRead, &dwRead, NULL) == 0 || dwRead != sizeToRead)
-                            {
-                                result = -7;
-                                totalChunkData = 0;
-                            }
-
-                            bytesRead += dwRead;
-                            totalChunkData -= dwRead;
-                        }
-                        break;
-                    }
-                    }
-
-                    if (bytesRead - 8 >= dwRiffDataSize) // excludes the first 8 byte header information
-                        break;
-                }
-
-                // If there was a result error OR no Audio data was found return S_FALSE
-                if (result < 0 || foundAudioData == false)
-                    theResult = S_FALSE;
-
-                return theResult;
-            }
-
-            void STDMETHODCALLTYPE OnBufferStart(void*) { ResetEvent(hBufferEndEvent); }
-            void STDMETHODCALLTYPE OnBufferEnd(void*) { SetEvent(hBufferEndEvent); }
+            void STDMETHODCALLTYPE OnBufferStart(void*) override { ResetEvent(hBufferEndEvent.get()); }
+            void STDMETHODCALLTYPE OnBufferEnd(void*) override { SetEvent(hBufferEndEvent.get()); }
             // Required studs as IXAudio2VoiceCallback is an abstract class
-            void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) {}
-            void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() {}
-            void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) {}
-            void STDMETHODCALLTYPE OnStreamEnd() {}
-            void STDMETHODCALLTYPE OnLoopEnd(void*) {}
+            void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
+            void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
+            void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) override {}
+            void STDMETHODCALLTYPE OnStreamEnd() override {}
+            void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
 
             std::atomic_bool atomic_isPlaying = false;
             std::atomic_bool atomic_isPaused = false;
@@ -61255,64 +62848,63 @@ namespace GW
             float globalMusicVolume = 1.0f; // global music volume
             float volume = 1.0f; // volume of this sound
             unsigned int numOfChannels = 0;
-            OVERLAPPED overlap = { 0 };
 
-            IXAudio2SourceVoice* mySourceVoice = nullptr;
-            IXAudio2SubmixVoice* mySubmixVoice = nullptr;
-            char* filePath;
-            HANDLE hBufferEndEvent;
+            std::function<void(IXAudio2SourceVoice*)> mySourceVoiceDestructor = [&](IXAudio2SourceVoice* sourceVoice)
+            {
+                if (sourceVoice)
+                    sourceVoice->DestroyVoice();
+            };
+            std::unique_ptr<IXAudio2SourceVoice, decltype(mySourceVoiceDestructor)> mySourceVoice{nullptr, mySourceVoiceDestructor};
+
+            std::function<void(IXAudio2SubmixVoice*)> mySubmixVoiceDestructor = [&](IXAudio2SubmixVoice* submixVoice)
+            {
+                if (submixVoice)
+                    submixVoice->DestroyVoice();
+            };
+            std::unique_ptr<IXAudio2SubmixVoice, decltype(mySubmixVoiceDestructor)> mySubmixVoice{nullptr, mySubmixVoiceDestructor};
+            std::unique_ptr<char> filePath{nullptr};
+            std::unique_ptr<void, decltype(&CloseHandle)> hBufferEndEvent{nullptr, &CloseHandle};
 
             float       channelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // channel volumes of this sound
             float masterChannelVolumes[6] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }; // global master volumes
             GW::AUDIO::GAudio gAudio;
             GW::CORE::GEventReceiver gReceiver;
             GW::SYSTEM::GConcurrent gConcurrent;
-            BYTE buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE];
+            char buffers[G_MAX_BUFFER_COUNT][G_STREAMING_BUFFER_SIZE] = {0};
 
-            char* CreateFilePath(const char* _constCharArray)
+            static std::unique_ptr<char> CreateFilePath(const char* _constCharArray)
             {
-                int size = 0;
-                for (; size < 1024; ++size)
-                {
-                    if (_constCharArray[size] == '\0')
-                    {
-                        ++size;
-                        break;
-                    }
-                }
-
+	            const size_t size = strlen(_constCharArray) + 1;
                 if (size >= 1024)
                     return nullptr;
 
-                char* charArray = new char[size];
-                memcpy(charArray, _constCharArray, size); // char is 1 byte
+                std::unique_ptr<char> charArray(new char[size]);
+                strcpy_s(charArray.get(), size, _constCharArray);
+
+                // This is here to fix the path and remove mixing of '/' and '\\'
+                for (size_t i = 0; i < size; ++i)
+                {
+                    if (charArray.get()[i] == '/')
+                        charArray.get()[i] = '\\';
+                }
 
                 return charArray;
             }
 
         public:
-            virtual ~GMusicImplementation()
+            ~GMusicImplementation() override
             {
-                Stop();
+	            GMusicImplementation::Stop();
 
                 // We do not need to check for GAudio proxy here, since those handles would get cleaned up 
                 // in the event callback if GAudio gets deleted first
-                LockSyncWrite();
-                if (mySourceVoice)
-                    mySourceVoice->DestroyVoice();
-
-                if (mySubmixVoice)
-                    mySubmixVoice->DestroyVoice();
-                UnlockSyncWrite();
-
-                if (filePath)
-                    delete[] filePath;
-
-                if (hBufferEndEvent)
-                    CloseHandle(hBufferEndEvent);
+	            GMusicImplementation::LockSyncWrite();
+                mySourceVoice = nullptr;
+                mySubmixVoice = nullptr;
+	            GMusicImplementation::UnlockSyncWrite();
             }
 
-            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, float _volume = 1.0f)
+            GReturn Create(const char* _path, GW::AUDIO::GAudio _audio, const float _volume = 1.0f)
             {
                 if (!_path || !_audio)
                     return GReturn::INVALID_ARGUMENT;
@@ -61326,26 +62918,32 @@ namespace GW
                     return GReturn::INVALID_ARGUMENT;
 
                 gAudio = _audio;
-                auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
-                hBufferEndEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE);
+                const auto audioImplementation = std::dynamic_pointer_cast<GW::I::GAudioImplementation>(*_audio);
+                hBufferEndEvent.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
                 if (!hBufferEndEvent)
                     return GReturn::FAILURE;
 
-                WAVEFORMATEXTENSIBLE wfmx;
-                if (LoadOnlyWaveHeaderData(filePath, wfmx) != S_OK)
+                WavReader wavReader;
+                if (-wavReader.ReadWAVOffset(filePath.get()))
                     return GReturn::FAILURE;
 
+                auto& header = wavReader.GetHeader();
                 // Size, in bytes, of extra format information appended to the end of the WAVEFORMATEX structure. (for non-PCM formats)
-                wfmx.Format.cbSize = (wfmx.Format.wFormatTag > 1) ? 22 : 0;
-                numOfChannels = static_cast<unsigned int>(wfmx.Format.nChannels);
-                if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&mySubmixVoice, G_NUM_OF_OUTPUTS, wfmx.Format.nSamplesPerSec) != S_OK)
-                    return GReturn::FAILURE;
+                header.format.extraChunkSize = (header.format.formatTag > 1) ? 22 : 0;
+                numOfChannels = static_cast<unsigned int>(header.format.channels);
 
-                XAUDIO2_SEND_DESCRIPTOR mscSendDcsp = { 0, mySubmixVoice };
-                XAUDIO2_VOICE_SENDS mscSendList = { 1, &mscSendDcsp };
-
-                if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&mySourceVoice, &wfmx.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &mscSendList) != S_OK)
+                IXAudio2SubmixVoice* submixVoice = nullptr;
+                if (audioImplementation->XAudioData.myAudio->CreateSubmixVoice(&submixVoice, G_NUM_OF_OUTPUTS, header.format.sampleRate) != S_OK)
                     return GReturn::FAILURE;
+                mySubmixVoice.reset(submixVoice);
+
+                XAUDIO2_SEND_DESCRIPTOR mscSendDcsp = { 0, mySubmixVoice.get() };
+                const XAUDIO2_VOICE_SENDS mscSendList = { 1, &mscSendDcsp };
+
+                IXAudio2SourceVoice* sourceVoice = nullptr;
+                if (audioImplementation->XAudioData.myAudio->CreateSourceVoice(&sourceVoice, reinterpret_cast<const WAVEFORMATEX*>(&header.format), 0, XAUDIO2_DEFAULT_FREQ_RATIO, this, &mscSendList) != S_OK)
+                    return GReturn::FAILURE;
+                mySourceVoice.reset(sourceVoice);
 
                 globalMusicVolume = audioImplementation->musicVolume;
                 masterVolume = audioImplementation->masterVolume;
@@ -61367,8 +62965,6 @@ namespace GW
                 if (result != GReturn::SUCCESS) // Events are suppressed
                     return result;
 
-                overlap.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
                 return gReceiver.Create(_audio, [&]()
                     {
                         GW::GEvent gEvent;
@@ -61386,17 +62982,8 @@ namespace GW
                             Stop();
                             // Need to cleanup XAudio handles before GAudio is deleted
                             LockSyncWrite();
-                            if (mySourceVoice)
-                            {
-                                mySourceVoice->DestroyVoice();
-                                mySourceVoice = nullptr;
-                            }
-
-                            if (mySubmixVoice)
-                            {
-                                mySubmixVoice->DestroyVoice();
-                                mySubmixVoice = nullptr;
-                            }
+                            mySourceVoice = nullptr;
+                            mySubmixVoice = nullptr;
                             UnlockSyncWrite();
                             break;
                         }
@@ -61466,7 +63053,7 @@ namespace GW
                     });
             }
 
-            GReturn SetChannelVolumes(const float* _values, unsigned int _numChannels) override
+            GReturn SetChannelVolumes(const float* _values, const unsigned int _numChannels) override
             {
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
@@ -61493,7 +63080,7 @@ namespace GW
                 {
                     if (trueIndex < _numChannels)
                     {
-                        float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
+	                    const float matrixVolume = channelVolumes[trueIndex] * masterChannelVolumes[trueIndex];
                         matrix[i] = matrixVolume;
                         matrix[i + 1] = matrixVolume;
                         trueIndex++;
@@ -61507,7 +63094,7 @@ namespace GW
                 }
 
                 LockSyncWrite();
-                if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice, sourceChannels, G_NUM_OF_OUTPUTS, matrix)))
+                if (mySourceVoice == nullptr || FAILED(mySourceVoice->SetOutputMatrix(mySubmixVoice.get(), sourceChannels, G_NUM_OF_OUTPUTS, matrix)))
                 {
                     UnlockSyncWrite();
                     return GReturn::FAILURE;
@@ -61541,7 +63128,7 @@ namespace GW
                 return GReturn::SUCCESS;
             }
 
-            GReturn Play(bool _loop = false) override
+            GReturn Play(const bool _loop = false) override
             {
                 if (!gAudio)
                     return GReturn::PREMATURE_DEALLOCATION;
@@ -61550,8 +63137,7 @@ namespace GW
 
                 if (atomic_isPlaying || atomic_isComplete)
                 {
-                    GReturn result = Stop();
-
+	                const GReturn result = Stop();
                     if (result != GReturn::SUCCESS)
                         return result;
                 }
@@ -61571,168 +63157,145 @@ namespace GW
                     atomic_isPlaying = true;
 
                     gConcurrent.BranchSingular([&]()
-                        {
-                            wchar_t tpath[1024];
-                            MultiByteToWideChar(CP_ACP, 0, filePath, -1, tpath, 1024);
-                            // if can't find file for unit tests, use : _wgetcwd to see where to put test file
+                    {
+                        WavReader wavReader;
+                        if (-wavReader.ReadWAVOffset(filePath.get()))
+                            return GReturn::FAILURE;
 
-                            HANDLE theFile = CreateFile2(tpath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+	                    int currentDiskReadBuffer = 0;
+	                    DWORD currentPosition = 0;
 
-                            if (theFile == INVALID_HANDLE_VALUE)
-                                return GReturn::FAILURE;
+                        const size_t bufferSize = wavReader.GetBufferSize();
+	                    while (currentPosition < bufferSize && atomic_stopFlag == false)
+	                    {
+		                    if (atomic_isPlaying)
+		                    {
+			                    const DWORD cbValid = (G_STREAMING_BUFFER_SIZE < (bufferSize - currentPosition))
+				                                          ? G_STREAMING_BUFFER_SIZE // if less
+				                                          : (bufferSize - currentPosition); // if greater or equal
 
-                            if (SetFilePointer(theFile, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-                                return GReturn::FAILURE;
+                                if (-wavReader.ReadDataChunk(buffers[currentDiskReadBuffer], cbValid))
+                                    continue;
 
-                            int CurrentDiskReadBuffer = 0;
-                            DWORD CurrentPosition = 0;
-                            DWORD cbWaveSize = 0;
+			                    // update the file position to where it will be once the read finishes
+			                    currentPosition += cbValid;
 
-                            if (FindStreamData(theFile, cbWaveSize, overlap) != S_OK)
-                                return GReturn::FAILURE;
+			                    XAUDIO2_VOICE_STATE state = {0};
+			                    while (atomic_isPlaying)
+			                    {
+				                    LockAsyncRead();
+				                    if (mySourceVoice == nullptr)
+				                    {
+					                    UnlockAsyncRead();
+					                    return GReturn::FAILURE;
+				                    }
+				                    mySourceVoice->GetState(&state);
+				                    UnlockAsyncRead();
 
-                            //GW::AUDIO::GAudio::burst_r burstAudio = *gAudio; // hold onto GAudio
-                            while (CurrentPosition < cbWaveSize && atomic_stopFlag == false)
-                            {
-                                if (atomic_isPlaying)
-                                {
-                                    DWORD dwRead;
-                                    DWORD cbValid = (G_STREAMING_BUFFER_SIZE < (cbWaveSize - CurrentPosition))
-                                        ? G_STREAMING_BUFFER_SIZE // if less
-                                        : (cbWaveSize - CurrentPosition); // if greater or equal
+				                    if (state.BuffersQueued >= G_MAX_BUFFER_COUNT - 1)
+				                    {
+					                    if (WaitForSingleObjectEx(hBufferEndEvent.get(), INFINITE, TRUE) == WAIT_FAILED)
+						                    break; // if deadlocks on pause check here <REMINDER>
+				                    }
+				                    else break;
+			                    }
 
-                                    if (ReadFile(theFile, buffers[CurrentDiskReadBuffer], G_STREAMING_BUFFER_SIZE, &dwRead, &overlap) == 0)
-                                        continue;
+			                    /*
+			                    FOR FUTURE AUDIO DEVELOPER
+			                    PCM FUNCTION POINTER GOES HERE
+			                    for(int i = 0; i < cbValid; i++)
+			                    {
+			                        dataFunction(buffers[CurrentDiskReadBuffer][i]);
+			                    }
+			                    */
 
-                                    overlap.Offset += cbValid;
+			                    XAUDIO2_BUFFER buf = {0};
+			                    buf.AudioBytes = cbValid;
+			                    buf.pAudioData = reinterpret_cast<const BYTE*>(buffers[currentDiskReadBuffer]);
 
-                                    // update the file position to where it will be once the read finishes
-                                    CurrentPosition += cbValid;
+			                    if (currentPosition >= bufferSize)
+			                    {
+				                    if (atomic_isLooping)
+				                    {
+					                    LockSyncWrite();
+					                    if (mySourceVoice == nullptr || FAILED(mySourceVoice->SubmitSourceBuffer(&buf)))
+					                    {
+						                    UnlockSyncWrite();
+						                    return GReturn::FAILURE;
+					                    }
+					                    UnlockSyncWrite();
 
-                                    DWORD NumberBytesTransfered;
-                                    GetOverlappedResult(theFile, &overlap, &NumberBytesTransfered, true);
-                                    XAUDIO2_VOICE_STATE state = { 0 };
+					                    ++currentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
+					                    currentPosition = 0;
 
-
-                                    while (atomic_isPlaying)
-                                    {
-                                        LockAsyncRead();
-                                        if (mySourceVoice == nullptr)
-                                        {
-                                            UnlockAsyncRead();
+                                        if (-wavReader.SeekToDataOffset())
                                             return GReturn::FAILURE;
-                                        }
-                                        mySourceVoice->GetState(&state);
-                                        UnlockAsyncRead();
 
-                                        if (state.BuffersQueued >= G_MAX_BUFFER_COUNT - 1)
-                                        {
-                                            if (WaitForSingleObjectEx(hBufferEndEvent, INFINITE, TRUE) == WAIT_FAILED)
-                                                break; // if deadlocks on pause check here <REMINDER>
-                                        }
-                                        else break;
-                                    }
+					                    continue;
+				                    }
+				                    else
+					                    buf.Flags = XAUDIO2_END_OF_STREAM;
+			                    }
 
-                                    /*
-                                    FOR FUTURE AUDIO DEVELOPER
-                                    PCM FUNCTION POINTER GOES HERE
-                                    for(int i = 0; i < cbValid; i++)
-                                    {
-                                        dataFunction(buffers[CurrentDiskReadBuffer][i]);
-                                    }
-                                    */
+			                    LockSyncWrite();
+			                    if (mySourceVoice == nullptr || FAILED(mySourceVoice->SubmitSourceBuffer(&buf)))
+			                    {
+				                    UnlockSyncWrite();
+				                    return GReturn::FAILURE;
+			                    }
+			                    UnlockSyncWrite();
+			                    ++currentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
+		                    }
+	                    }
 
-                                    XAUDIO2_BUFFER buf = { 0 };
-                                    buf.AudioBytes = cbValid;
-                                    buf.pAudioData = buffers[CurrentDiskReadBuffer];
+                        wavReader.CloseFile();
 
-                                    if (CurrentPosition >= cbWaveSize)
-                                    {
-                                        if (atomic_isLooping)
-                                        {
-                                            LockSyncWrite();
-                                            if (mySourceVoice == nullptr || FAILED(mySourceVoice->SubmitSourceBuffer(&buf)))
-                                            {
-                                                UnlockSyncWrite();
-                                                return GReturn::FAILURE;
-                                            }
-                                            UnlockSyncWrite();
-                                            ++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
-                                            CurrentPosition = 0;
-                                            if (SetFilePointer(theFile, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
-                                                return GReturn::FAILURE;
-                                            // sets the offset to skip right to the streaming data. Used to be overlap.offset = 0; and that caused a pop.
-                                            if (FindStreamData(theFile, cbWaveSize, overlap) != S_OK)
-                                                break;
+	                    XAUDIO2_VOICE_STATE state;
+	                    LockAsyncRead();
+	                    if (mySourceVoice == nullptr)
+	                    {
+		                    UnlockAsyncRead();
+		                    return GReturn::FAILURE;
+	                    }
+	                    mySourceVoice->GetState(&state);
+	                    UnlockAsyncRead();
 
-                                            continue;
-                                        }
-                                        else
-                                            buf.Flags = XAUDIO2_END_OF_STREAM;
-                                    }
+	                    // Waits for last buffers to finish playing
+	                    while (state.BuffersQueued > 0)
+	                    {
+		                    if (atomic_stopFlag == true)
+			                    break;
 
-                                    LockSyncWrite();
-                                    if (mySourceVoice == nullptr || FAILED(mySourceVoice->SubmitSourceBuffer(&buf)))
-                                    {
-                                        UnlockSyncWrite();
-                                        return GReturn::FAILURE;
-                                    }
-                                    UnlockSyncWrite();
-                                    ++CurrentDiskReadBuffer %= G_MAX_BUFFER_COUNT;
-                                }
-                            }
-                            // Closes the Handle since we are no longer using it
-                            CloseHandle(theFile);
+		                    LockAsyncRead();
+		                    if (mySourceVoice == nullptr)
+		                    {
+			                    UnlockAsyncRead();
+			                    return GReturn::FAILURE;
+		                    }
+		                    mySourceVoice->GetState(&state);
+		                    UnlockAsyncRead();
 
-                            XAUDIO2_VOICE_STATE state;
-                            LockAsyncRead();
-                            if (mySourceVoice == nullptr)
-                            {
-                                UnlockAsyncRead();
-                                return GReturn::FAILURE;
-                            }
-                            mySourceVoice->GetState(&state);
-                            UnlockAsyncRead();
+		                    // [TODO:] needs testing
+		                    if (WaitForSingleObjectEx(hBufferEndEvent.get(), INFINITE, TRUE) == WAIT_FAILED)
+			                    break;
+	                    }
 
-                            // Waits for last buffers to finish playing
-                            while (state.BuffersQueued > 0)
-                            {
-                                if (atomic_stopFlag == true)
-                                    break;
+	                    // Stops the voice from producing more sound
+	                    LockSyncWrite();
+	                    if (mySourceVoice == nullptr || FAILED(mySourceVoice->Stop()))
+	                    {
+		                    UnlockSyncWrite();
+		                    return GReturn::FAILURE;
+	                    }
+	                    UnlockSyncWrite();
 
-                                LockAsyncRead();
-                                if (mySourceVoice == nullptr)
-                                {
-                                    UnlockAsyncRead();
-                                    return GReturn::FAILURE;
-                                }
-                                mySourceVoice->GetState(&state);
-                                UnlockAsyncRead();
+	                    // Updates information about playback state
+	                    atomic_isPlaying = false;
+	                    atomic_isPaused = false;
+	                    atomic_isComplete = true;
 
-                                // [TODO:] needs testing
-                                if (WaitForSingleObjectEx(hBufferEndEvent, INFINITE, TRUE) == WAIT_FAILED)
-                                    break;
-                            }
-
-                            // Stops the voice from producing more sound
-                            LockSyncWrite();
-                            if (mySourceVoice == nullptr || FAILED(mySourceVoice->Stop()))
-                            {
-                                UnlockSyncWrite();
-                                return GReturn::FAILURE;
-                            }
-                            UnlockSyncWrite();
-
-                            // This needs to be reset so XAudio2 doesn't remember where it left off playing
-                            overlap.Offset = 0;
-
-                            // Updates information about playback state
-                            atomic_isPlaying = false;
-                            atomic_isPaused = false;
-                            atomic_isComplete = true;
-
-                            return GReturn::SUCCESS;
-                        });
+	                    return GReturn::SUCCESS;
+                    });
                 }
 
                 return GReturn::SUCCESS;
@@ -61756,7 +63319,7 @@ namespace GW
 
                 atomic_isPlaying = false;
                 atomic_isPaused = true;
-                SetEvent(hBufferEndEvent);
+                SetEvent(hBufferEndEvent.get());
 
                 return GReturn::SUCCESS;
             }
@@ -61858,13 +63421,6 @@ namespace GW
     }// end I
 }// end GW
 
-#undef G_RIFFcc
-#undef G_DATAcc
-#undef G_FMTcc 
-#undef G_WAVEcc
-#undef G_JUNKcc
-//#undef G_XWMAcc
-//#undef G_DPDScc
 #undef G_NUM_OF_OUTPUTS
 #undef G_STREAMING_BUFFER_SIZE
 #undef G_MAX_BUFFER_COUNT
@@ -61971,9 +63527,7 @@ namespace GW
 }
 
 #elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-    #include <math.h>
-
-namespace GW
+    namespace GW
 {
 	namespace I
 	{
@@ -61992,7 +63546,7 @@ namespace GW
 			float maxRadius = 50.0f;
 			float volume = 1.0f;
 
-			GReturn CalculateRatio(float theta, float spread, float start, float end, float& outRatio)
+			static GReturn CalculateRatio(const float theta, const float spread, const float start, const float end, float& outRatio)
 			{
 				if (start >= end)
 					return GReturn::FAILURE;
@@ -62000,15 +63554,15 @@ namespace GW
 				if (spread > 180.0f)
 					return GReturn::FAILURE;
 
-				float startBound = theta - spread;
-				float endBound = theta + spread;
-				float deltaSection = end - start;
+				const float startBound = theta - spread;
+				const float endBound = theta + spread;
+				const float deltaSection = end - start;
 
-				float RrR = (endBound - start) / deltaSection;
-				float RlR = (startBound - start) / deltaSection;
+				const float RrR = (endBound - start) / deltaSection;
+				const float RlR = (startBound - start) / deltaSection;
 
-				float clampR = G_CLAMP(RrR, 0.0f, 1.0f);
-				float clampL = G_CLAMP(RlR, 0.0f, 1.0f);
+				const float clampR = G_CLAMP(RrR, 0.0f, 1.0f);
+				const float clampL = G_CLAMP(RlR, 0.0f, 1.0f);
 
 				outRatio = clampR - clampL;
 
@@ -62016,13 +63570,14 @@ namespace GW
 			}
 
 			GReturn GetSpatializedChannelVolumes(GW::MATH::GVECTORF _position, float _volume,
-				float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation, unsigned int _channelNum,
-				float* _outChannelVolumes)
+			                                     const float _minRadius, const float _maxRadius,
+			                                     const GW::AUDIO::GATTENUATION _attenuation, const unsigned int _channelNum,
+			                                     float* _outChannelVolumes)
 			{
-				if ((int)_attenuation > G_IMPLEMENTED_ATTENUATIONS || (int)_attenuation < 0)
+				if (static_cast<int>(_attenuation) > G_IMPLEMENTED_ATTENUATIONS || static_cast<int>(_attenuation) < 0)
 					return GReturn::INVALID_ARGUMENT;
 
-				GW::MATH::GVECTORF localPosition;
+				GW::MATH::GVECTORF localPosition{};
 				GReturn result = GW::MATH::GMatrix::VectorXMatrixF(transform, _position, localPosition);
 
 				if (result != GReturn::SUCCESS)
@@ -62064,9 +63619,9 @@ namespace GW
 				}
 
 				// spread = (1 - DFlat / DFlatMax) * 180    -float spread [0, 180]
-				float spread = (1 - G_CLAMP(dFlat / _maxRadius, 0, 1)) * 180;
+				const float spread = (1 - G_CLAMP(dFlat / _maxRadius, 0, 1)) * 180;
 
-				GW::MATH::GVECTORF cross;
+				GW::MATH::GVECTORF cross{};
 				GW::MATH::GVECTORF forward = {{{0.0f, 0.0f, 1.0f, 0.0f}}};
 				result = GW::MATH::GVector::CrossVector3F(forward, localPosition, cross);
 
@@ -62081,9 +63636,6 @@ namespace GW
 
 				theta = (cross.y > 0) ? acosf(theta) : -1 * acosf(theta);
 				theta = G_RADIAN_TO_DEGREE_F(theta);
-
-				if (result != GReturn::SUCCESS)
-					return result;
 
 				float ratio = 0;
 				//float channelVolumes[6] = { 0, 0, 0, 0, 0, 0 };
@@ -62161,6 +63713,8 @@ namespace GW
 								return result;
 						}
 						break;
+					default:
+						break;
 					}
 
 					_outChannelVolumes[i] = ratio * _volume;
@@ -62176,7 +63730,7 @@ namespace GW
 					return GReturn::PREMATURE_DEALLOCATION;
 
 				float volumes[6] = { 0, 0, 0, 0, 0, 0 };
-				GReturn result = GetSpatializedChannelVolumes(position, volume, minRadius, maxRadius, attenuation, 6, volumes);
+				const GReturn result = GetSpatializedChannelVolumes(position, volume, minRadius, maxRadius, attenuation, 6, volumes);
 
 				if (result != GReturn::SUCCESS)
 					return result;
@@ -62184,7 +63738,7 @@ namespace GW
 				return SetChannelVolumes(volumes, 6);
 			}
 		public:
-			GReturn Create(const char* _path, float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation, GW::AUDIO::GAudio3D _audio3D, float _volume = 1.0f)
+			GReturn Create(const char* _path, const float _minRadius, const float _maxRadius, const GW::AUDIO::GATTENUATION _attenuation, GW::AUDIO::GAudio3D _audio3D, const float _volume = 1.0f)
 			{
 				if (!_path || !_audio3D)
 					return GReturn::INVALID_ARGUMENT;
@@ -62198,11 +63752,11 @@ namespace GW
 				gAudio3D = _audio3D;
 				volume = _volume;
 
-				GReturn result = GSoundImplementation::Create(_path, _audio3D, _volume);
+				const GReturn result = GSoundImplementation::Create(_path, _audio3D, _volume);
 				if (result != GReturn::SUCCESS)
 					return result;
-				
-				auto audio3DImplementation = std::dynamic_pointer_cast<GW::I::GAudio3DImplementation>(*_audio3D);
+
+				const auto audio3DImplementation = std::dynamic_pointer_cast<GW::I::GAudio3DImplementation>(*_audio3D);
 				return gReceiver.Create(audio3DImplementation->gEventGen, [&]()
 				{
 					GW::GEvent event;
@@ -62217,7 +63771,7 @@ namespace GW
 							{
 								GW::AUDIO::GAudio3D::EVENT_DATA eventData;
 								event.Read(eventData);
-								GW::MATH::GMATRIXF eventMatrix;
+								GW::MATH::GMATRIXF eventMatrix{};
 								GW::MATH::GMatrix::ConvertQuaternionF(eventData.quaternion, eventMatrix);
 								eventMatrix.row4 = eventData.position;
 								listener = eventMatrix;
@@ -62227,7 +63781,7 @@ namespace GW
 							{
 								GW::AUDIO::GAudio3D::EVENT_DATA eventData;
 								event.Read(eventData);
-								GW::MATH::GMATRIXF eventMatrix;
+								GW::MATH::GMATRIXF eventMatrix{};
 								GW::MATH::GMatrix::ConvertQuaternionF(eventData.quaternion, eventMatrix);
 								eventMatrix.row4 = eventData.position;
 								transform = eventMatrix;
@@ -62242,7 +63796,7 @@ namespace GW
 				});
 			}
 
-			GReturn UpdatePosition(GW::MATH::GVECTORF _position) override
+			GReturn UpdatePosition(const GW::MATH::GVECTORF _position) override
 			{
 				if (!gAudio3D)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -62251,12 +63805,12 @@ namespace GW
 				return Spatialize();
 			}
 
-			GReturn UpdateAttenuation(float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation) override
+			GReturn UpdateAttenuation(const float _minRadius, const float _maxRadius, const GW::AUDIO::GATTENUATION _attenuation) override
 			{
 				if (!gAudio3D)
 					return GReturn::PREMATURE_DEALLOCATION;
 
-				if ((int)_attenuation > G_IMPLEMENTED_ATTENUATIONS || (int)_attenuation < 0)
+				if (static_cast<int>(_attenuation) > G_IMPLEMENTED_ATTENUATIONS || static_cast<int>(_attenuation) < 0)
 					return GReturn::INVALID_ARGUMENT;
 
 				if (_minRadius > _maxRadius)
@@ -62269,7 +63823,7 @@ namespace GW
 				return Spatialize();
 			}
 
-			GReturn SetVolume(float _newVolume) override
+			GReturn SetVolume(const float _newVolume) override
 			{
 				if (_newVolume < 0.0f)
 					return GReturn::INVALID_ARGUMENT;
@@ -62385,9 +63939,7 @@ namespace GW
 }
 
 #elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-    #include <math.h>
-
-namespace GW
+    namespace GW
 {
 	namespace I
 	{
@@ -62406,7 +63958,7 @@ namespace GW
 			float maxRadius = 50.0f;
 			float volume = 1.0f;
 
-			GReturn CalculateRatio(float theta, float spread, float start, float end, float& outRatio)
+			static GReturn CalculateRatio(const float theta, const float spread, const float start, const float end, float& outRatio)
 			{
 				if (start >= end)
 					return GReturn::FAILURE;
@@ -62414,15 +63966,15 @@ namespace GW
 				if (spread > 180.0f)
 					return GReturn::FAILURE;
 
-				float startBound = theta - spread;
-				float endBound = theta + spread;
-				float deltaSection = end - start;
+				const float startBound = theta - spread;
+				const float endBound = theta + spread;
+				const float deltaSection = end - start;
 
-				float RrR = (endBound - start) / deltaSection;
-				float RlR = (startBound - start) / deltaSection;
+				const float RrR = (endBound - start) / deltaSection;
+				const float RlR = (startBound - start) / deltaSection;
 
-				float clampR = G_CLAMP(RrR, 0.0f, 1.0f);
-				float clampL = G_CLAMP(RlR, 0.0f, 1.0f);
+				const float clampR = G_CLAMP(RrR, 0.0f, 1.0f);
+				const float clampL = G_CLAMP(RlR, 0.0f, 1.0f);
 
 				outRatio = clampR - clampL;
 
@@ -62430,13 +63982,14 @@ namespace GW
 			}
 
 			GReturn GetSpatializedChannelVolumes(GW::MATH::GVECTORF _position, float _volume,
-				float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation, unsigned int _channelNum,
-				float* _outChannelVolumes)
+			                                     const float _minRadius, const float _maxRadius,
+			                                     const GW::AUDIO::GATTENUATION _attenuation, const unsigned int _channelNum,
+			                                     float* _outChannelVolumes)
 			{
-				if ((int)_attenuation > G_IMPLEMENTED_ATTENUATIONS || (int)_attenuation < 0)
+				if (static_cast<int>(_attenuation) > G_IMPLEMENTED_ATTENUATIONS || static_cast<int>(_attenuation) < 0)
 					return GReturn::INVALID_ARGUMENT;
 
-				GW::MATH::GVECTORF localPosition;
+				GW::MATH::GVECTORF localPosition{};
 				GReturn result = GW::MATH::GMatrix::VectorXMatrixF(transform, _position, localPosition);
 
 				if (result != GReturn::SUCCESS)
@@ -62478,9 +64031,9 @@ namespace GW
 				}
 
 				// spread = (1 - DFlat / DFlatMax) * 180    -float spread [0, 180]
-				float spread = (1 - G_CLAMP(dFlat / _maxRadius, 0, 1)) * 180;
+				const float spread = (1 - G_CLAMP(dFlat / _maxRadius, 0, 1)) * 180;
 
-				GW::MATH::GVECTORF cross;
+				GW::MATH::GVECTORF cross{};
 				GW::MATH::GVECTORF forward = {{{0.0f, 0.0f, 1.0f, 0.0f}}};
 				result = GW::MATH::GVector::CrossVector3F(forward, localPosition, cross);
 
@@ -62495,9 +64048,6 @@ namespace GW
 
 				theta = (cross.y > 0) ? acosf(theta) : -1 * acosf(theta);
 				theta = G_RADIAN_TO_DEGREE_F(theta);
-
-				if (result != GReturn::SUCCESS)
-					return result;
 
 				float ratio = 0;
 				//float channelVolumes[6] = { 0, 0, 0, 0, 0, 0 };
@@ -62575,6 +64125,8 @@ namespace GW
 								return result;
 						}
 						break;
+					default:
+						break;
 					}
 
 					_outChannelVolumes[i] = ratio * _volume;
@@ -62590,7 +64142,7 @@ namespace GW
 					return GReturn::PREMATURE_DEALLOCATION;
 
 				float volumes[6] = { 0, 0, 0, 0, 0, 0 };
-				GReturn result = GetSpatializedChannelVolumes(position, volume, minRadius, maxRadius, attenuation, 6, volumes);
+				const GReturn result = GetSpatializedChannelVolumes(position, volume, minRadius, maxRadius, attenuation, 6, volumes);
 
 				if (result != GReturn::SUCCESS)
 					return result;
@@ -62598,7 +64150,9 @@ namespace GW
 				return SetChannelVolumes(volumes, 6);
 			}
 		public:
-			GReturn Create(const char* _path, float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation, GW::AUDIO::GAudio3D _audio3D, float _volume = 1.0f)
+			GReturn Create(const char* _path, const float _minRadius, const float _maxRadius,
+			               const GW::AUDIO::GATTENUATION _attenuation, GW::AUDIO::GAudio3D _audio3D,
+			               const float _volume = 1.0f)
 			{
 				if (!_path || !_audio3D)
 					return GReturn::INVALID_ARGUMENT;
@@ -62612,11 +64166,11 @@ namespace GW
 				gAudio3D = _audio3D;
 				volume = _volume;
 
-				GReturn result = GMusicImplementation::Create(_path, _audio3D, _volume);
+				const GReturn result = GMusicImplementation::Create(_path, _audio3D, _volume);
 				if (result != GReturn::SUCCESS)
 					return result;
 
-				auto audio3DImplementation = std::dynamic_pointer_cast<GW::I::GAudio3DImplementation>(*_audio3D);
+				const auto audio3DImplementation = std::dynamic_pointer_cast<GW::I::GAudio3DImplementation>(*_audio3D);
 				return gReceiver.Create(audio3DImplementation->gEventGen, [&]()
 				{
 					GW::GEvent event;
@@ -62632,7 +64186,7 @@ namespace GW
 									GW::AUDIO::GAudio3D::EVENT_DATA eventData;
 									event.Read(eventData);
 
-									GW::MATH::GMATRIXF eventMatrix;
+									GW::MATH::GMATRIXF eventMatrix{};
 									GW::MATH::GMatrix::ConvertQuaternionF(eventData.quaternion, eventMatrix);
 									eventMatrix.row4 = eventData.position;
 									listener = eventMatrix;
@@ -62644,7 +64198,7 @@ namespace GW
 									GW::AUDIO::GAudio3D::EVENT_DATA eventData;
 									event.Read(eventData);
 
-									GW::MATH::GMATRIXF eventMatrix;
+									GW::MATH::GMATRIXF eventMatrix{};
 									GW::MATH::GMatrix::ConvertQuaternionF(eventData.quaternion, eventMatrix);
 									eventMatrix.row4 = eventData.position;
 									transform = eventMatrix;
@@ -62660,7 +64214,7 @@ namespace GW
 				});
 			}
 
-			GReturn UpdatePosition(GW::MATH::GVECTORF _position) override
+			GReturn UpdatePosition(const GW::MATH::GVECTORF _position) override
 			{
 				if (!gAudio3D)
 					return GReturn::PREMATURE_DEALLOCATION;
@@ -62669,12 +64223,12 @@ namespace GW
 				return Spatialize();
 			}
 
-			GReturn UpdateAttenuation(float _minRadius, float _maxRadius, GW::AUDIO::GATTENUATION _attenuation) override
+			GReturn UpdateAttenuation(const float _minRadius, const float _maxRadius, const GW::AUDIO::GATTENUATION _attenuation) override
 			{
 				if (!gAudio3D)
 					return GReturn::PREMATURE_DEALLOCATION;
 
-				if ((int)_attenuation > G_IMPLEMENTED_ATTENUATIONS || (int)_attenuation < 0)
+				if (static_cast<int>(_attenuation) > G_IMPLEMENTED_ATTENUATIONS || static_cast<int>(_attenuation) < 0)
 					return GReturn::INVALID_ARGUMENT;
 
 				if (_minRadius > _maxRadius)
@@ -62687,7 +64241,7 @@ namespace GW
 				return Spatialize();
 			}
 
-			GReturn SetVolume(float _newVolume) override
+			GReturn SetVolume(const float _newVolume) override
 			{
 				if (_newVolume < 0.0f)
 					return GReturn::INVALID_ARGUMENT;
@@ -70275,19 +71829,19 @@ namespace GW
 static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 // The Major version is auto-generated based on the current year.
-#define GATEWARE_MAJOR 24
+#define GATEWARE_MAJOR 25
 // The Minor version is auto-generated based on the current day of the year.
-#define GATEWARE_MINOR 68
+#define GATEWARE_MINOR 5
 // The Patch version is auto-generated based on the current UTC hour of the day.
-#define GATEWARE_PATCH 21
+#define GATEWARE_PATCH 20
 // Pulled directly from GIT  
 #define GATEWARE_BRANCH "master"
 // Pulled directly from GIT
-#define GATEWARE_COMMIT_HASH 0x9422a94
+#define GATEWARE_COMMIT_HASH 0x721e75d
 // Standard Window Title Bar
-#define GATEWARE_VERSION_STRING "Gateware v24.68.21"
+#define GATEWARE_VERSION_STRING "Gateware v25.5.20"
 // Window Title Bar displayed in DEBUG builds
-#define GATEWARE_VERSION_STRING_LONG "Gateware v24.68.21 (master) [9422a94]"
+#define GATEWARE_VERSION_STRING_LONG "Gateware v25.5.20 (master) [721e75d]"
 
 // Distinguishes the platform Gateware is compiling for
 //// This file contains defines for platform-specific code
@@ -70337,6 +71891,8 @@ static_assert(sizeof(void*) == 8, "Gateware supports x64 platforms only.");
 
 #ifndef GVULKANHELPER_HPP
 #define GVULKANHELPER_HPP
+
+#include <cstdio>
 
 namespace GvkHelper {
 	//Extension, Layers and Enumeration Support (RETURNS: VK_FALSE IS SUCCESS, VK_TRUE IS FAILURE)
@@ -71678,7 +73234,10 @@ namespace GW
 						return GReturn::INVALID_ARGUMENT;
 
 					//Error Check #5: Supported Initialization Masks
-					unsigned long long allowed = GRAPHICS::DEPTH_BUFFER_SUPPORT | GRAPHICS::DEPTH_STENCIL_SUPPORT | (GRAPHICS::MSAA_64X_SUPPORT - GRAPHICS::MSAA_2X_SUPPORT) | GRAPHICS::MSAA_64X_SUPPORT  | GRAPHICS::TRIPLE_BUFFER;
+					unsigned long long allowed = 
+						GRAPHICS::DEPTH_BUFFER_SUPPORT | GRAPHICS::DEPTH_STENCIL_SUPPORT | 
+						(GRAPHICS::MSAA_64X_SUPPORT - GRAPHICS::MSAA_2X_SUPPORT) | GRAPHICS::MSAA_64X_SUPPORT 
+						| GRAPHICS::TRIPLE_BUFFER | GRAPHICS::BINDLESS_SUPPORT;
 					if (~allowed & _initMask)
 						return GReturn::INVALID_ARGUMENT;
 					m_InitMask = _initMask;
@@ -71697,10 +73256,19 @@ namespace GW
 					for (uint32_t i = 0; i < _instanceLayerCount; ++i)
 						m_InstanceLayers[i] = _instanceLayers[i];
 
+					// copy device extensions, leaving room for bindless support
+					std::unique_ptr<const char* []> device_extensions(new const char* [(_deviceExtensionCount + 1)]);
+					device_extensions[_deviceExtensionCount] = nullptr; // don't allow to be garbage
+					for (uint32_t i = 0; i < _deviceExtensionCount; ++i)
+						device_extensions[i] = _deviceExtensions[i];
+					// add bindless support if requested
+					if (m_InitMask & GRAPHICS::BINDLESS_SUPPORT)
+						device_extensions[_deviceExtensionCount++] = VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
+						
 					//Error Check #6: No Swapchain or Surface Support
 					m_InstanceExtensionCount = _instanceExtensionCount;
 					m_DeviceExtensionCount = _deviceExtensionCount;
-					if (CheckCompatibility(_instanceExtensions, _deviceExtensions)) {
+					if (CheckCompatibility(_instanceExtensions, device_extensions.get())) {
 						CleanupVulkanSurface();
 						return GReturn::HARDWARE_UNAVAILABLE;
 					}
@@ -72432,7 +74000,7 @@ namespace GW
 						m_VSync = _vSync;
 						
 						//Clear the Swapchain
-						GReturn g = ResetSwapchain();
+                        GReturn g = ResetSwapchain();
 
 						//Unlock Thread
 						UnlockSyncWrite();
@@ -72775,6 +74343,16 @@ namespace GW
 				create_info.enabledExtensionCount = m_DeviceExtensionCount;
 				create_info.ppEnabledExtensionNames = m_DeviceExtensions;
 
+				// add bindless support if requested
+				VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures{};
+				if (m_InitMask & GRAPHICS::BINDLESS_SUPPORT) {
+					physicalDeviceDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+					physicalDeviceDescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+					physicalDeviceDescriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+					physicalDeviceDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+					physicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+					create_info.pNext = &physicalDeviceDescriptorIndexingFeatures;
+				}
 				//Create the Surface (With Results) [VK_SUCCESS = 0]
 				VkResult r = vkCreateDevice(m_VkPhysicalDevice, &create_info, nullptr, &m_VkDevice);
 
@@ -73156,11 +74734,15 @@ namespace GW
 
 			//Cleanup & Error Check Methods
 			GReturn ResetSwapchain() {
-				//if (m_VkDevice == nullptr)
-                //    return GReturn::FAILURE;
+				if (m_VkDevice == nullptr)
+                    return GReturn::FAILURE;
                 
                 //Wait for Device to finish
 				vkDeviceWaitIdle(m_VkDevice);
+                
+                // free existing objects
+                CleanupSyncObjects();
+                CleanupSwapchain();
 
 				//Update Swapchain Surface Data
 				m_GWindow.GetClientWidth(m_WindowExtent.width);
@@ -87409,6 +88991,9 @@ namespace GW
 			// Minimum amount of space that can be left in a result block's bin before it is considered full and the result must flush instructions
 			static constexpr unsigned short		RESULT_FLUSH_THRESHOLD				= 4;
 
+			// Maximum number of instructions that can be sent to a thread at once (this is ideally replaced by a heuristic in the future)
+			static constexpr unsigned int		MAX_INSTRUCTIONS_PER_THREAD			= 256;
+
 #pragma endregion DEFINES
 #pragma region ENUMS
 
@@ -87418,6 +89003,7 @@ namespace GW
 				UNSUPPORTED				= -1,	// File type is not natively supported by GBlitter
 				UNUSED					=  0,	// File is not used in source data (This value is used during data normalization while importing sources)
 				TGA						= +1,	// TGA (Targa)
+				BMP						= +2,	// BMP (Bitmap)
 			};
 
 			// Color formats for TGA files
@@ -87594,6 +89180,44 @@ namespace GW
 				Byte				pixel_data[128 * 4]; // holds up to 128 pixels (maximum possible in a TGA RLE packet) with up to 4 bytes per pixel
 			};
 #pragma pack(pop)
+
+			// NOTE Byte Labeled info is not necissarly needed after first load. 
+			// pre converted information is used in the conversion process
+#pragma pack(push, 2)
+			struct BmpHeader {									//					  0 
+				Byte signature[2];								// + 2				= 2
+				unsigned int fileSize;							// + 4				= 6
+				Byte reserved1[2];								// + 2				= 10
+				Byte reserved2[2];								// + 2				= 12
+				unsigned int dataOffset;						// + 4				= 14
+			};													// TOTAL:				14 
+			struct DIBV5Header {								//						= 0
+				unsigned int headerSize;						// + 4					= 4
+				int imageWidth;									// + 4					= 8
+				int imageHeight;								// + 4					= 12
+				short int planes; short int bitsPerPixel;		// + 2 , 2				= 16
+				unsigned int compression;						// + 4					= 20
+				unsigned int imageSize;							// + 4					= 24
+				int  xPixelsPerMeter;							// + 4					= 28
+				int  yPixelsPerMeter;							// + 4					= 32
+				unsigned int colorsInColorTable;				// + 4					= 36
+				unsigned int importantColorCount;				// + 4					= 40
+				unsigned int redChannelMask;					// + 4 (big-endian)		= 44
+				unsigned int greenChannelMask;					// + 4 (big-endian)		= 48
+				unsigned int blueChannelMask;					// + 4 (big-endian)		= 52
+				unsigned int alphaChannelMask;					// + 4 (big-endian)		= 56
+				unsigned int colorSpaceType;					// + 4					= 60
+				Byte colorSpaceEndpoints[36];					// + 36					= 96
+				unsigned int gammaForRedChannel;				// + 4					= 100
+				unsigned int gammaForGreenChannel;				// + 4					= 104
+				unsigned int gammaForBlueChannel;				// + 4					= 108
+				unsigned int intent;							// + 4					= 112
+				unsigned int iccProfileData;					// + 4					= 116
+				unsigned int iccProfileSize;					// + 4					= 120
+				unsigned int reserved;							// + 4					= 124
+			};													// TOTAL:				= 124
+#pragma pack(pop)
+
 
 
 			struct Vector2
@@ -87871,6 +89495,9 @@ namespace GW
 				std::vector<ResultBlock>		data;				// result blocks containing result's data
 				std::vector<GReturn>			flush_results;		// results of individual block flush operations
 			};
+
+
+
 
 #pragma endregion STRUCTS
 #pragma region VARIABLES
@@ -88197,6 +89824,8 @@ namespace GW
 				// filter extension and store detected type (0 = contents of both strings are equal)
 				if (strcmp(extension, "tga") == 0)
 					_outFiletype = SOURCE_FILE_TYPE::TGA;
+				else if (strcmp(extension, "bmp") == 0)
+					_outFiletype = SOURCE_FILE_TYPE::BMP;
 				else
 					_outFiletype = SOURCE_FILE_TYPE::UNSUPPORTED;
 				// return success
@@ -88284,6 +89913,156 @@ namespace GW
 				delete[] readBuffer;
 
 				return GReturn::SUCCESS;
+			}
+
+			GReturn readSourceDataFromBMP(const char* _filepath, unsigned int dataType, SourceDataBuffer& _outSourceDataBuffer) {
+
+				GW::SYSTEM::GFile gFile;
+				// create file.
+				if (-gFile.Create())
+					return GReturn::FAILURE;
+				// set file propertys as binary
+				if (-gFile.OpenBinaryRead(_filepath))
+					return GReturn::FILE_NOT_FOUND;
+				
+				// read header
+				BmpHeader header = {};
+				if (-gFile.Read(reinterpret_cast<char*>(&header), sizeof(BmpHeader))) {
+					gFile.CloseFile();
+					return GReturn::FAILURE;
+				}
+
+				// read dib
+				DIBV5Header dib = {};
+				if (-gFile.Read(reinterpret_cast<char*>(&dib), sizeof(DIBV5Header)))
+				{
+					gFile.CloseFile();
+					return GReturn::FAILURE;
+				}
+
+
+				// init out buffer with information required.
+				if (_outSourceDataBuffer.w == 0 && _outSourceDataBuffer.h == 0)
+					initSourceDataBuffer(_outSourceDataBuffer, dib.imageWidth, dib.imageHeight);
+
+				// with dib info and header read we are in place to read the image
+				// read the image size (w*h*c) to a temp buffer for processing
+				std::vector<Byte> readBuffer;
+				readBuffer.resize(dib.imageSize);
+				if (-gFile.Read(reinterpret_cast<char*>(readBuffer.data()), _outSourceDataBuffer.size * (dib.bitsPerPixel / 8))) {
+					gFile.CloseFile();
+					return GReturn::FAILURE;
+				}
+
+
+				if (-gFile.CloseFile()) {
+					//delete[] readBuffer;
+					return GReturn::FAILURE;
+				}
+
+
+				// destination buffer expects rgba unsigned int 4 bytes each
+				// srcBuffer is in an unknown pixel type ..
+				
+				Byte* dstBuffer = nullptr;
+
+				switch (dataType)
+				{
+					case INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::COLOR:
+						dstBuffer = reinterpret_cast<Byte*>(_outSourceDataBuffer.colors);
+						break;
+					case INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::STENCIL:
+						dstBuffer = reinterpret_cast<Byte*>(_outSourceDataBuffer.stencils);
+						break;
+					case INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::LAYER:
+						dstBuffer = reinterpret_cast<Byte*>(_outSourceDataBuffer.layers);
+						break;
+				
+				}
+
+				if (dstBuffer == nullptr) {
+					return GReturn::FAILURE;
+				}
+
+				// read into the destination buffer byte for byte
+				if (dib.compression == 0) // NO COMPRESSION
+				{
+					int numPixels = dib.imageWidth * dib.imageHeight;
+					switch (dataType)
+					{
+					case INTERNAL_PIXEL_ATTRIBUTES::COLOR:
+						// Copy pixel data, flipping vertically
+						for (int y = dib.imageHeight - 1; y >= 0; --y)
+						{
+							for (int x = 0; x < dib.imageWidth; ++x)
+							{
+								// Calculate the index of the current pixel
+								int i = (y * dib.imageWidth + x) * 3; // Assuming RGB 24-bit image
+
+								*dstBuffer++ = readBuffer[i];			// blue
+								*dstBuffer++ = readBuffer[i + 1];		// green
+								*dstBuffer++ = readBuffer[i + 2];		// red
+								*dstBuffer++ = COLOR_CHANNEL_MAX;       // alpha
+							}
+						}
+						break;
+					case INTERNAL_PIXEL_ATTRIBUTES::LAYER:
+					case INTERNAL_PIXEL_ATTRIBUTES::STENCIL:
+						for (int y = dib.imageHeight - 1; y >= 0; --y)
+						{
+							for (int x = 0; x < dib.imageWidth; ++x)
+							{
+								int i = (y * dib.imageWidth + x) * 3; // Assuming RGB 24-bit image
+								*dstBuffer++ = readBuffer[i];
+							}
+						}
+						break;
+					default:
+						break;
+					}
+
+				}
+				else if(dib.compression == 3) // BIT_FIELDS
+				{
+					int numPixels = dib.imageWidth * dib.imageHeight / 4;
+					switch (dataType)
+					{
+					case INTERNAL_PIXEL_ATTRIBUTES::COLOR:
+						for (int y = dib.imageHeight - 1; y >= 0; --y)
+						{
+							for (int x = 0; x < dib.imageWidth; ++x)
+							{
+								// Calculate the index of the current pixel
+								int i = (y * dib.imageWidth + x) * 4; // Assuming RGB 32-bit image
+
+								*dstBuffer++ = readBuffer[i];			// blue
+								*dstBuffer++ = readBuffer[i + 1];		// green
+								*dstBuffer++ = readBuffer[i + 2];		// red
+								*dstBuffer++ = readBuffer[i + 3];       // alpha
+							}
+						}
+						break;
+					case INTERNAL_PIXEL_ATTRIBUTES::LAYER:
+					case INTERNAL_PIXEL_ATTRIBUTES::STENCIL:
+						for (int y = dib.imageHeight - 1; y >= 0; --y)
+						{
+							for (int x = 0; x < dib.imageWidth; ++x)
+							{
+								int i = (y * dib.imageWidth + x) * 4; // Assuming RGB 32-bit image
+								*dstBuffer++ = readBuffer[i];
+							}
+						}
+						break;
+					default:
+						break;
+					}
+				}
+				else 
+				{
+					return GReturn::FORMAT_UNSUPPORTED;
+				}
+
+				return GW::GReturn::SUCCESS;
 			}
 
 			// Creates a source from a source data buffer
@@ -90607,10 +92386,30 @@ namespace GW
 			}
 
 			// GConcurrent-compatible function to flush a single block
+			// After fixing GConcurrent, this original operation seems to be the ideal way to flush a block
 			static void flushResultBlock_Parallel(const void* _unused, ResultBlock* _blockToFlush, unsigned int _blockIndex, const void* _blitter)
 			{
 				GBlitterImplementation* blitter = const_cast<GBlitterImplementation*>(reinterpret_cast<const GBlitterImplementation*>(_blitter));
 				blitter->m_result.flush_results[_blockIndex] = blitter->flushResultBlock_Serial(*_blockToFlush);
+			}
+
+			// GConcurrent-compatible function to flush a single instruction
+			// After fixing GConcurrent, this operation is no longer necessary
+			// We keep it here for reference on how to flush individual instructions
+			static void flushInstructions_Parallel(const void* _unused,
+				std::pair<unsigned short, unsigned int>* _ins, unsigned int _insIndex, const void* _blitter)
+			{
+				GBlitterImplementation* blitter =
+					const_cast<GBlitterImplementation*>(reinterpret_cast<const GBlitterImplementation*>(_blitter));
+
+				// store instruction by reference for neatness
+				ResultBlock& resBlock = blitter->m_result.data[_ins->first];
+				ResultInstruction& resInstr = resBlock.instruction_bin[_ins->second];
+				// determine how to draw the instruction and draw it
+				if (resInstr.flags & DrawOptions::USE_TRANSFORMATIONS)
+					blitter->flushResultInstruction_Transformed(resBlock, resInstr);
+				else
+					blitter->flushResultInstruction_Basic(resBlock, resInstr);
 			}
 
 			// Gets pointers to source block color/layer/stencil data (if present) depending on source's format
@@ -93034,6 +94833,9 @@ namespace GW
 						case SOURCE_FILE_TYPE::TGA:
 							gr = readSourceDataFromTGA(_colorsFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::COLOR, sourceDataBuffer);
 							break;
+						case SOURCE_FILE_TYPE::BMP:
+							gr = readSourceDataFromBMP(_colorsFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::COLOR, sourceDataBuffer);
+							break;
 						default:
 							gr = GReturn::FORMAT_UNSUPPORTED;
 							break;
@@ -93053,6 +94855,9 @@ namespace GW
 						case SOURCE_FILE_TYPE::TGA:
 							gr = readSourceDataFromTGA(_layersFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::LAYER, sourceDataBuffer);
 							break;
+						case SOURCE_FILE_TYPE::BMP:
+							gr = readSourceDataFromBMP(_layersFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::LAYER, sourceDataBuffer);
+							break;
 						default:
 							gr = GReturn::FORMAT_UNSUPPORTED;
 							break;
@@ -93071,6 +94876,9 @@ namespace GW
 					{
 						case SOURCE_FILE_TYPE::TGA:
 							gr = readSourceDataFromTGA(_stencilsFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::STENCIL, sourceDataBuffer);
+							break;
+						case SOURCE_FILE_TYPE::BMP:
+							gr = readSourceDataFromBMP(_stencilsFilepath, INTERNAL_PIXEL_ATTRIBUTES::ELEMENT::STENCIL, sourceDataBuffer);
 							break;
 						default:
 							gr = GReturn::FORMAT_UNSUPPORTED;
@@ -93574,24 +95382,29 @@ namespace GW
 
 #ifdef GBLITTER_DEBUG_SERIAL_FLUSH
 				// iterate through result blocks
-				for (unsigned short b = 0; b < m_result.size_data; ++b)
+				for (unsigned short b = 0; b < m_result.size_data; ++b) {
 					// flush the current block and store the result of the operation
 					m_result.flush_results[b] = flushResultBlock_Serial(m_result.data[b]);
+				}
 #else // process blocks in parallel with GConcurrent; default
-				// flush all blocks' instructions to result
-				m_gFlushThread.BranchParallel(flushResultBlock_Parallel, 1, m_result.size_data, reinterpret_cast<const void*>(this), 0, static_cast<const void*>(nullptr), 0, &m_result.data[0]);
-				// wait until flush finishes
-				m_gFlushThread.Converge(0);
+				
+				// flush all blocks in parallel, each block in the result gets one job in the thread pool
+				// since blocks are independent, they can be processed in parallel
+				// each block has a varying amount of work to do, so the thread pool will balance the load
+				m_gFlushThread.BranchParallel(flushResultBlock_Parallel, 1,
+					m_result.size_data, reinterpret_cast<const void*>(this), 0,
+					static_cast<const void*>(nullptr), 0, m_result.data.data());
+				
+				// wait for all instructions to be processed
+				m_gFlushThread.Converge(1000000); // 1ms spin wait
 #endif
-
 				// determine the result of the flush (if at least one block was flushed, operation was successful; otherwise, operation was redundant)
-				for (unsigned short b = 0; b < m_result.size_data; ++b)
-					if (m_result.flush_results[b] == GReturn::SUCCESS)
-					{
+				for (unsigned short b = 0; b < m_result.size_data; ++b) {
+					if (m_result.flush_results[b] == GReturn::SUCCESS) {
 						result = GReturn::SUCCESS;
 						break;
 					}
-
+				}
 				return result;
 			}
 
@@ -94701,6 +96514,7 @@ inline void RUN_ON_UI_THREAD(dispatch_block_t block)
 
 #endif //endif GATEWARE_DISABLE_DEPENDENCY_TEST
 #endif //endif GDEPENDENCIESTEST_HPP
+
 #ifndef G_WARNING_UNSUPPRESSIONS
 #define G_WARNING_UNSUPPRESSIONS
 
