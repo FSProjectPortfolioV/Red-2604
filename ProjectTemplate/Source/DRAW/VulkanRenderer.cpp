@@ -317,7 +317,7 @@ namespace DRAW
 		vertex_binding_description.stride = sizeof(DRAW::StarVertex);
 		vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		VkVertexInputAttributeDescription vertex_attribute_description[2];
+		VkVertexInputAttributeDescription vertex_attribute_description[3];
 		vertex_attribute_description[0].binding = 0;
 		vertex_attribute_description[0].location = 0;
 		vertex_attribute_description[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -328,11 +328,16 @@ namespace DRAW
 		vertex_attribute_description[1].format = VK_FORMAT_R32_SFLOAT;
 		vertex_attribute_description[1].offset = offsetof(DRAW::StarVertex, brightness);
 
+		vertex_attribute_description[2].binding = 0;
+		vertex_attribute_description[2].location = 2;
+		vertex_attribute_description[2].format = VK_FORMAT_R32_SINT;
+		vertex_attribute_description[2].offset = offsetof(DRAW::StarVertex, layer);
+
 		VkPipelineVertexInputStateCreateInfo input_vertex_info = {};
 		input_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		input_vertex_info.vertexBindingDescriptionCount = 1;
 		input_vertex_info.pVertexBindingDescriptions = &vertex_binding_description;
-		input_vertex_info.vertexAttributeDescriptionCount = 2;
+		input_vertex_info.vertexAttributeDescriptionCount = 3;
 		input_vertex_info.pVertexAttributeDescriptions = vertex_attribute_description;
 
 		unsigned int windowWidth, windowHeight;

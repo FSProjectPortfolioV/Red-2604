@@ -2,6 +2,7 @@ struct VSInput
 {
     float4 pos : POSITION;
     float brightness : BRIGHTNESS;
+    int layer : LAYER;
 };
 
 struct VSOutput
@@ -18,7 +19,17 @@ VSOutput main(VSInput input)
     output.pos = input.pos;
     output.brightness = input.brightness;
 
-    output.gl_PointSize = 2.0f;
+    float size = 2.0f; // default
+
+    if (input.layer == 0)
+        size = 1.5f; // background
+    if (input.layer == 1)
+        size = 2.5f; // mid
+    if (input.layer == 2)
+        size = 4.0f; // foreground
+
+    output.gl_PointSize = size;
+
 
     return output;
 }

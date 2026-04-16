@@ -39,9 +39,6 @@ namespace GAME
 
 		lm.time += (float)dt;
 
-		// Auto-scroll world
-		
-
 		// Spawn waves at the correct time (TODO)
 
 		// End of level

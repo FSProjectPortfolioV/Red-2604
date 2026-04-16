@@ -125,12 +125,14 @@ namespace DRAW
 		GW::MATH::GVECTORF position;
 		float speed;
 		float brightness;
+		int layer; // for parallax effect, 0 = farthest, higher = closer
 	};
 
 	struct StarVertex
 	{
 		GW::MATH::GVECTORF pos;
 		float brightness;
+		int layer;
 	};
 
 	struct Starfield
@@ -163,18 +165,34 @@ static void Construct_Starfield(entt::registry& registry, entt::entity e)
 	for (int i = 0; i < STAR_COUNT; i++)
 	{
 		DRAW::Star s;
+
+		// Random layer distribution
+		float r = UTIL::RandomFloat(0.0f, 1.0f);
+		if (r < 0.8f)      s.layer = 0; // background
+		else if (r < 0.9f) s.layer = 1; // mid
+		else               s.layer = 2; // foreground
+
+		// Clip-space spawn
 		s.position = {
-			UTIL::RandomFloat(-sf.width, sf.width),   // x in [-1, 1]
-			UTIL::RandomFloat(-sf.height, sf.height), // y in [-1, 1]
-			UTIL::RandomFloat(0.0f, sf.depth),        // z in [0, 1]
+			UTIL::RandomFloat(-1.0f, 1.0f),
+			UTIL::RandomFloat(-1.0f, 1.0f),
+			UTIL::RandomFloat(0.0f, 1.0f),
 			1.0f
 		};
 
-		s.speed = UTIL::RandomFloat(1.0f, 5.0f);
-		s.brightness = UTIL::RandomFloat(0.5f, 1.0f);
+		// Layer-based speed
+		if (s.layer == 0) s.speed = UTIL::RandomFloat(0.1f, 0.3f);
+		if (s.layer == 1) s.speed = UTIL::RandomFloat(0.3f, 0.6f);
+		if (s.layer == 2) s.speed = UTIL::RandomFloat(0.6f, 1.0f);
+
+		// Layer-based brightness
+		if (s.layer == 0) s.brightness = UTIL::RandomFloat(0.2f, 0.4f);
+		if (s.layer == 1) s.brightness = UTIL::RandomFloat(0.4f, 0.7f);
+		if (s.layer == 2) s.brightness = UTIL::RandomFloat(0.7f, 1.0f);
 
 		sf.stars.push_back(s);
 	}
+
 
 }
 #endif // !DRAW_COMPONENTS_H

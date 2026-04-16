@@ -98,7 +98,7 @@ void GraphicsBehavior(entt::registry& registry)
 	registry.emplace<DRAW::VulkanRendererInitialization>(display,
 		DRAW::VulkanRendererInitialization{ 
 			vertShader, pixelShader, starsVertexShader, starsFragmentShader,
-			{ {0.2f, 0.2f, 0.25f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
+			{ {0.0f, 0.0f, 0.0f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
 	registry.emplace<DRAW::VulkanRenderer>(display);
 	
 	// Emplace GPULevel
@@ -223,23 +223,24 @@ void MainLoopBehavior(entt::registry& registry)
 
 			for (auto& s : sf.stars)
 			{
-				// Move downward in clip space with a parallax effect based on z-depth
-				s.position.y += s.speed * dt * (0.2f + s.position.z * 0.8f);
+				// Move star down based on its speed and layer (parallax effect)
+				float layerSpeed = s.speed;
+				if (s.layer == 0) layerSpeed *= 0.5f; // background
+				if (s.layer == 1) layerSpeed *= 1.0f; // mid
+				if (s.layer == 2) layerSpeed *= 1.8f; // foreground
+				s.position.y += layerSpeed * dt;
 
 				// Horizontal sway using sine wave based on vertical position
-				s.position.x += sinf(s.position.y * 5.0f) * 0.0005f;
+				s.position.x += sinf(s.position.y * 5.0f) * 0.000225f;
 
 				// Wrap when star goes below the screen
 				if (s.position.y > 1.0f)
 				{
-					s.position.y = -1.0f; // respawn at top
-
+					s.position.y = -1.0f;
 					s.position.x = UTIL::RandomFloat(-1.0f, 1.0f);
 					s.position.z = UTIL::RandomFloat(0.0f, 1.0f);
-
-					// Randomize brightness
-					s.brightness = UTIL::RandomFloat(0.5f, 1.0f);
 				}
+
 
 
 				// Wrap horizontally as well, because why not?
@@ -253,8 +254,7 @@ void MainLoopBehavior(entt::registry& registry)
 			gpuVerts.reserve(sf.stars.size());
 
 			for (auto& s : sf.stars)
-				gpuVerts.push_back({ s.position, s.brightness });
-
+				gpuVerts.push_back({ s.position, s.brightness, s.layer });
 			registry.emplace_or_replace<std::vector<DRAW::StarVertex>>(entity, gpuVerts);
 			registry.patch<DRAW::VulkanVertexBuffer>(entity);
 
