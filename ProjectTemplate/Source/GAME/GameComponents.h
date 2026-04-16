@@ -63,5 +63,10 @@ namespace GAME
 		float speed;
 		float rotationSpeed;
 	};
+
+	struct ScrollingBackground
+	{
+		float scrollSpeed;
+	};
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

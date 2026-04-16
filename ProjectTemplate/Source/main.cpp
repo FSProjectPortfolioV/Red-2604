@@ -51,6 +51,10 @@ void GraphicsBehavior(entt::registry& registry)
 {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
+	// Setup scroll speed
+	float scrollSpeed = (*config).at("Global").at("scrollSpeed").as<float>();
+	registry.ctx().emplace<GAME::ScrollingBackground>(scrollSpeed); // Make scroll speed available to anything with registry access
+
 	// Add Gateware Audio System, for music and sound effects
 
 	using namespace GW::AUDIO;
@@ -228,7 +232,9 @@ void MainLoopBehavior(entt::registry& registry)
 				if (s.layer == 0) layerSpeed *= 0.5f; // background
 				if (s.layer == 1) layerSpeed *= 1.0f; // mid
 				if (s.layer == 2) layerSpeed *= 1.8f; // foreground
-				s.position.y += layerSpeed * dt;
+				
+				float baseScroll = registry.ctx().get<GAME::ScrollingBackground>().scrollSpeed;
+				s.position.y += baseScroll * s.speed * dt;
 
 				// Horizontal sway using sine wave based on vertical position
 				s.position.x += sinf(s.position.y * 5.0f) * 0.000225f;
