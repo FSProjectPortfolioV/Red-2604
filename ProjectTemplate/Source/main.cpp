@@ -93,14 +93,24 @@ void GraphicsBehavior(entt::registry& registry)
 	// Create a transient component to initialize the Renderer
 	std::string vertShader = (*config).at("Shaders").at("vertex").as<std::string>();
 	std::string pixelShader = (*config).at("Shaders").at("pixel").as<std::string>();
+	std::string starsVertexShader = (*config).at("Shaders").at("starVertex").as<std::string>();
+	std::string starsFragmentShader = (*config).at("Shaders").at("starPixel").as<std::string>();
 	registry.emplace<DRAW::VulkanRendererInitialization>(display,
 		DRAW::VulkanRendererInitialization{ 
-			vertShader, pixelShader,
+			vertShader, pixelShader, starsVertexShader, starsFragmentShader,
 			{ {0.2f, 0.2f, 0.25f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
 	registry.emplace<DRAW::VulkanRenderer>(display);
 	
 	// Emplace GPULevel
 	registry.emplace<DRAW::GPULevel>(display);
+
+	// Create a starfield entity
+	entt::entity starEnt = registry.create();
+	Construct_Starfield(registry, starEnt);
+
+	// Attach GPU components to starfield entity
+	registry.emplace<DRAW::StarfieldGPU>(starEnt);
+	registry.emplace<DRAW::VulkanVertexBuffer>(starEnt);
 
 	// Register for Vulkan clean up
 	GW::CORE::GEventResponder shutdown;
@@ -108,9 +118,18 @@ void GraphicsBehavior(entt::registry& registry)
 		GW::GRAPHICS::GVulkanSurface::Events event;
 		GW::GRAPHICS::GVulkanSurface::EVENT_DATA data;
 		if (+e.Read(event, data) && event == GW::GRAPHICS::GVulkanSurface::Events::RELEASE_RESOURCES) {
+
+			registry.clear<DRAW::Starfield>();
+			registry.clear<DRAW::StarfieldGPU>();
+
+			registry.clear<DRAW::VulkanVertexBuffer>();
+			registry.clear<DRAW::VulkanIndexBuffer>();
+			registry.clear<DRAW::VulkanGPUInstanceBuffer>();
+			registry.clear<DRAW::VulkanUniformBuffer>();
 			registry.clear<DRAW::VulkanRenderer>();
 		}
 		});
+
 	registry.get<DRAW::VulkanRenderer>(display).vlkSurface.Register(shutdown);
 	registry.emplace<GW::CORE::GEventResponder>(display, shutdown.Relinquish());
 
@@ -193,6 +212,56 @@ void MainLoopBehavior(entt::registry& registry)
 		auto gmView = registry.view<GAME::GameManager>();
 		for (auto gm : gmView)
 			registry.patch<GAME::GameManager>(gm);
+
+		// Update Starfield
+		auto starView = registry.view<DRAW::Starfield>();
+		for (auto entity : starView)
+		{
+			auto& sf = registry.get<DRAW::Starfield>(entity);
+
+			float dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
+			for (auto& s : sf.stars)
+			{
+				// Move downward in clip space with a parallax effect based on z-depth
+				s.position.y += s.speed * dt * (0.2f + s.position.z * 0.8f);
+
+				// Horizontal sway using sine wave based on vertical position
+				s.position.x += sinf(s.position.y * 5.0f) * 0.0005f;
+
+				// Wrap when star goes below the screen
+				if (s.position.y > 1.0f)
+				{
+					s.position.y = -1.0f; // respawn at top
+
+					s.position.x = UTIL::RandomFloat(-1.0f, 1.0f);
+					s.position.z = UTIL::RandomFloat(0.0f, 1.0f);
+
+					// Randomize brightness
+					s.brightness = UTIL::RandomFloat(0.5f, 1.0f);
+				}
+
+
+				// Wrap horizontally as well, because why not?
+				if (s.position.x < -1) s.position.x = 1;
+				if (s.position.x > 1) s.position.x = -1;
+				if (s.position.z < 0)  s.position.z = 1;
+				if (s.position.z > 1)  s.position.z = 0;
+			}
+
+			std::vector<DRAW::StarVertex> gpuVerts;
+			gpuVerts.reserve(sf.stars.size());
+
+			for (auto& s : sf.stars)
+				gpuVerts.push_back({ s.position, s.brightness });
+
+			registry.emplace_or_replace<std::vector<DRAW::StarVertex>>(entity, gpuVerts);
+			registry.patch<DRAW::VulkanVertexBuffer>(entity);
+
+			registry.get<DRAW::StarfieldGPU>(entity).starCount = gpuVerts.size();
+		}
+
+
 
 		closedCount = 0;
 		// find all Windows that are not closed and call "patch" to update them
