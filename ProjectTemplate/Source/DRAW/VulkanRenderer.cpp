@@ -492,7 +492,16 @@ namespace DRAW
 		// Create Projection matrix
 		float aspectRatio;
 		vulkanRenderer.vlkSurface.GetAspectRatio(aspectRatio);
-		GW::MATH::GMatrix::ProjectionVulkanLHF(G2D_DEGREE_TO_RADIAN_F(initializationData.fovDegrees), aspectRatio, initializationData.nearPlane, initializationData.farPlane, vulkanRenderer.projMatrix);
+		float worldWidth = 2.0f;   // adjust to taste
+		float worldHeight = worldWidth / aspectRatio;
+
+		GW::MATH::GMatrix::OrthographicLHF(
+			worldWidth,
+			worldHeight,
+			initializationData.nearPlane,
+			initializationData.farPlane,
+			vulkanRenderer.projMatrix
+		);
 
 		
 		vulkanRenderer.vlkSurface.GetDevice((void**)&vulkanRenderer.device);

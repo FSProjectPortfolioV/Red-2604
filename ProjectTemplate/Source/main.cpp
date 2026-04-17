@@ -9,7 +9,6 @@
 #include "DRAW/CloneEntity.h"
 
 
-
 // Local routines for specific application behavior
 void GraphicsBehavior(entt::registry& registry);
 void GameplayBehavior(entt::registry& registry);
@@ -139,7 +138,7 @@ void GraphicsBehavior(entt::registry& registry)
 
 	// Create a camera and emplace it
 	GW::MATH::GMATRIXF initialCamera;
-	GW::MATH::GVECTORF translate = { 0.0f,  45.0f, -5.0f };
+	GW::MATH::GVECTORF translate = { 0.0f,  45.0f, 0.0f };
 	GW::MATH::GVECTORF lookat = { 0.0f, 0.0f, 0.0f };
 	GW::MATH::GVECTORF up = { 0.0f, 1.0f, 0.0f };
 	GW::MATH::GMatrix::TranslateGlobalF(initialCamera, translate, initialCamera);
@@ -159,6 +158,13 @@ void GameplayBehavior(entt::registry& registry)
 		registry.ctx().emplace<DRAW::ModelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+
+	// Set window bounds
+	auto& windowBounds = registry.ctx().emplace<GAME::WindowBounds>();
+	windowBounds.left = (*config).at("Window").at("leftBound").as<float>();
+	windowBounds.right = (*config).at("Window").at("rightBound").as<float>();
+	windowBounds.top = (*config).at("Window").at("topBound").as<float>();
+	windowBounds.bottom = (*config).at("Window").at("bottomBound").as<float>();
 
 	// Create player
 	entt::entity player = registry.create();
@@ -237,7 +243,7 @@ void MainLoopBehavior(entt::registry& registry)
 				s.position.y += baseScroll * s.speed * dt;
 
 				// Horizontal sway using sine wave based on vertical position
-				s.position.x += sinf(s.position.y * 5.0f) * 0.000225f;
+				s.position.x += sinf(s.position.y * 5.0f) * 0.00004f;
 
 				// Wrap when star goes below the screen
 				if (s.position.y > 1.0f)

@@ -4,6 +4,31 @@
 #include "../CCL.h"
 #include "../DRAW/CloneEntity.h"
 
+void PlayerClampSystem(entt::registry& registry)
+{
+    auto view = registry.view<GAME::Player, GAME::Transform>();
+    auto& windowBounds = registry.ctx().get<GAME::WindowBounds>();
+
+    for (auto entity : view)
+    {
+        auto& transform = view.get<GAME::Transform>(entity);
+
+        // Extract translation from matrix
+        float x = transform.matrix.row4.x;
+        float z = transform.matrix.row4.z;
+
+        // Clamp
+        x = std::clamp(x, windowBounds.left, windowBounds.right);
+        z = std::clamp(z, windowBounds.bottom, windowBounds.top);
+
+        // Write back
+        transform.matrix.row4.x = x;
+        transform.matrix.row4.z = z;
+    }
+}
+
+
+
 void Update_Player(entt::registry& registry, entt::entity self)
 {
     auto& transform = registry.get<GAME::Transform>(self);
@@ -54,6 +79,8 @@ void Update_Player(entt::registry& registry, entt::entity self)
         newMat
     );
     transform.matrix = newMat;
+
+	PlayerClampSystem(registry);
 
     // Firing cooldown
     float fireRate = config->at("Player").at("firerate").as<float>();

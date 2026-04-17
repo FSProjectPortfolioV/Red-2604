@@ -78,5 +78,10 @@ namespace GAME
 	{
 		float scrollSpeed;
 	};
+
+	struct WindowBounds
+	{
+		float left, right, top, bottom;
+	};
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_
