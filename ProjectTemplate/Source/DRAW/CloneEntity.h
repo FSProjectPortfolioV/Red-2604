@@ -2,6 +2,7 @@
 #include "../GAME/GameComponents.h"
 #include "../DRAW/DrawComponents.h"
 #include "../UTIL/Utilities.h"
+#include "../GAME/EnemyManger.h"
 
 
     struct EnemyConfig 
@@ -12,6 +13,8 @@
         int shatterAmount;
         float shatterScale;
         std::string modelName;
+        GAME::FormationStyle Movement; //used for knowing how to move the enemy
+        GAME::Invuln Spawn; //used for preventing accidental on spawn deleteion. 
     };
 
     static void CloneModelToEntity(
@@ -54,8 +57,8 @@
     }
 
     static entt::entity SpawnEnemy(entt::registry& registry,
-        const DRAW::ModelManager& manager,
-        const GAME::Transform& transform,
+        const DRAW::ModelManager& manager, 
+        const GAME::Transform& transform, 
         const EnemyConfig& cfg)
     {
         // Create entity
