@@ -22,6 +22,15 @@ namespace GAME
 
 	struct GameManager {};
 
+	struct LevelManager
+	{
+		float time = 0.0f; // current time in level
+		float scrollSpeed = 4.0f; // how fast the level scrolls
+		size_t nextWave = 0; // index of the next wave to spawn
+		// TODO: A vector of waves, where each wave contains enemy spawn data (type, position, formation, etc)
+		bool levelComplete = false;
+	};
+
 	struct Firing 
 	{
 		float cooldown;
@@ -48,5 +57,41 @@ namespace GAME
 	{
 		float cooldown;
 	};
+
+	struct BackgroundObject
+	{
+		float speed;
+		float rotationSpeed;
+	};
+
+	struct ScrollingBackground
+	{
+		float scrollSpeed;
+	};
+
+	enum PowerUpType
+	{
+		None,
+		SideFighterPU,
+	};
+
+	struct PowerUp
+	{
+		PowerUpType type;
+	};
+
+	struct HasSideFighters
+	{
+		bool leftAlive = false;
+		bool rightAlive = false;
+	};
+
+	struct SideFighter 
+	{
+		entt::entity player;
+		std::string side;
+		GW::MATH::GVECTORF offset;
+	};
+
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

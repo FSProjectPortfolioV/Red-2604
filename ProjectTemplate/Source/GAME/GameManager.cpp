@@ -47,8 +47,29 @@ namespace GAME
 		Cleanup::Destroy(registry);
 	}
 
+	void Update_LevelManager(entt::registry& registry, entt::entity self)
+	{
+		auto& lm = registry.get<GAME::LevelManager>(self);
+		double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
+		if (lm.levelComplete)
+			return;
+
+		lm.time += (float)dt;
+
+		// Spawn waves at the correct time (TODO)
+
+		// End of level
+		/*if (no waves remaining)
+		{
+			lm.levelComplete = true;
+			std::cout << "Level Complete\n";
+		}*/
+	}
+
 	CONNECT_COMPONENT_LOGIC()
 	{
 		registry.on_update<GameManager>().connect<Update_GameManager>();
+		registry.on_update<LevelManager>().connect<Update_LevelManager>();
 	}
 }

@@ -1,6 +1,7 @@
 #include "Physics.h"
 #include "../GameComponents.h"
 #include "../../DRAW/CloneEntity.h"
+#include "../../GAME/Gameplay/PowerUps/PowerUps.h"
 
 
 
@@ -160,6 +161,24 @@ void Physics::Collision(entt::registry& registry)
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
 					HurtPlayer(registry, *a);
+				}
+
+				// Case: Player to Power-Ups - Player gets the power-up, power-up gets destroyed
+				if (registry.all_of<Player>(*a) && registry.all_of<PowerUp>(*b))
+				{
+					auto& powerUp = registry.get<GAME::PowerUp>(*b);
+
+					PowerUpEffect(registry, *a, powerUp.type);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+				}
+				if (registry.all_of<Player>(*b) && registry.all_of<PowerUp>(*a))
+				{
+					auto& powerUp = registry.get<GAME::PowerUp>(*a);
+
+					PowerUpEffect(registry, *b, powerUp.type);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
 				}
 			}
 		}
