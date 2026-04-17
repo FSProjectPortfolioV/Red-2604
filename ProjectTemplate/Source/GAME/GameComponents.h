@@ -12,6 +12,7 @@ namespace GAME
 	struct Obstacle {};
 	struct ToDestroy {};
 	struct GameOver {};
+	struct PowerUp {};
 
 
 	///*** Components ***///
