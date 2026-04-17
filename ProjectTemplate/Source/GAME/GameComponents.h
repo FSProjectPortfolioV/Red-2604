@@ -22,14 +22,24 @@ namespace GAME
 
 	struct GameManager {};
 
-	struct LevelManager
+	struct LevelEvent 
 	{
-		float time = 0.0f; // current time in level
-		float scrollSpeed = 4.0f; // how fast the level scrolls
-		size_t nextWave = 0; // index of the next wave to spawn
-		// TODO: A vector of waves, where each wave contains enemy spawn data (type, position, formation, etc)
+		float triggerTime;
+		std::string formationName;
+	};
+
+	struct LevelManager {
+		float time = 0;
+		int tokenBudget = 10;
+		int tokensAvailable = 10;
+
+		size_t nextEvent = 0;
+		std::vector<LevelEvent> timeline;
+
+		std::queue<std::string> formationQueue; // names of formations waiting to spawn
 		bool levelComplete = false;
 	};
+
 
 	struct Firing 
 	{
