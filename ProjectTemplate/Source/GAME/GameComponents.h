@@ -13,6 +13,7 @@ namespace GAME
 	struct ToDestroy {};
 	struct GameOver {};
 
+
 	///*** Components ***///
 	struct Transform
 	{
@@ -20,6 +21,15 @@ namespace GAME
 	};
 
 	struct GameManager {};
+
+	struct LevelManager
+	{
+		float time = 0.0f; // current time in level
+		float scrollSpeed = 4.0f; // how fast the level scrolls
+		size_t nextWave = 0; // index of the next wave to spawn
+		// TODO: A vector of waves, where each wave contains enemy spawn data (type, position, formation, etc)
+		bool levelComplete = false;
+	};
 
 	struct Firing 
 	{
@@ -46,6 +56,17 @@ namespace GAME
 	struct Invuln 
 	{
 		float cooldown;
+	};
+
+	struct BackgroundObject
+	{
+		float speed;
+		float rotationSpeed;
+	};
+
+	struct ScrollingBackground
+	{
+		float scrollSpeed;
 	};
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_
