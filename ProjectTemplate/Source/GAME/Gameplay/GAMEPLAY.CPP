@@ -1,6 +1,7 @@
 #include "Gameplay.h"
 #include "../GameComponents.h";
 #include "../../DRAW/DrawComponents.h"
+#include "../Rendering/Rendering.h"
 
 void Gameplay::Shatter(entt::registry& registry, const EnemyConfig& cfg)
 {

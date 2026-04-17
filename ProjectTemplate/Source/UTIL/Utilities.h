@@ -27,5 +27,8 @@ namespace UTIL
 	/// Creates a normalized vector pointing in a random direction on the X/Z plane
 	GW::MATH::GVECTORF GetRandomVelocityVector();
 
+	// Generate a random float between min and max
+	float RandomFloat(float min, float max);
+
 } // namespace UTIL
 #endif // !UTILITIES_H_
