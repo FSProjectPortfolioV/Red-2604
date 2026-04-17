@@ -7,7 +7,7 @@ namespace GAME
 	int EnemyDestroyed;//How many enemies were destoryed by the player
 	int EnemyFleed; //How many enemies weren't destoryed by the player and just flew offscreen
 
-	enum FormationStyle { //sued by enemies to know to move //used by level to know what to spawn
+	enum FormationStyle { //used by enemies to know to move //used by level to know what to spawn
 		WaveLeft = 0,
 		WaveRight = 1,
 		ArrowHeadDown = 2,
