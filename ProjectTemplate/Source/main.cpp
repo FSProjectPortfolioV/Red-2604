@@ -8,6 +8,8 @@
 #include "APP/Window.hpp"
 #include "DRAW/CloneEntity.h"
 #include "GAME/Gameplay/ScoreSystem/ScoreSystem.h"
+#include "GAME/Gameplay/ScoreSystem/LeaderboardSystem.h"
+#include "GAME/Gameplay/ScoreSystem/FirebaseLeaderboardAPI.h"
 
 
 
@@ -24,6 +26,8 @@ int main()
 	entt::registry registry;	
 
 	registry.ctx().emplace<ScoreSystem>();
+	registry.ctx().emplace<LeaderboardSystem>();
+	registry.ctx().emplace<FirebaseLeaderboardAPI>("leaderboard-2851-default-rtdb.firebaseio.com", "/Leaderboard/Entries.json");
 
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
