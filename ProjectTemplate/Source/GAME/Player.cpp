@@ -3,6 +3,8 @@
 #include "../UTIL/Utilities.h"
 #include "../CCL.h"
 #include "../DRAW/CloneEntity.h"
+#include "Gameplay/PowerUps/PowerUps.h"
+
 
 void Update_Player(entt::registry& registry, entt::entity self)
 {
@@ -147,6 +149,30 @@ void Update_Player(entt::registry& registry, entt::entity self)
 
         // Cooldown
         registry.emplace<GAME::Firing>(self, fireRate);
+    }
+
+    // Temporary key press logic to test power up spawning
+    // Gets the event cache to read buffered input events
+    auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
+    GW::GEvent event;
+
+    // Loop through all buffered events
+    while (+pressEvents.Pop(event))
+    {
+        GW::INPUT::GBufferedInput::Events inputEvent;
+        GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+
+        // Gets the event details
+        if (+event.Read(inputEvent, inputData))
+        {
+            // Check if a key was specifically pressed down and if it's 'C'
+            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
+            {
+                // Call the new spawn method!
+				SpawnPowerUp(registry, transform.matrix);
+                
+            }
+        }
     }
 }
 
