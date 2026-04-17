@@ -220,6 +220,11 @@ void MainLoopBehavior(entt::registry& registry)
 		for (auto gm : gmView)
 			registry.patch<GAME::GameManager>(gm);
 
+		//Update SideFighters
+		auto sfView = registry.view<GAME::SideFighter>();
+		for (auto entity : sfView)
+			registry.patch<GAME::SideFighter>(entity);
+
 		// Update Starfield
 		auto starView = registry.view<DRAW::Starfield>();
 		for (auto entity : starView)

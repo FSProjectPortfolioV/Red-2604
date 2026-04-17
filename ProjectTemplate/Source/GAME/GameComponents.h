@@ -12,8 +12,6 @@ namespace GAME
 	struct Obstacle {};
 	struct ToDestroy {};
 	struct GameOver {};
-	struct PowerUp {};
-
 
 	///*** Components ***///
 	struct Transform
@@ -69,5 +67,30 @@ namespace GAME
 	{
 		float scrollSpeed;
 	};
+
+	enum PowerUpType
+	{
+		None,
+		SideFighterPU,
+	};
+
+	struct PowerUp
+	{
+		PowerUpType type;
+	};
+
+	struct HasSideFighters
+	{
+		bool leftAlive = false;
+		bool rightAlive = false;
+	};
+
+	struct SideFighter 
+	{
+		entt::entity player;
+		std::string side;
+		GW::MATH::GVECTORF offset;
+	};
+
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_
