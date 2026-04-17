@@ -21,6 +21,24 @@ namespace GAME
 
 		Physics::Velocity(registry, dt);
 		Physics::Collision(registry);
+		//Spawn enemy after a delay (for testing)!
+		static bool testonce = true;
+		if (registry.ctx().contains<UTIL::DeltaTime>() && testonce == true) {
+			auto& manager = registry.ctx().get<DRAW::ModelManager>();
+			double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+			static float time = 0;
+			time += dt;
+			GAME::Transform SpawnPoint;
+			GW::MATH::GMatrix::IdentityF(SpawnPoint.matrix);
+			GW::MATH::GVECTORF Location = { 0,0,0,0 };
+			GW::MATH::GMatrix::TranslateGlobalF(SpawnPoint.matrix, Location, SpawnPoint.matrix);
+			std::string enemy = "Enemy1";
+			EnemyConfig TEST = EnemyCFGCreator(registry, enemy, GAME::FormationStyle::WaveLeft);
+			if (time > 3 && testonce == true) {
+				SpawnFormation(registry, GAME::FormationStyle::WaveLeft, 3, 5, 1, SpawnPoint, TEST, manager, 0.5f);
+				testonce = false;
+			}
+		}
 
 		Gameplay::PlayerTimers(registry, dt);
 		Rendering::SyncTransforms(registry);

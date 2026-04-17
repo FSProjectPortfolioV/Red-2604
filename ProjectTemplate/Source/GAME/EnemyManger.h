@@ -2,10 +2,10 @@
 #define GAME_COMPONENTS_H_
 namespace GAME
 {
-	int EnemyCount; //Current Alive enemies, could possibly be used for levels token count?
-	int EnemyTotal; //How many enemies have spawn total
-	int EnemyDestroyed;//How many enemies were destoryed by the player
-	int EnemyFleed; //How many enemies weren't destoryed by the player and just flew offscreen
+	//int EnemyCount; //Current Alive enemies, could possibly be used for levels token count?
+	//int EnemyTotal; //How many enemies have spawn total
+	//int EnemyDestroyed;//How many enemies were destoryed by the player
+	//int EnemyFleed; //How many enemies weren't destoryed by the player and just flew offscreen
 
 	enum FormationStyle { //used by enemies to know to move //used by level to know what to spawn
 		WaveLeft = 0,

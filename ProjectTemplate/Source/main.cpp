@@ -140,6 +140,7 @@ void GameplayBehavior(entt::registry& registry)
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
+
 	// Create player
 	entt::entity player = registry.create();
 	registry.emplace<GAME::Player>(player);
@@ -167,6 +168,7 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
+
 
 }
 
