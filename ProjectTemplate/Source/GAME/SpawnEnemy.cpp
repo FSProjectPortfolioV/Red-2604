@@ -4,4 +4,8 @@
 #include "../DRAW/CloneEntity.cpp"
 #include "../UTIL/Utilities.h"
 
+namespace GAME
+{
+
+}
 
