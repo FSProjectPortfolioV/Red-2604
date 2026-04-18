@@ -1,5 +1,6 @@
 #pragma once
 #include "../GAME/GameComponents.h"
+#include "../GAME/GamePlay/ScoreSystem/ScoreSystem.h"
 #include "./Utility/FileIntoString.h"
 #include "shaderc/shaderc.h"
 #include "./Overlay.h"
