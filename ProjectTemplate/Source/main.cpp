@@ -141,7 +141,7 @@ void GraphicsBehavior(entt::registry& registry)
 
 	// Create a camera and emplace it
 	GW::MATH::GMATRIXF initialCamera;
-	GW::MATH::GVECTORF translate = { 0.0f,  45.0f, 0.0f };
+	GW::MATH::GVECTORF translate = { 0.0f,  35.0f, -5.0f };
 	GW::MATH::GVECTORF lookat = { 0.0f, 0.0f, 0.0f };
 	GW::MATH::GVECTORF up = { 0.0f, 1.0f, 0.0f };
 	GW::MATH::GMatrix::TranslateGlobalF(initialCamera, translate, initialCamera);
