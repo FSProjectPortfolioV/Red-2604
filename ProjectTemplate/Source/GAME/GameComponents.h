@@ -93,5 +93,10 @@ namespace GAME
 		GW::MATH::GVECTORF offset;
 	};
 
+	struct Paused
+	{
+
+	};
+
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_
