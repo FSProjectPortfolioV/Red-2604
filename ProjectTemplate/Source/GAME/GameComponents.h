@@ -47,5 +47,10 @@ namespace GAME
 	{
 		float cooldown;
 	};
+
+	struct Paused 
+	{
+
+	};
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

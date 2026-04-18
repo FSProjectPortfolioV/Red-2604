@@ -1,6 +1,5 @@
 // Gateware Research file. Will be used to test adding an asynchronous overlay to GVulkanSurface
 #pragma once
-
 // Author: Lari Norri 12/31/2024
 // This is protype class for an overlay that can be updated asynchronously
 // and rendered using Vulkan. The overlay is intended to be used for HUDs,
