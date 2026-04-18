@@ -8,6 +8,7 @@ namespace GAME
 	struct Player {};
 	struct Enemy {};
 	struct Bullet {};
+	struct EnemyBullets {};
 	struct Collidable {};
 	struct Obstacle {};
 	struct ToDestroy {};

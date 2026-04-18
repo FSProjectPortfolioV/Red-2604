@@ -1,5 +1,5 @@
 #include "Gameplay.h"
-#include "../GameComponents.h";
+#include "../GameComponents.h"
 #include "../../DRAW/DrawComponents.h"
 #include "../Rendering/Rendering.h"
 
