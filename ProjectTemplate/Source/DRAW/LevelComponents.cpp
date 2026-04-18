@@ -1,6 +1,7 @@
 #include "DrawComponents.h"
 #include "../GAME/GameComponents.h"
 #include "../CCL.h"
+#include "Utility/TextureUTTL.h"
 
 namespace DRAW
 {
@@ -32,6 +33,8 @@ namespace DRAW
 
 		auto& manager = registry.ctx().get<ModelManager>();
 		auto& levelData = gpuLevel.lvlData;
+		auto& vulkanRenderer = registry.ctx().get<VulkanRenderer>();
+
 		for (auto& obj : levelData.blenderObjects)
 		{
 			MeshCollection collection;
@@ -59,16 +62,34 @@ namespace DRAW
 			for (int meshIdx = 0; meshIdx < model.meshCount; ++meshIdx)
 			{
 				auto& meshInfo = levelData.levelMeshes[model.meshStart + meshIdx];
+				auto& material = levelData.levelMaterials[meshInfo.materialIndex];
 				auto newMesh = registry.create();
 
 				auto& gpuInstance = registry.emplace<GPUInstance>(newMesh);
 				gpuInstance.transform = levelData.levelTransforms[obj.transformIndex];
-				gpuInstance.matData = levelData.levelMaterials[model.materialStart + meshInfo.materialIndex].attrib;
+				gpuInstance.matData = material.attrib;
 
 				auto& geoData = registry.emplace<GeometryData>(newMesh);
 				geoData.indexCount = meshInfo.drawInfo.indexCount;
 				geoData.indexStart = model.indexStart + meshInfo.drawInfo.indexOffset;
 				geoData.vertexStart = model.vertexStart;
+
+				if (material.map_Kd[0] != '\0')
+				{
+					std::string texName = material.map_Kd;
+
+					if (manager.textures.find(texName) == manager.textures.end())
+					{
+						TextureData newTex;
+						std::string fullPath = gpuLevel.modelFolder + "/" + texName;
+						UploadTextureToGPU(vulkanRenderer.vlkSurface, fullPath,
+							newTex.memory, newTex.image, newTex.view, false);
+
+						manager.textures[texName] = newTex;
+					}
+
+					geoData.textureView = manager.textures[texName].view;
+				}
 
 				if (model.isDynamic)
 				{

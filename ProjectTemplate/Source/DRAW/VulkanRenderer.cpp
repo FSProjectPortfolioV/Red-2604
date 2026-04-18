@@ -2,6 +2,7 @@
 #include "../CCL.h"
 // component dependencies
 #include "./Utility/FileIntoString.h"
+#include "../DRAW/Utility/TextureUTTL.h"
 
 #include "shaderc/shaderc.h" // needed for compiling shaders at runtime
 #ifdef _WIN32 // must use MT platform DLL libraries on windows
@@ -486,6 +487,8 @@ namespace DRAW
 			return;
 		}
 
+		CreateSampler(vulkanRenderer.vlkSurface, vulkanRenderer.textureSampler);
+
 		vulkanRenderer.clrAndDepth[0].color = initializationData.clearColor;
 		vulkanRenderer.clrAndDepth[1].depthStencil = initializationData.depthStencil;
 
@@ -695,6 +698,24 @@ namespace DRAW
 			int instanceStart = 0;
 			for (auto [geoData, count] : geoInstances)
 			{
+				if (geoData.textureView != VK_NULL_HANDLE)
+				{
+					VkDescriptorImageInfo imageInfo{};
+					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfo.imageView = geoData.textureView;
+					imageInfo.sampler = vulkanRenderer.textureSampler;
+
+					VkWriteDescriptorSet textureWrite{};
+					textureWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					textureWrite.dstSet = vulkanRenderer.descriptorSets[frame];
+					textureWrite.dstBinding = 2; // This matches register(t2) in your HLSL
+					textureWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					textureWrite.descriptorCount = 1;
+					textureWrite.pImageInfo = &imageInfo;
+
+					vkUpdateDescriptorSets(vulkanRenderer.device, 1, &textureWrite, 0, nullptr);
+				}
+				
 				vkCmdDrawIndexed(commandBuffer, geoData.indexCount, count, geoData.indexStart, geoData.vertexStart, instanceStart);
 				instanceStart += count;
 			}

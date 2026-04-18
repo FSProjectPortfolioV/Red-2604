@@ -18,9 +18,16 @@ namespace DRAW
 		GW::MATH::GOBBF collider;
 	};
 
+	struct TextureData {
+		VkImage image = VK_NULL_HANDLE;
+		VkDeviceMemory memory = VK_NULL_HANDLE;
+		VkImageView view = VK_NULL_HANDLE;
+	};
+
 	struct ModelManager
 	{
 		std::unordered_map<std::string, MeshCollection> collections;
+		std::unordered_map<std::string, TextureData> textures;
 	};
 
 	struct VulkanRendererInitialization
@@ -54,6 +61,7 @@ namespace DRAW
 		VkDescriptorSetLayout descriptorLayout = nullptr;
 		VkDescriptorPool descriptorPool = nullptr;
 		std::vector<VkDescriptorSet> descriptorSets;
+		VkSampler textureSampler = VK_NULL_HANDLE;
 		VkClearValue clrAndDepth[2];
 	};
 
@@ -72,8 +80,15 @@ namespace DRAW
 	struct GeometryData
 	{
 		unsigned int indexStart, indexCount, vertexStart;
+		VkImageView textureView = VK_NULL_HANDLE;
+
 		inline bool operator < (const GeometryData a) const {
-			return indexStart < a.indexStart;
+			if(indexStart != a.indexStart)
+			{
+				return indexStart < a.indexStart;
+			}
+
+			return vertexStart < a.vertexStart;
 		}
 	};
 
