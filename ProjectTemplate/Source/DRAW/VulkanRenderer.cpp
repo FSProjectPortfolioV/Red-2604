@@ -290,6 +290,164 @@ namespace DRAW
 		vkCreateGraphicsPipelines(vulkanRenderer.device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &vulkanRenderer.pipeline);
 	}
 
+	void InitializeStarfieldPipeline(entt::registry& registry, entt::entity entity)
+	{
+		auto& vulkanRenderer = registry.get<VulkanRenderer>(entity);
+		GW::SYSTEM::GWindow win = registry.get<GW::SYSTEM::GWindow>(entity);
+
+		VkPipelineShaderStageCreateInfo stage_create_info[2] = {};
+		// Create Stage Info for Vertex Shader
+		stage_create_info[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stage_create_info[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+		stage_create_info[0].module = vulkanRenderer.starsVertexShader;
+		stage_create_info[0].pName = "main";
+
+		// Create Stage Info for Fragment Shader
+		stage_create_info[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		stage_create_info[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		stage_create_info[1].module = vulkanRenderer.starsFragmentShader;
+		stage_create_info[1].pName = "main";
+
+		VkPipelineInputAssemblyStateCreateInfo assembly_create_info = {};
+		assembly_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		assembly_create_info.primitiveRestartEnable = VK_FALSE;
+
+		VkVertexInputBindingDescription vertex_binding_description = {};
+		vertex_binding_description.binding = 0;
+		vertex_binding_description.stride = sizeof(DRAW::StarVertex);
+		vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		VkVertexInputAttributeDescription vertex_attribute_description[3];
+		vertex_attribute_description[0].binding = 0;
+		vertex_attribute_description[0].location = 0;
+		vertex_attribute_description[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		vertex_attribute_description[0].offset = offsetof(DRAW::StarVertex, pos);
+
+		vertex_attribute_description[1].binding = 0;
+		vertex_attribute_description[1].location = 1;
+		vertex_attribute_description[1].format = VK_FORMAT_R32_SFLOAT;
+		vertex_attribute_description[1].offset = offsetof(DRAW::StarVertex, brightness);
+
+		vertex_attribute_description[2].binding = 0;
+		vertex_attribute_description[2].location = 2;
+		vertex_attribute_description[2].format = VK_FORMAT_R32_SINT;
+		vertex_attribute_description[2].offset = offsetof(DRAW::StarVertex, layer);
+
+		VkPipelineVertexInputStateCreateInfo input_vertex_info = {};
+		input_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		input_vertex_info.vertexBindingDescriptionCount = 1;
+		input_vertex_info.pVertexBindingDescriptions = &vertex_binding_description;
+		input_vertex_info.vertexAttributeDescriptionCount = 3;
+		input_vertex_info.pVertexAttributeDescriptions = vertex_attribute_description;
+
+		unsigned int windowWidth, windowHeight;
+		win.GetClientWidth(windowWidth);
+		win.GetClientHeight(windowHeight);
+		VkViewport viewport = CreateViewportFromWindowDimensions(windowWidth, windowHeight);
+
+		VkRect2D scissor = CreateScissorFromWindowDimensions(windowWidth, windowHeight);
+
+		VkPipelineViewportStateCreateInfo viewport_create_info = {};
+		viewport_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewport_create_info.viewportCount = 1;
+		viewport_create_info.pViewports = &viewport;
+		viewport_create_info.scissorCount = 1;
+		viewport_create_info.pScissors = &scissor;
+
+		VkPipelineRasterizationStateCreateInfo rasterization_create_info = {};
+		rasterization_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterization_create_info.rasterizerDiscardEnable = VK_FALSE;
+		rasterization_create_info.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterization_create_info.lineWidth = 1.0f;
+		rasterization_create_info.cullMode = VK_CULL_MODE_NONE;
+		rasterization_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterization_create_info.depthClampEnable = VK_FALSE;
+		rasterization_create_info.depthBiasEnable = VK_FALSE;
+		rasterization_create_info.depthBiasClamp = 0.0f;
+		rasterization_create_info.depthBiasConstantFactor = 0.0f;
+		rasterization_create_info.depthBiasSlopeFactor = 0.0f;
+
+		VkPipelineMultisampleStateCreateInfo multisample_create_info = {};
+		multisample_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisample_create_info.sampleShadingEnable = VK_FALSE;
+		multisample_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisample_create_info.minSampleShading = 1.0f;
+		multisample_create_info.pSampleMask = VK_NULL_HANDLE;
+		multisample_create_info.alphaToCoverageEnable = VK_FALSE;
+		multisample_create_info.alphaToOneEnable = VK_FALSE;
+
+		VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info = {};
+		depth_stencil_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depth_stencil_create_info.depthTestEnable = VK_FALSE; // No depth
+		depth_stencil_create_info.depthWriteEnable = VK_FALSE;
+		depth_stencil_create_info.depthCompareOp = VK_COMPARE_OP_ALWAYS;
+		depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
+		depth_stencil_create_info.stencilTestEnable = VK_FALSE;
+
+		VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
+		color_blend_attachment_state.colorWriteMask = 0xF;
+		color_blend_attachment_state.blendEnable = VK_FALSE;
+		color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+		color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
+		color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
+		color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+		color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
+
+		VkPipelineColorBlendStateCreateInfo color_blend_create_info = {};
+		color_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		color_blend_create_info.logicOpEnable = VK_FALSE;
+		color_blend_create_info.logicOp = VK_LOGIC_OP_COPY;
+		color_blend_create_info.attachmentCount = 1;
+		color_blend_create_info.pAttachments = &color_blend_attachment_state;
+		color_blend_create_info.blendConstants[0] = 0.0f;
+		color_blend_create_info.blendConstants[1] = 0.0f;
+		color_blend_create_info.blendConstants[2] = 0.0f;
+		color_blend_create_info.blendConstants[3] = 0.0f;
+
+		// Dynamic State
+		VkDynamicState dynamic_states[2] =
+		{
+			// By setting these we do not need to re-create the pipeline on Resize
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR
+		};
+		VkPipelineDynamicStateCreateInfo dynamic_create_info = {};
+		dynamic_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamic_create_info.dynamicStateCount = 2;
+		dynamic_create_info.pDynamicStates = dynamic_states;
+
+		VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
+		pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipeline_layout_create_info.setLayoutCount = 0; // No descriptors for the star
+		pipeline_layout_create_info.pSetLayouts = nullptr;
+		pipeline_layout_create_info.pushConstantRangeCount = 0;
+		pipeline_layout_create_info.pPushConstantRanges = nullptr;
+
+		vkCreatePipelineLayout(vulkanRenderer.device, &pipeline_layout_create_info, nullptr, &vulkanRenderer.starPipelineLayout);
+
+		// Pipeline State... (FINALLY)
+		VkGraphicsPipelineCreateInfo pipeline_create_info = {};
+		pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipeline_create_info.stageCount = 2;
+		pipeline_create_info.pStages = stage_create_info;
+		pipeline_create_info.pInputAssemblyState = &assembly_create_info;
+		pipeline_create_info.pVertexInputState = &input_vertex_info;
+		pipeline_create_info.pViewportState = &viewport_create_info;
+		pipeline_create_info.pRasterizationState = &rasterization_create_info;
+		pipeline_create_info.pMultisampleState = &multisample_create_info;
+		pipeline_create_info.pDepthStencilState = &depth_stencil_create_info;
+		pipeline_create_info.pColorBlendState = &color_blend_create_info;
+		pipeline_create_info.pDynamicState = &dynamic_create_info;
+		pipeline_create_info.layout = vulkanRenderer.starPipelineLayout;
+		pipeline_create_info.renderPass = vulkanRenderer.renderPass;
+		pipeline_create_info.subpass = 0;
+		pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
+
+		vkCreateGraphicsPipelines(vulkanRenderer.device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &vulkanRenderer.starPipeline);
+	}
+
 	//*** SYSTEMS ***//
 
 	// run this code when a VulkanRenderer component is connected
@@ -389,11 +547,56 @@ namespace DRAW
 
 		shaderc_result_release(result); // done
 
+		// --- STARFIELD VERTEX SHADER ---
+		std::string starsVS = ReadFileIntoString(initializationData.starsVertexShaderName.c_str());
+		result = shaderc_compile_into_spv(
+			compiler, starsVS.c_str(), starsVS.length(),
+			shaderc_vertex_shader, "stars.vert", "main", options);
+
+		if (shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success)
+		{
+			std::cout << "Starfield Vertex Shader Errors:\n"
+				<< shaderc_result_get_error_message(result) << std::endl;
+			abort();
+		}
+
+		GvkHelper::create_shader_module(
+			vulkanRenderer.device,
+			shaderc_result_get_length(result),
+			(char*)shaderc_result_get_bytes(result),
+			&vulkanRenderer.starsVertexShader);
+
+		shaderc_result_release(result);
+
+		// --- STARFIELD FRAGMENT SHADER ---
+		std::string starsFS = ReadFileIntoString(initializationData.starsFragmentShaderName.c_str());
+		result = shaderc_compile_into_spv(
+			compiler, starsFS.c_str(), starsFS.length(),
+			shaderc_fragment_shader, "stars.frag", "main", options);
+
+		if (shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success)
+		{
+			std::cout << "Starfield Fragment Shader Errors:\n"
+				<< shaderc_result_get_error_message(result) << std::endl;
+			abort();
+		}
+
+		GvkHelper::create_shader_module(
+			vulkanRenderer.device,
+			shaderc_result_get_length(result),
+			(char*)shaderc_result_get_bytes(result),
+			&vulkanRenderer.starsFragmentShader);
+
+		shaderc_result_release(result);
+
+
 		// Free runtime shader compiler resources
 		shaderc_compile_options_release(options);
 		shaderc_compiler_release(compiler);
 
 		InitializeGraphicsPipeline(registry, entity);
+
+		InitializeStarfieldPipeline(registry, entity);
 
 		// Remove the initializtion data as we no longer need it
 		registry.remove<VulkanRendererInitialization>(entity);
@@ -429,6 +632,24 @@ namespace DRAW
 
 		VkRect2D scissor = CreateScissorFromWindowDimensions(windowWidth, windowHeight);
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		// --- Draw Starfield ---
+		auto starView = registry.view<StarfieldGPU, VulkanVertexBuffer>();
+		for (auto starEnt : starView)
+		{
+			auto& starGPU = starView.get<StarfieldGPU>(starEnt);
+			auto& vbuf = starView.get<VulkanVertexBuffer>(starEnt);
+
+			if (vbuf.buffer != VK_NULL_HANDLE)
+			{
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanRenderer.starPipeline);
+
+				VkDeviceSize offsets[] = { 0 };
+				vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vbuf.buffer, offsets);
+
+				vkCmdDraw(commandBuffer, static_cast<uint32_t>(starGPU.starCount), 1, 0, 0);
+			}
+		}
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanRenderer.pipeline);
 
@@ -507,9 +728,13 @@ namespace DRAW
 
 		// Release allocated shaders & pipeline
 		vkDestroyShaderModule(vulkanRenderer.device, vulkanRenderer.vertexShader, nullptr);
+		vkDestroyShaderModule(vulkanRenderer.device, vulkanRenderer.starsVertexShader, nullptr);
 		vkDestroyShaderModule(vulkanRenderer.device, vulkanRenderer.fragmentShader, nullptr);
+		vkDestroyShaderModule(vulkanRenderer.device, vulkanRenderer.starsFragmentShader, nullptr);
 		vkDestroyPipelineLayout(vulkanRenderer.device, vulkanRenderer.pipelineLayout, nullptr);
+		vkDestroyPipelineLayout(vulkanRenderer.device, vulkanRenderer.starPipelineLayout, nullptr);
 		vkDestroyPipeline(vulkanRenderer.device, vulkanRenderer.pipeline, nullptr);
+		vkDestroyPipeline(vulkanRenderer.device, vulkanRenderer.starPipeline, nullptr);
 	}
 
 	// Use this MACRO to connect the EnTT Component Logic

@@ -3,6 +3,9 @@
 #include "../UTIL/Utilities.h"
 #include "../CCL.h"
 #include "../DRAW/CloneEntity.h"
+#include "Gameplay/PowerUps/PowerUps.h"
+
+void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir);
 
 void Update_Player(entt::registry& registry, entt::entity self)
 {
@@ -86,19 +89,19 @@ void Update_Player(entt::registry& registry, entt::entity self)
     if (input.immediateInput.GetState(G_KEY_DOWN, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
     {
         dir.z -= 1.0f;
-        firePressed = true;
+        //firePressed = true;
     }
 
     if (input.immediateInput.GetState(G_KEY_RIGHT, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
     {
         dir.x += 1.0f;
-        firePressed = true;
+        //firePressed = true;
     }
 
     if (input.immediateInput.GetState(G_KEY_LEFT, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
     {
         dir.x -= 1.0f;
-        firePressed = true;
+        //firePressed = true;
     }
 
     float pressed = 0.0f;
@@ -150,12 +153,81 @@ void Update_Player(entt::registry& registry, entt::entity self)
             inst.transform = bulletTransform.matrix;
         }
 
+        SideFighterFire(registry, self, transform, dir);
+
         // Cooldown
         registry.emplace<GAME::Firing>(self, fireRate);
+    }
+
+    // Temporary key press logic to test power up spawning
+    // Gets the event cache to read buffered input events
+    auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
+    GW::GEvent event;
+
+    while (+pressEvents.Pop(event))
+    {
+        GW::INPUT::GBufferedInput::Events inputEvent;
+        GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+
+        if (+event.Read(inputEvent, inputData))
+        {
+            // Check if a key was specifically pressed down and if it's 'C'
+            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
+            {
+				SpawnPowerUp(registry, transform.matrix);
+                
+            }
+        }
+    }
+}
+
+void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir)
+{
+    auto wingmanView = registry.view<GAME::SideFighter>();
+
+    for (auto wingmanEntity : wingmanView)
+    {
+        auto& fighterData = registry.get<GAME::SideFighter>(wingmanEntity);
+
+        if (fighterData.player == self)
+        {
+            entt::entity bullet = registry.create();
+
+            auto& vel = registry.emplace<GAME::Velocity>(bullet);
+            vel.direction = dir;
+
+            registry.emplace<GAME::Bullet>(bullet);
+            registry.emplace<GAME::Collidable>(bullet);
+
+            auto& bulletTransform = registry.emplace<GAME::Transform>(bullet);
+
+            auto& manager = registry.ctx().get<DRAW::ModelManager>();
+            auto& bulletCollection = registry.emplace<DRAW::MeshCollection>(bullet);
+
+            CloneModelToEntity(
+                registry,
+                manager.collections["Bullet"],
+                bulletCollection,
+                bulletTransform
+            );
+
+            GW::MATH::GMatrix::TranslateGlobalF(
+                transform.matrix,
+                fighterData.offset,
+                bulletTransform.matrix
+			);
+
+            for (auto mesh : bulletCollection.meshEntities)
+            {
+                auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+                inst.transform = bulletTransform.matrix;
+            }
+        }
     }
 }
 
 CONNECT_COMPONENT_LOGIC()
 {
     registry.on_update<GAME::Player>().connect<Update_Player>();
+    registry.on_update<GAME::SideFighter>().connect<Update_SideFighter>();
 }

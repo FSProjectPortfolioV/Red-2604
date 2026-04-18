@@ -1,29 +1,9 @@
 #include "Physics.h"
 #include "../GameComponents.h"
 #include "../../DRAW/CloneEntity.h"
+#include "../../GAME/Gameplay/PowerUps/PowerUps.h"
 
-void BounceEnemy(GW::MATH::GVECTORF enemyLocation, GW::MATH::GVECTORF& enemyVelocity, GW::MATH::GOBBF& obstacleBox)
-{
-	// Closest point
-	GW::MATH::GVECTORF closest;
-	GW::MATH::GCollision::ClosestPointToOBBF(obstacleBox, enemyLocation, closest);
 
-	// Normal
-	GW::MATH::GVECTORF normal;
-	GW::MATH::GVector::SubtractVectorF(enemyLocation, closest, normal);
-	normal.y = 0.0f;
-	normal.w = 0.0f;
-	GW::MATH::GVector::NormalizeF(normal, normal);
-
-	// Reflect velocity
-	float dot;
-	GW::MATH::GVector::DotF(enemyVelocity, normal, dot);
-	dot *= 2.0f;
-
-	GW::MATH::GVECTORF scaled;
-	GW::MATH::GVector::ScaleF(normal, dot, scaled);
-	GW::MATH::GVector::SubtractVectorF(enemyVelocity, scaled, enemyVelocity);
-}
 
 void HurtPlayer(entt::registry& registry, entt::entity player)
 {
@@ -139,17 +119,21 @@ void Physics::Collision(entt::registry& registry)
 				{
 					registry.emplace_or_replace<ToDestroy>(*b);
 				}
-
-				// Case: Enemy to Wall - Enemy bounces
+				 //UPDATED!
+				// Case: Enemy to Wall - Enemy Gets Destoryed!
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Obstacle>(*b))
 				{
-					auto& vel = registry.get<GAME::Velocity>(*a).direction;
-					BounceEnemy(transA.row4, vel, colB);
+					if (!registry.any_of<Invuln>(*a)) {
+						registry.emplace_or_replace<ToDestroy>(*a);
+					}
+					
 				}
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Obstacle>(*a))
 				{
-					auto& vel = registry.get<GAME::Velocity>(*b).direction;
-					BounceEnemy(transB.row4, vel, colA);
+					if (!registry.any_of<Invuln>(*b)) {
+						registry.emplace_or_replace<ToDestroy>(*b);
+					}
+					
 				}
 
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
@@ -177,6 +161,24 @@ void Physics::Collision(entt::registry& registry)
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
 					HurtPlayer(registry, *a);
+				}
+
+				// Case: Player to Power-Ups - Player gets the power-up, power-up gets destroyed
+				if (registry.all_of<Player>(*a) && registry.all_of<PowerUp>(*b))
+				{
+					auto& powerUp = registry.get<GAME::PowerUp>(*b);
+
+					PowerUpEffect(registry, *a, powerUp.type);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+				}
+				if (registry.all_of<Player>(*b) && registry.all_of<PowerUp>(*a))
+				{
+					auto& powerUp = registry.get<GAME::PowerUp>(*a);
+
+					PowerUpEffect(registry, *b, powerUp.type);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
 				}
 			}
 		}
