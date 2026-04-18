@@ -37,21 +37,72 @@ namespace DRAW
 			vkDeviceWaitIdle(vkRenderer.device);
 			registry.remove<std::vector<H2B::VERTEX>>(entity);
 		}
-	}
 
-	void Destroy_VulkanVertexBuffer(entt::registry& registry, entt::entity entity) {
-		// check if the buffer is allocated, if so, release it
-		if (registry.all_of<VulkanVertexBuffer, VulkanRenderer>(entity)) {
+		if (registry.all_of<std::vector<DRAW::StarVertex>>(entity)) {
 
-			auto& vkRenderer = registry.get<VulkanRenderer>(entity);
-			auto& vertex_buffer = registry.get<VulkanVertexBuffer>(entity);
+			// get renderer entity just to access device/physicalDevice
+			auto rendererView = registry.view<DRAW::VulkanRenderer>();
+			if (rendererView.empty())
+				return;
+
+			entt::entity rendererEnt = rendererView.front();
+			auto& vkRenderer = registry.get<DRAW::VulkanRenderer>(rendererEnt);
+			auto& starVerts = registry.get<std::vector<DRAW::StarVertex>>(entity);
+
+			// destroy old star buffer if present
+			if (vertex_buffer.buffer != VK_NULL_HANDLE) {
+				vkDeviceWaitIdle(vkRenderer.device);
+				vkDestroyBuffer(vkRenderer.device, vertex_buffer.buffer, nullptr);
+				vkFreeMemory(vkRenderer.device, vertex_buffer.memory, nullptr);
+				vertex_buffer.buffer = VK_NULL_HANDLE;
+				vertex_buffer.memory = VK_NULL_HANDLE;
+			}
+
+			VkDeviceSize size = sizeof(DRAW::StarVertex) * starVerts.size();
+			if (size > 0) {
+				GvkHelper::create_buffer(
+					vkRenderer.physicalDevice, vkRenderer.device,
+					size,
+					VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+					&vertex_buffer.buffer, &vertex_buffer.memory
+				);
+
+				GvkHelper::write_to_buffer(
+					vkRenderer.device, vertex_buffer.memory,
+					starVerts.data(), size
+				);
+			}
+
 			vkDeviceWaitIdle(vkRenderer.device);
-			// Release allocated buffers, shaders & pipeline
-			vkDestroyBuffer(vkRenderer.device, vertex_buffer.buffer, nullptr);
-			vkFreeMemory(vkRenderer.device, vertex_buffer.memory, nullptr);
+			registry.remove<std::vector<DRAW::StarVertex>>(entity);
 		}
-
 	}
+
+	void Destroy_VulkanVertexBuffer(entt::registry& registry, entt::entity entity)
+	{
+		auto& vertex_buffer = registry.get<VulkanVertexBuffer>(entity);
+
+		if (vertex_buffer.buffer == VK_NULL_HANDLE)
+			return;
+
+		// Find the renderer entity to get device + physicalDevice
+		auto rendererView = registry.view<DRAW::VulkanRenderer>();
+		if (rendererView.empty())
+			return;
+
+		entt::entity rendererEnt = rendererView.front();
+		auto& vkRenderer = registry.get<DRAW::VulkanRenderer>(rendererEnt);
+
+		vkDeviceWaitIdle(vkRenderer.device);
+
+		vkDestroyBuffer(vkRenderer.device, vertex_buffer.buffer, nullptr);
+		vkFreeMemory(vkRenderer.device, vertex_buffer.memory, nullptr);
+
+		vertex_buffer.buffer = VK_NULL_HANDLE;
+		vertex_buffer.memory = VK_NULL_HANDLE;
+	}
+
 
 	// Forward declare
 	void Destroy_VulkanIndexBuffer(entt::registry& registry, entt::entity entity);
