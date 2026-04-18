@@ -167,7 +167,7 @@
         int enemyCount, // how many enemies to spawn
         int spacing , // how far apart enmies are from each other
         float speed, //multipler to the enemies movement speed
-        GAME::Transform StartLocation, //where to start the formation form
+        GAME::Transform StartLocation, //where to start the formation from
         const EnemyConfig& cfg, //enemy being used
         const DRAW::ModelManager& manager, //for knowing where to get the model from
         float SpawnDelay // delay between enemy spawns for the formations
