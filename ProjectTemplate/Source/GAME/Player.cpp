@@ -5,6 +5,7 @@
 #include "../DRAW/CloneEntity.h"
 #include "Gameplay/PowerUps/PowerUps.h"
 
+
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir);
 
 void Update_Player(entt::registry& registry, entt::entity self)
