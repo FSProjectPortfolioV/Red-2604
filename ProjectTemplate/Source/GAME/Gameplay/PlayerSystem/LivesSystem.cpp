@@ -4,6 +4,7 @@
 #include "../../../DRAW/DrawComponents.h"
 #include "../../../UTIL/Utilities.h"
 #include "../ScoreSystem/HighscoreScreenController.h"
+#include "../ScoreSystem/InitialsEntrySystem.h"
 
 namespace GAME
 {
@@ -76,6 +77,8 @@ namespace GAME
 				if (highscore.IsNewHighscore())
 				{
 					std::cout << "New Highscore\n";
+					auto& initials = registry.ctx().get<InitialsEntrySystem>();
+					initials.Reset();
 				}
 				else
 				{
@@ -162,6 +165,101 @@ namespace GAME
 					}
 				}
 			}
+		}
+	}
+
+	void UpdateHighscoreEntry(entt::registry& registry)
+	{
+		auto& highscore = registry.ctx().get<HighscoreScreenController>();
+
+		if (!highscore.NeedsInitialsEntry())
+		{
+			return;
+		}
+
+		auto& initials = registry.ctx().get<InitialsEntrySystem>();
+		auto& input = registry.ctx().get<UTIL::Input>();
+
+		static bool wDown = false;
+		static bool aDown = false;
+		static bool sDown = false;
+		static bool dDown = false;
+		static bool enterDown = false;
+
+		float state = 0.0f;
+
+		if (input.immediateInput.GetState(G_KEY_W, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!wDown)
+			{
+				initials.MoveUp();
+			}
+			wDown = true;
+		}
+		else
+		{
+			wDown = false;
+		}
+
+		if (input.immediateInput.GetState(G_KEY_A, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!aDown)
+			{
+				initials.MoveLeft();
+			}
+			aDown = true;
+		}
+		else
+		{
+			aDown = false;
+		}
+
+		if (input.immediateInput.GetState(G_KEY_S, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!sDown)
+			{
+				initials.MoveDown();
+			}
+			sDown = true;
+		}
+		else
+		{
+			sDown = false;
+		}
+
+		if (input.immediateInput.GetState(G_KEY_D, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!dDown)
+			{
+				initials.MoveRight();
+			}
+			dDown = true;
+		}
+		else
+		{
+			dDown = false;
+		}
+
+		if (input.immediateInput.GetState(G_KEY_ENTER, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!enterDown)
+			{
+				std::string entered = initials.GetInitials();
+
+				if (highscore.SubmitInitials(registry, entered))
+				{
+					std::cout << "Highscore saved: " << entered << "\n";
+				}
+				else
+				{
+					std::cout << "Highscore failed to save\n";
+				}
+			}
+			enterDown = true;
+		}
+		else
+		{
+			enterDown = false;
 		}
 	}
 }
