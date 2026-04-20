@@ -112,14 +112,21 @@ void BLIT_Font::DrawTextDeferred(int _x, int _y, const char* _text, std::size_t 
 
 void BLIT_Font::DrawTextImmediate(int _x, int _y, const char* _text, std::size_t _len)
 {
-	// Draw the text using the GBlitter class
 	thread_local static std::vector<GW::GRAPHICS::GBlitter::DrawInstruction> draw_instructions;
 	draw_instructions.resize(_len);
-	// compute the starting position
+
 	float start_x = static_cast<float>(_x);
 	float start_y = static_cast<float>(_y);
 
+	// Create a separate counter for valid, printable characters
+	std::size_t valid_count = 0; 
+
 	for (std::size_t i = 0; i < _len; ++i) {
+
+		// Prevent negative indexing if a newline or tab slips in
+		if (_text[i] < 32) {
+			continue;
+		}
 
 		// skip spaces
 		if (_text[i] == ' ') {
@@ -127,22 +134,28 @@ void BLIT_Font::DrawTextImmediate(int _x, int _y, const char* _text, std::size_t
 			continue;
 		}
 
-		draw_instructions[i] = {
+		// Use 'valid_count' to pack instructions tightly, avoiding gaps
+		draw_instructions[valid_count] = {
 			tile_ids[_text[i] - 32],
 			GW::GRAPHICS::GBlitter::DrawOptions::USE_MASKING,
-			0, 0, start_x, start_y, 0, // rest unused
+			0, 0, start_x, start_y, 0, 
 		};
-		draw_instructions[i].t[0] -= static_cast<float>(font.characters[_text[i] - 32].originX);
-		draw_instructions[i].t[1] -= static_cast<float>(font.characters[_text[i] - 32].originY);
+		
+		draw_instructions[valid_count].t[0] -= static_cast<float>(font.characters[_text[i] - 32].originX);
+		draw_instructions[valid_count].t[1] -= static_cast<float>(font.characters[_text[i] - 32].originY);
 
 		start_x += static_cast<float>(font.characters[_text[i] - 32].width);
 		start_x -= static_cast<float>(font.characters[_text[i] - 32].originX);
+
+		// Increment our valid instruction counter
+		valid_count++; 
 	}
 
-	// Draw the text using the GBlitter class
-	if (-blitter.DrawImmediate(draw_instructions.data(), _len)) {
-		// error handling
-		std::throw_with_nested(std::runtime_error("Failed to draw text"));
+	// Only attempt to draw if there are actual characters
+	if (valid_count > 0) {
+		if (-blitter.DrawImmediate(draw_instructions.data(), valid_count)) {
+			throw std::runtime_error("Failed to draw text");
+		}
 	}
 }
 
