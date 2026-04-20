@@ -2,6 +2,7 @@
 #include "../GameComponents.h"
 #include "../../DRAW/CloneEntity.h"
 #include "../../GAME/Gameplay/PowerUps/PowerUps.h"
+#include "../Gameplay/PlayerSystem/LivesSystem.h"
 
 
 
@@ -154,13 +155,27 @@ void Physics::Collision(entt::registry& registry)
 				}
 
 				// Case: Enemy to Player - Hurt the player
+				entt::entity gameManager = entt::null;
+				auto gmView = registry.view<GAME::GameManager>();
+				for (auto gm : gmView)
+				{
+					gameManager = gm;
+					break;
+				}
+
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Player>(*b))
 				{
-					HurtPlayer(registry, *b);
+					if (gameManager != entt::null)
+					{
+						GAME::KillPlayer(registry, *b, gameManager);
+					}
 				}
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
-					HurtPlayer(registry, *a);
+					if (gameManager != entt::null)
+					{
+						GAME::KillPlayer(registry, *a, gameManager);
+					}
 				}
 
 				// Case: Player to Power-Ups - Player gets the power-up, power-up gets destroyed

@@ -88,16 +88,6 @@ void Gameplay::GameOver(entt::registry& registry, entt::entity manager)
 
 void Gameplay::PlayerTimers(entt::registry& registry, float dt)
 {
-	auto invView = registry.view<GAME::Player, GAME::Invuln>();
-	for (auto p : invView)
-	{
-		auto& inv = invView.get<GAME::Invuln>(p);
-		inv.cooldown -= dt;
-
-		if (inv.cooldown <= 0)
-			registry.remove<GAME::Invuln>(p);
-	}
-
 	auto playerView = registry.view<GAME::Player>();
 	for (auto p : playerView)
 		registry.patch<GAME::Player>(p);

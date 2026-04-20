@@ -9,6 +9,13 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
 void Update_Player(entt::registry& registry, entt::entity self)
 {
+    // Check if player dies
+    auto& health = registry.get<GAME::Health>(self);
+    if (health.HP <= 0)
+    {
+        return;
+    }
+
     auto& transform = registry.get<GAME::Transform>(self);
     auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
 

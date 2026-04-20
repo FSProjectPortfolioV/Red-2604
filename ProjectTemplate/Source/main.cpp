@@ -10,6 +10,8 @@
 #include "GAME/Gameplay/ScoreSystem/ScoreSystem.h"
 #include "GAME/Gameplay/ScoreSystem/LeaderboardSystem.h"
 #include "GAME/Gameplay/ScoreSystem/FirebaseLeaderboardAPI.h"
+#include "GAME/Gameplay/ScoreSystem/HighscoreScreenController.h"
+#include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 
 
 
@@ -28,6 +30,7 @@ int main()
 	registry.ctx().emplace<ScoreSystem>();
 	registry.ctx().emplace<LeaderboardSystem>();
 	registry.ctx().emplace<FirebaseLeaderboardAPI>("leaderboard-2851-default-rtdb.firebaseio.com", "/Leaderboard/Entries.json");
+	registry.ctx().emplace<HighscoreScreenController>();
 
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
@@ -177,6 +180,9 @@ void GameplayBehavior(entt::registry& registry)
 	auto& pHP = registry.emplace<GAME::Health>(player);
 	pHP.HP = (*config).at("Player").at("hitpoints").as<int>();
 
+	auto& lives = registry.emplace<GAME::Lives>(player);
+	lives.count = (*config).at("Player").at("lives").as<int>();
+
 	// Create game manager
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);
@@ -220,6 +226,8 @@ void MainLoopBehavior(entt::registry& registry)
 			elapsed = 1.0 / 30.0;
 		}
 		deltaTime = elapsed;
+
+		GAME::RespawnPlayer(registry, (float)deltaTime);
 
 		//Update Game
 		auto gmView = registry.view<GAME::GameManager>();

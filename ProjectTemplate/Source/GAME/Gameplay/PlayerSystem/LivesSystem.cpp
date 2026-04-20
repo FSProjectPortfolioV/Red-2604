@@ -1,0 +1,167 @@
+#include <iostream>
+#include "LivesSystem.h"
+#include "../../GameComponents.h"
+#include "../../../DRAW/DrawComponents.h"
+#include "../../../UTIL/Utilities.h"
+#include "../ScoreSystem/HighscoreScreenController.h"
+
+namespace GAME
+{
+	void KillPlayer(entt::registry& registry, entt::entity player, entt::entity gameManager)
+	{
+		if (!registry.valid(player) || !registry.valid(gameManager))
+		{
+			return;
+		}
+
+		// Ignore hits while invuln
+		if (registry.all_of<Invuln>(player))
+		{
+			return;
+		}
+
+		auto& health = registry.get<Health>(player);
+		auto& lives = registry.get<Lives>(player);
+		auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
+
+		if (health.HP <= 0)
+		{
+			return;
+		}
+
+		health.HP = 0;
+		lives.count--;
+
+		// Todo: Place death explosion here
+		// Use the players transform to spawn a small explosion where the player dies
+
+		// Disable collision while dead
+		if (registry.all_of<Collidable>(player))
+		{
+			registry.remove<Collidable>(player);
+		}
+
+		// Stop active fire
+		if (registry.all_of<Firing>(player))
+		{
+			registry.remove<Firing>(player);
+		}
+
+		// Hide mesh while dead
+		if (registry.all_of<DRAW::MeshCollection>(player))
+		{
+			auto& meshes = registry.get<DRAW::MeshCollection>(player);
+
+			for (auto mesh : meshes.meshEntities)
+			{
+				registry.emplace_or_replace<Visible>(mesh).show = false;
+			}
+		}
+
+		if (lives.count > 0)
+		{
+			float delay = config->at("Player").at("respawnDelay").as<float>();
+			registry.emplace_or_replace<RespawnTimer>(player).timeRemaining = delay;
+
+			std::cout << "Player died. Lives left: " << lives.count << "\n";
+		}
+		else // Final death
+		{
+			registry.emplace_or_replace<GameOver>(gameManager);
+
+			// Check localscore to highscore
+			auto& highscore = registry.ctx().get<HighscoreScreenController>();
+			if (highscore.Begin(registry))
+			{
+				if (highscore.IsNewHighscore())
+				{
+					std::cout << "New Highscore\n";
+				}
+				else
+				{
+					std::cout << "No new highscore\n";
+				}
+			}
+			else
+			{
+				std::cout << "Leaderboard failed to load\n";
+			}
+		}
+	}
+
+	void RespawnPlayer(entt::registry& registry, float deltaTime)
+	{
+		auto view = registry.view<Player, Health, Lives, Transform>();
+
+		auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
+		float invulnPeriod = config->at("Player").at("invulnPeriod").as<float>();
+		int hitPoints = config->at("Player").at("hitpoints").as<int>();
+
+		for (auto player : view)
+		{
+			auto& health = view.get<Health>(player);
+
+			if (registry.all_of<RespawnTimer>(player))
+			{
+				auto& timer = registry.get<RespawnTimer>(player);
+				timer.timeRemaining -= deltaTime;
+
+				if (timer.timeRemaining <= 0.0f)
+				{
+					health.HP = hitPoints;
+
+					registry.emplace_or_replace<Collidable>(player);
+					registry.emplace_or_replace<Invuln>(player).cooldown = invulnPeriod;
+
+					// Show player meshes
+					if (registry.all_of<DRAW::MeshCollection>(player))
+					{
+						auto& meshes = registry.get<DRAW::MeshCollection>(player);
+						for (auto mesh : meshes.meshEntities)
+						{
+							registry.emplace_or_replace<Visible>(mesh).show = true;
+						}
+					}
+
+					registry.remove<RespawnTimer>(player);
+
+					std::cout << "Respawned\n";
+				}
+
+				continue;
+			}
+
+			if (registry.all_of<Invuln>(player))
+			{
+				auto& invuln = registry.get<Invuln>(player);
+				invuln.cooldown -= deltaTime;
+
+				int blinkStep = (int)(invuln.cooldown * 10.0f);
+				bool visible = (blinkStep % 2 == 0);
+
+				if (registry.all_of<DRAW::MeshCollection>(player))
+				{
+					auto& meshes = registry.get<DRAW::MeshCollection>(player);
+					for (auto mesh : meshes.meshEntities)
+					{
+						registry.emplace_or_replace<Visible>(mesh).show = visible;
+					}
+				}
+
+				if (invuln.cooldown <= 0.0f)
+				{
+					registry.remove<Invuln>(player);
+					
+					if (registry.all_of<DRAW::MeshCollection>(player))
+					{
+						auto& meshes = registry.get<DRAW::MeshCollection>(player);
+						for (auto mesh : meshes.meshEntities)
+						{
+							registry.emplace_or_replace<Visible>(mesh).show = true;
+						}
+					}
+				}
+			}
+		}
+	}
+}
