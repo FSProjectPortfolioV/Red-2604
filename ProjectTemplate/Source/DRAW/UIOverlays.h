@@ -8,6 +8,8 @@
 #include "./BLIT_Font.h"
 #include "../UTIL/Utilities.h"
 
+ScoreSystem Scorring;
+
 void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 	int windowWidth = (*config).at("Window").at("width").as<int>();
@@ -26,6 +28,8 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 	font.DrawTextImmediate(W / 8, 25, "1UP", 3);
 	font.DrawTextImmediate(W - (W / 6), 25, "2UP", 3);
 	font.DrawTextImmediate((W / 2) - 100, 25, "HIGH SCORE", 10);
+	std::string score = std::to_string(Scorring.GetScore());
+	font.DrawTextImmediate((W / 2) - 50, 60, score.c_str(), score.length());
 	std::string hits;
 	auto player = registry.view<GAME::Player>();
 	for (auto entity : player) {
@@ -36,6 +40,18 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 	}
 	font.DrawTextImmediate(5, H - 20, hits.c_str(), 7);
 	font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
+	unsigned int* pixels;
+	ovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+	ovl.Unlock();
+	ovl.TransferOverlay();
+}
+
+static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	bltr.ClearColor(0x00000000);
+	font.DrawTextImmediate(W / 8, 25, "1UP", 3);
+	font.DrawTextImmediate(W - (W / 6), 25, "2UP", 3);
+	font.DrawTextImmediate((W / 2) - 100, 25, "HIGH SCORE", 10);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
