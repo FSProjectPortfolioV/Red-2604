@@ -8,11 +8,11 @@ namespace GAME
 	struct Player {};
 	struct Enemy {};
 	struct Bullet {};
+	struct EnemyBullets {};
 	struct Collidable {};
 	struct Obstacle {};
 	struct ToDestroy {};
 	struct GameOver {};
-
 
 	///*** Components ***///
 	struct Transform
@@ -79,9 +79,41 @@ namespace GAME
 		float scrollSpeed;
 	};
 
-	struct WindowBounds
+	enum PowerUpType
 	{
-		float left, right, top, bottom;
+		None,
+		SideFighterPU,
 	};
+
+	struct PowerUp
+	{
+		PowerUpType type;
+	};
+
+	struct HasSideFighters
+	{
+		bool leftAlive = false;
+		bool rightAlive = false;
+	};
+
+	struct SideFighter 
+	{
+		entt::entity player;
+		std::string side;
+		GW::MATH::GVECTORF offset;
+	};
+
+	struct Paused
+	{
+
+	};
+
+	// This is defined based on the player's visible screen space.
+	// If you want to use this for operations outside the screen, you will need to define a margin.
+	struct Bounds
+	{
+		float left, right, bottom, top;
+	};;
+
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

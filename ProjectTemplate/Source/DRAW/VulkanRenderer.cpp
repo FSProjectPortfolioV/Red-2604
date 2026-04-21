@@ -7,6 +7,7 @@
 #ifdef _WIN32 // must use MT platform DLL libraries on windows
 #pragma comment(lib, "shaderc_combined.lib") 
 #endif
+#include "./UIOverlays.h"
 
 namespace DRAW
 {
@@ -600,6 +601,7 @@ namespace DRAW
 		// Remove the initializtion data as we no longer need it
 		registry.remove<VulkanRendererInitialization>(entity);
 
+		InitializeUIOverlays(registry, entity);
 	}
 
 	// run this code when a VulkanRenderer component is updated
@@ -699,6 +701,11 @@ namespace DRAW
 				instanceStart += count;
 			}
 		}
+		auto& overlay = registry.get<Overlay>(entity);
+		auto& blitter = registry.get<GW::GRAPHICS::GBlitter>(entity);
+		auto& font = registry.get<BLIT_Font>(entity);
+		UpdateUIOverlays(registry, 1, overlay, blitter, font, windowWidth, windowHeight);
+		overlay.RenderOverlay();
 
 		vulkanRenderer.vlkSurface.EndFrame(true);
 	}
