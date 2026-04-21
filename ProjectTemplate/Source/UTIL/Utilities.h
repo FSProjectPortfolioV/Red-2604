@@ -30,12 +30,6 @@ namespace UTIL
 	// Generate a random float between min and max
 	float RandomFloat(float min, float max);
 
-    // Creates a left-handed orthographic projection matrix with the given dimensions
-	GW::MATH::GMATRIXF OrthoLH(
-		float left, float right,
-		float bottom, float top,
-		float nearZ, float farZ);
-
 
 } // namespace UTIL
 #endif // !UTILITIES_H_
