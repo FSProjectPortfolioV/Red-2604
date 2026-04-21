@@ -98,5 +98,10 @@ namespace GAME
 
 	};
 
+	struct Bounds
+	{
+		float left, right, bottom, top;
+	};;
+
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

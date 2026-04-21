@@ -23,7 +23,7 @@ int main()
 {
 
 	// All components, tags, and systems are stored in a single registry
-	entt::registry registry;	
+	entt::registry registry;
 
 	registry.ctx().emplace<ScoreSystem>();
 	registry.ctx().emplace<LeaderboardSystem>();
@@ -41,13 +41,13 @@ int main()
 	GraphicsBehavior(registry); // create windows, surfaces, and renderers
 
 	GameplayBehavior(registry); // create entities and components for gameplay
-	
+
 	MainLoopBehavior(registry); // update windows and input
 
 	// clear all entities and components from the registry
 	// invokes on_destroy() for all components that have it
 	// registry will still be intact while this is happening
-	registry.clear(); 
+	registry.clear();
 
 	return 0; // now destructors will be called for all components
 }
@@ -78,7 +78,7 @@ void GraphicsBehavior(entt::registry& registry)
 	auto display = registry.create();
 
 	// Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
-	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
+	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{ (*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>() });
 
 	// Emplace and initialize Window component
 	int windowWidth = (*config).at("Window").at("width").as<int>();
@@ -86,11 +86,11 @@ void GraphicsBehavior(entt::registry& registry)
 	int startX = (*config).at("Window").at("xstart").as<int>();
 	int startY = (*config).at("Window").at("ystart").as<int>();
 	registry.emplace<APP::Window>(display,
-		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "2851 by Crimson Millenia"});
+		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "2851 by Crimson Millenia" });
 
 
 	// Create the input
-	auto& input =  registry.ctx().emplace<UTIL::Input>();
+	auto& input = registry.ctx().emplace<UTIL::Input>();
 	auto& window = registry.get<GW::SYSTEM::GWindow>(display);
 	window.ChangeWindowStyle(GW::SYSTEM::GWindowStyle::WINDOWEDLOCKED);
 	input.bufferedInput.Create(window);
@@ -107,11 +107,11 @@ void GraphicsBehavior(entt::registry& registry)
 	std::string starsVertexShader = (*config).at("Shaders").at("starVertex").as<std::string>();
 	std::string starsFragmentShader = (*config).at("Shaders").at("starPixel").as<std::string>();
 	registry.emplace<DRAW::VulkanRendererInitialization>(display,
-		DRAW::VulkanRendererInitialization{ 
+		DRAW::VulkanRendererInitialization{
 			vertShader, pixelShader, starsVertexShader, starsFragmentShader,
 			{ {0.0f, 0.0f, 0.0f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
 	registry.emplace<DRAW::VulkanRenderer>(display);
-	
+
 	// Emplace GPULevel
 	registry.emplace<DRAW::GPULevel>(display);
 
@@ -146,16 +146,67 @@ void GraphicsBehavior(entt::registry& registry)
 
 	// Create a camera and emplace it
 	GW::MATH::GMATRIXF initialCamera;
-	GW::MATH::GVECTORF translate = { 0.0f,  45.0f, -5.0f };
-	GW::MATH::GVECTORF lookat = { 0.0f, 0.0f, 0.0f };
-	GW::MATH::GVECTORF up = { 0.0f, 1.0f, 0.0f };
-	GW::MATH::GMatrix::TranslateGlobalF(initialCamera, translate, initialCamera);
-	GW::MATH::GMatrix::LookAtLHF(translate, lookat, up, initialCamera);
+	GW::MATH::GVECTORF camPos = { 0.0f,  45.0f, -5.0f };
+	GW::MATH::GVECTORF camLook = { 0.0f, 0.0f, 0.0f };
+	GW::MATH::GVECTORF camUp = { 0.0f, 1.0f, 0.0f };
+	GW::MATH::GMatrix::TranslateGlobalF(initialCamera, camPos, initialCamera);
+	GW::MATH::GMatrix::LookAtLHF(camPos, camLook, camUp, initialCamera);
 	// Inverse to turn it into a camera matrix, not a view matrix. This will let us do
 	// camera manipulation in the component easier
 	GW::MATH::GMatrix::InverseF(initialCamera, initialCamera);
 	registry.emplace<DRAW::Camera>(display,
 		DRAW::Camera{ initialCamera });
+
+	float fovY = 75.0f * (G_PI_F / 180.0f);
+	float aspect = (float)windowWidth / (float)windowHeight;
+	float halfTanY = tanf(fovY / 2.0f);
+	float halfTanX = halfTanY * aspect;
+
+	// Build camera axes
+	GW::MATH::GVECTORF forward;
+	GW::MATH::GVector::SubtractVectorF(camLook, camPos, forward);
+	GW::MATH::GVector::NormalizeF(forward, forward); // points toward scene
+	GW::MATH::GVECTORF right;
+	GW::MATH::GVector::CrossVector3F(forward, camUp, right);
+	GW::MATH::GVector::NormalizeF(right, right);
+	GW::MATH::GVECTORF up;
+	GW::MATH::GVector::CrossVector3F(right, forward, up);
+
+	// Four corners in view space, projected onto Y=0 world plane
+	// NDC corners: (-1,-1), (1,-1), (-1,1), (1,1) -> (left,bottom), (right,bottom), (left,top), (right,top)
+	auto rayToY0 = [&](float ndcX, float ndcY) -> GW::MATH::GVECTORF {
+		// right * ndcX * halfTanX
+		GW::MATH::GVECTORF scaledRight;
+		GW::MATH::GVector::ScaleF(right, ndcX * halfTanX, scaledRight);
+
+		// up * ndcY * halfTanY
+		GW::MATH::GVECTORF scaledUp;
+		GW::MATH::GVector::ScaleF(up, ndcY * halfTanY, scaledUp);
+
+		// forward + scaledRight + scaledUp
+		GW::MATH::GVECTORF dir;
+		GW::MATH::GVector::AddVectorF(forward, scaledRight, dir);
+		GW::MATH::GVector::AddVectorF(dir, scaledUp, dir);
+		GW::MATH::GVector::NormalizeF(dir, dir);
+
+		// t = -camPos.y / dir.y, then walk along ray to Y=0
+		float t = -camPos.y / dir.y;
+		return { camPos.x + t * dir.x, 0.0f, camPos.z + t * dir.z, 1.0f };
+		};
+
+	auto bottomLeft = rayToY0(-1.0f, -1.0f);
+	auto bottomRight = rayToY0(1.0f, -1.0f);
+	auto topLeft = rayToY0(-1.0f, 1.0f);
+	auto topRight = rayToY0(1.0f, 1.0f);
+
+	float playerHalfExtent = 3.0f; // Increase this if player goes off the top or bottom of the screen
+
+	registry.ctx().emplace<GAME::Bounds>(GAME::Bounds{
+	(std::min)(bottomLeft.x, bottomRight.x),  // left
+	(std::max)(bottomLeft.x, bottomRight.x),  // right
+	(std::min)(bottomLeft.z, topLeft.z) + playerHalfExtent,      // bottom
+	(std::max)(bottomLeft.z, topLeft.z) - playerHalfExtent       // top
+		});
 }
 
 // This function will be called by the main loop to update the gameplay
@@ -202,7 +253,7 @@ void GameplayBehavior(entt::registry& registry)
 // This function will be called by the main loop to update the main loop
 // It will be responsible for updating any created windows and handling any input
 void MainLoopBehavior(entt::registry& registry)
-{	
+{
 	// main loop
 	int closedCount; // count of closed windows
 	auto winView = registry.view<APP::Window>(); // for updating all windows
@@ -215,7 +266,7 @@ void MainLoopBehavior(entt::registry& registry)
 			std::chrono::steady_clock::now() - start).count();
 		start = std::chrono::steady_clock::now();
 		// Cap delta time to min 30 fps. This will prevent too much time from simulating when dragging the window
-		if(elapsed > 1.0 / 30.0)
+		if (elapsed > 1.0 / 30.0)
 		{
 			elapsed = 1.0 / 30.0;
 		}
@@ -246,7 +297,7 @@ void MainLoopBehavior(entt::registry& registry)
 				if (s.layer == 0) layerSpeed *= 0.5f; // background
 				if (s.layer == 1) layerSpeed *= 1.0f; // mid
 				if (s.layer == 2) layerSpeed *= 1.8f; // foreground
-				
+
 				float baseScroll = registry.ctx().get<GAME::ScrollingBackground>().scrollSpeed;
 				s.position.y += baseScroll * s.speed * dt;
 
