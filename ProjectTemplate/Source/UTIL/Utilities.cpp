@@ -26,4 +26,5 @@ namespace UTIL
 		float range = max - min;
 		return (random * range) + min;
 	}
+
 } // namespace UTIL

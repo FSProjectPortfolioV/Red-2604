@@ -59,6 +59,13 @@ void Update_Player(entt::registry& registry, entt::entity self)
     );
     transform.matrix = newMat;
 
+    // Clamp player position to screen bounds
+    if (registry.ctx().contains<GAME::Bounds>()) {
+        auto& bounds = registry.ctx().get<GAME::Bounds>();
+        transform.matrix.row4.x = std::clamp(transform.matrix.row4.x, bounds.left, bounds.right);
+        transform.matrix.row4.z = std::clamp(transform.matrix.row4.z, bounds.bottom, bounds.top);
+    }
+
     // Firing cooldown
     float fireRate = config->at("Player").at("firerate").as<float>();
     if (registry.all_of<GAME::Firing>(self)) {
