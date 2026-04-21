@@ -2,6 +2,7 @@
 #include "../CCL.h"
 // component dependencies
 #include "./Utility/FileIntoString.h"
+#include "../DRAW/Utility/TextureUTTL.h"
 
 #include "shaderc/shaderc.h" // needed for compiling shaders at runtime
 #ifdef _WIN32 // must use MT platform DLL libraries on windows
@@ -64,18 +65,38 @@ namespace DRAW
 		setCreateInfo.flags = 0;
 		setCreateInfo.pNext = nullptr;
 		vkCreateDescriptorSetLayout(vulkanRenderer.device, &setCreateInfo, nullptr, &vulkanRenderer.descriptorLayout);
+
+		// Create a second layout for the texture, since it is only used in the fragment shader, it can be separate from the other 2 buffers. This is not required, but it is more efficient if you don't need certain resources in certain shader stages
+		VkDescriptorSetLayoutBinding texBinding = {};
+		texBinding.binding = 0;
+		texBinding.descriptorCount = 1;
+		texBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		texBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		texBinding.pImmutableSamplers = nullptr;
+
+		VkDescriptorSetLayoutCreateInfo texLayoutInfo = {};
+		texLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		texLayoutInfo.bindingCount = 1; 
+		texLayoutInfo.pBindings = &texBinding;
+
+		std::cout << "[Vulkan] STEP 1: Descriptor Layouts and Pool created successfully." << std::endl;
+		vkCreateDescriptorSetLayout(vulkanRenderer.device, &texLayoutInfo, nullptr, &vulkanRenderer.textureLayout);
+
+		if (vulkanRenderer.textureLayout == VK_NULL_HANDLE)
+			std::cout << "[Vulkan] ERROR: textureLayout is STILL NULL!" << std::endl;
 #pragma endregion
 
 #pragma region Descriptor Pool
 		VkDescriptorPoolCreateInfo descriptorpool_create_info = {};
 		descriptorpool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		VkDescriptorPoolSize descriptorpool_size[2] = {
+		VkDescriptorPoolSize descriptorpool_size[3] = {
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, frameCount },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, frameCount }
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, frameCount },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 }
 		};
-		descriptorpool_create_info.poolSizeCount = 2;
+		descriptorpool_create_info.poolSizeCount = 3;
 		descriptorpool_create_info.pPoolSizes = descriptorpool_size;
-		descriptorpool_create_info.maxSets = frameCount;
+		descriptorpool_create_info.maxSets = frameCount + 100;
 		descriptorpool_create_info.flags = 0;
 		descriptorpool_create_info.pNext = nullptr;
 		vkCreateDescriptorPool(vulkanRenderer.device, &descriptorpool_create_info, nullptr, &vulkanRenderer.descriptorPool);
@@ -260,10 +281,12 @@ namespace DRAW
 
 		InitializeDescriptors(registry, entity);
 
+		VkDescriptorSetLayout layouts[] = { vulkanRenderer.descriptorLayout, vulkanRenderer.textureLayout };
+
 		VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
 		pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipeline_layout_create_info.setLayoutCount = 1;
-		pipeline_layout_create_info.pSetLayouts = &vulkanRenderer.descriptorLayout;
+		pipeline_layout_create_info.setLayoutCount = 2;
+		pipeline_layout_create_info.pSetLayouts = layouts;
 		pipeline_layout_create_info.pushConstantRangeCount = 0;
 		pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
@@ -487,6 +510,8 @@ namespace DRAW
 			return;
 		}
 
+		CreateSampler(vulkanRenderer.vlkSurface, vulkanRenderer.textureSampler);
+
 		vulkanRenderer.clrAndDepth[0].color = initializationData.clearColor;
 		vulkanRenderer.clrAndDepth[1].depthStencil = initializationData.depthStencil;
 
@@ -697,6 +722,17 @@ namespace DRAW
 			int instanceStart = 0;
 			for (auto [geoData, count] : geoInstances)
 			{
+				vkCmdBindDescriptorSets(
+					commandBuffer,
+					VK_PIPELINE_BIND_POINT_GRAPHICS,
+					vulkanRenderer.pipelineLayout,
+					1, // firstSet = 1
+					1, // descriptorSetCount = 1
+					&geoData.textureDescriptor, // The set we saved in the GeometryData!
+					0,
+					nullptr
+				);
+				
 				vkCmdDrawIndexed(commandBuffer, geoData.indexCount, count, geoData.indexStart, geoData.vertexStart, instanceStart);
 				instanceStart += count;
 			}
@@ -722,8 +758,36 @@ namespace DRAW
 		registry.remove<VulkanGPUInstanceBuffer>(entity);
 		registry.remove<VulkanUniformBuffer>(entity);
 
+		if (vulkanRenderer.textureSampler != VK_NULL_HANDLE) {
+			vkDestroySampler(vulkanRenderer.device, vulkanRenderer.textureSampler, nullptr);
+		}
+
+		// Access the manager from the context, not a view
+		if (registry.ctx().contains<ModelManager>())
+		{
+			auto& manager = registry.ctx().get<ModelManager>();
+			auto rendererView = registry.view<VulkanRenderer>();
+
+			if (!rendererView.empty())
+			{
+				auto& vulkanRenderer = registry.get<VulkanRenderer>(rendererView.front());
+
+				for (auto& pair : manager.textures)
+				{
+					if (pair.second.view != VK_NULL_HANDLE) {
+						vkDestroyImageView(vulkanRenderer.device, pair.second.view, nullptr);
+						vkDestroyImage(vulkanRenderer.device, pair.second.image, nullptr);
+						vkFreeMemory(vulkanRenderer.device, pair.second.memory, nullptr);
+					}
+				}
+
+				// Clear the map so we don't try to destroy them twice
+				manager.textures.clear();
+			}
+		}
 
 		vkDestroyDescriptorSetLayout(vulkanRenderer.device, vulkanRenderer.descriptorLayout, nullptr);
+		vkDestroyDescriptorSetLayout(vulkanRenderer.device, vulkanRenderer.textureLayout, nullptr);
 		vkDestroyDescriptorPool(vulkanRenderer.device, vulkanRenderer.descriptorPool, nullptr);
 
 		// Release allocated shaders & pipeline

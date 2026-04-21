@@ -22,14 +22,24 @@ namespace GAME
 
 	struct GameManager {};
 
-	struct LevelManager
+	struct LevelEvent 
 	{
-		float time = 0.0f; // current time in level
-		float scrollSpeed = 4.0f; // how fast the level scrolls
-		size_t nextWave = 0; // index of the next wave to spawn
-		// TODO: A vector of waves, where each wave contains enemy spawn data (type, position, formation, etc)
+		float triggerTime;
+		std::string formationName;
+	};
+
+	struct LevelManager {
+		float time = 0;
+		int tokenBudget = 10;
+		int tokensAvailable = 10;
+
+		size_t nextEvent = 0;
+		std::vector<LevelEvent> timeline;
+
+		std::queue<std::string> formationQueue; // names of formations waiting to spawn
 		bool levelComplete = false;
 	};
+
 
 	struct Firing 
 	{
@@ -44,21 +54,6 @@ namespace GAME
 	struct Health
 	{
 		int HP;
-	};
-
-	struct Lives
-	{
-		int count = 3;
-	};
-
-	struct RespawnTimer
-	{
-		float timeRemaining = 0.0f;
-	};
-
-	struct Visible
-	{
-		bool show = true;
 	};
 
 	struct Shatters 
@@ -112,6 +107,13 @@ namespace GAME
 	{
 
 	};
+
+	// This is defined based on the player's visible screen space.
+	// If you want to use this for operations outside the screen, you will need to define a margin.
+	struct Bounds
+	{
+		float left, right, bottom, top;
+	};;
 
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_
