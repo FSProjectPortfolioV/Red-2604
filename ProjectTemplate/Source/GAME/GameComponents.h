@@ -46,13 +46,6 @@ namespace GAME
 		int HP;
 	};
 
-	struct Shatters 
-	{
-		int remaining;
-		int clones;
-		float scaleDown;
-	};
-
 	struct Invuln 
 	{
 		float cooldown;
