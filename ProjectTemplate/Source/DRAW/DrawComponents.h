@@ -22,6 +22,7 @@ namespace DRAW
 		VkImage image = VK_NULL_HANDLE;
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
+		VkDescriptorSet descriptorSet;
 	};
 
 	struct ModelManager
@@ -60,6 +61,8 @@ namespace DRAW
 		GW::MATH::GMATRIXF projMatrix;
 		VkDescriptorSetLayout descriptorLayout = nullptr;
 		VkDescriptorPool descriptorPool = nullptr;
+
+		VkDescriptorSetLayout textureLayout;
 		std::vector<VkDescriptorSet> descriptorSets;
 		VkSampler textureSampler = VK_NULL_HANDLE;
 		VkClearValue clrAndDepth[2];
@@ -80,15 +83,13 @@ namespace DRAW
 	struct GeometryData
 	{
 		unsigned int indexStart, indexCount, vertexStart;
-		VkImageView textureView = VK_NULL_HANDLE;
+		VkDescriptorSet textureDescriptor = VK_NULL_HANDLE;
 
-		inline bool operator < (const GeometryData a) const {
-			if(indexStart != a.indexStart)
-			{
+		inline bool operator < (const GeometryData& a) const {
+			if (indexStart != a.indexStart)
 				return indexStart < a.indexStart;
-			}
 
-			return vertexStart < a.vertexStart;
+			return textureDescriptor < a.textureDescriptor;
 		}
 	};
 

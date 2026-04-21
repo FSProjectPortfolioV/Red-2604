@@ -3,6 +3,10 @@
 #include "CCL.h"
 #include "UTIL/Utilities.h"
 // include all components, tags, and systems used by this program
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "./DRAW/Utility/stb_image.h"
+
 #include "DRAW/DrawComponents.h"
 #include "GAME/GameComponents.h"
 #include "APP/Window.hpp"
@@ -77,9 +81,6 @@ void GraphicsBehavior(entt::registry& registry)
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
 
-	// Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
-	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{(*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>()});
-
 	// Emplace and initialize Window component
 	int windowWidth = (*config).at("Window").at("width").as<int>();
 	int windowHeight = (*config).at("Window").at("height").as<int>();
@@ -110,9 +111,16 @@ void GraphicsBehavior(entt::registry& registry)
 		DRAW::VulkanRendererInitialization{ 
 			vertShader, pixelShader, starsVertexShader, starsFragmentShader,
 			{ {0.0f, 0.0f, 0.0f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
+
+	std::cout << "[Main] Attempting to create VulkanRenderer..." << std::endl;
 	registry.emplace<DRAW::VulkanRenderer>(display);
 	
+	// Emplace CPULevel. Placing here to reduce occurrence of a json race condition crash
+	std::cout << "[Main] Attempting to load CPULevel (Parsing Files)..." << std::endl;
+	registry.emplace<DRAW::CPULevel>(display, DRAW::CPULevel{ (*config).at("Level1").at("levelFile").as<std::string>(), (*config).at("Level1").at("modelPath").as<std::string>() });
+
 	// Emplace GPULevel
+	std::cout << "[Main] Attempting to load GPULevel (Uploading Textures)..." << std::endl;
 	registry.emplace<DRAW::GPULevel>(display);
 
 	// Create a starfield entity
@@ -166,7 +174,6 @@ void GameplayBehavior(entt::registry& registry)
 		registry.ctx().emplace<DRAW::ModelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
-
 
 	// Create player
 	entt::entity player = registry.create();

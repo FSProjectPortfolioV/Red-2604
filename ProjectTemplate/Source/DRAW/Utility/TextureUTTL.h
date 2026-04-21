@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cmath> 
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 // A lightweight struct to hold raw pixel data

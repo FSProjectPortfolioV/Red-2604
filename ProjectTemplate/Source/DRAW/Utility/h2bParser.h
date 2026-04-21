@@ -60,6 +60,16 @@ namespace H2B {
 		bool Parse(const char* h2bPath)
 		{
 			Clear();
+
+			// --- ADD THIS CHECK HERE ---
+			if (h2bPath != nullptr && std::string(h2bPath).find("SideFighterPU") != std::string::npos)
+			{
+				// PUT YOUR BREAKPOINT ON THE INT BELOW!
+				int stopHere = 1;
+				std::cout << ">>> H2B Parser is opening SideFighterPU! <<<" << std::endl;
+			}
+			// ---------------------------
+
 			std::ifstream file;
 			char buffer[260] = { 0, };
 			file.open(h2bPath,	std::ios_base::in | 
