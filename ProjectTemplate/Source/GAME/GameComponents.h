@@ -63,6 +63,21 @@ namespace GAME
 		float scaleDown;
 	};
 
+	struct Lives
+	{
+		int count = 3;
+	};
+
+	struct RespawnTimer
+	{
+		float timeRemaining = 0.0f;
+	};
+
+	struct Visible
+	{
+		bool show = true;
+	};
+
 	struct Invuln 
 	{
 		float cooldown;
