@@ -105,6 +105,11 @@ void Update_Player(entt::registry& registry, entt::entity self)
         //firePressed = true;
     }
 
+    float pressed = 0.0f;
+    if (input.immediateInput.GetState(G_KEY_P, pressed) == GW::GReturn::SUCCESS && pressed > 0.0f) {
+        //registry.emplace<GAME::Paused>(self);
+    }
+
     // Normalize
     float bulletMag = sqrtf(dir.x * dir.x + dir.z * dir.z);
     if (bulletMag > 0.001f) {

@@ -258,7 +258,7 @@ void MainLoopBehavior(entt::registry& registry)
 				s.position.y += baseScroll * s.speed * dt;
 
 				// Horizontal sway using sine wave based on vertical position
-				s.position.x += sinf(s.position.y * 5.0f) * 0.000225f;
+				s.position.x += sinf(s.position.y * 5.0f) * 0.00003f;
 
 				// Wrap when star goes below the screen
 				if (s.position.y > 1.0f)

@@ -8,4 +8,6 @@ struct Gameplay
     static void GameOver(entt::registry& registry, entt::entity manager);
 
 	static void PlayerTimers(entt::registry& registry, float dt);
+
+	static void Pause(entt::registry& registry, entt::entity manager);
 };
