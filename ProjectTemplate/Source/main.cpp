@@ -199,7 +199,7 @@ void GraphicsBehavior(entt::registry& registry)
 	auto topLeft = rayToY0(-1.0f, 1.0f);
 	auto topRight = rayToY0(1.0f, 1.0f);
 
-	float playerHalfExtent = 3.0f; // Increase this if player goes off the top or bottom of the screen
+	float playerHalfExtent = 3.0f; // Increase this if player goes off the top or bottom of the screen. This is to compensate for player model geometry.
 
 	registry.ctx().emplace<GAME::Bounds>(GAME::Bounds{
 	(std::min)(bottomLeft.x, bottomRight.x),  // left
