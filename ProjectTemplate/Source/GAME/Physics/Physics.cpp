@@ -3,6 +3,7 @@
 #include "../../DRAW/CloneEntity.h"
 #include "../../GAME/Gameplay/PowerUps/PowerUps.h"
 #include "../Gameplay/PlayerSystem/LivesSystem.h"
+#include "../../GAME/Gameplay/Gameplay.h"
 
 
 
@@ -140,18 +141,28 @@ void Physics::Collision(entt::registry& registry)
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Bullet>(*b))
 				{
-					auto& health = registry.get<Health>(*a);
-					health.HP -= 1;
-
-					registry.emplace_or_replace<ToDestroy>(*b);
+					if (!registry.any_of<Invuln>(*a)) {
+						auto& health = registry.get<Health>(*a);
+						auto& cfg = registry.get<EnemyConfig>(*a);
+						health.HP -= 1;
+						if (health.HP == 0) {
+							Gameplay::EnemyDeath(registry, cfg);
+						}
+						registry.emplace_or_replace<ToDestroy>(*b);
+					}
 				}
 
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Bullet>(*a))
 				{
-					auto& health = registry.get<Health>(*b);
-					health.HP -= 1;
-
-					registry.emplace_or_replace<ToDestroy>(*a);
+					if (!registry.any_of<Invuln>(*b)) {
+						auto& health = registry.get<Health>(*b);
+						auto& cfg = registry.get<EnemyConfig>(*b);
+						health.HP -= 1;
+						if (health.HP == 0) {
+							Gameplay::EnemyDeath(registry, cfg);
+						}
+						registry.emplace_or_replace<ToDestroy>(*a);
+					}
 				}
 
 				// Case: Enemy to Player - Hurt the player

@@ -241,6 +241,10 @@ void GameplayBehavior(entt::registry& registry)
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);
 
+	// Create level manager
+	entt::entity lm = registry.create();
+	registry.emplace<GAME::LevelManager>(lm);
+
 	// Get model manager
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
 

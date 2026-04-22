@@ -25,6 +25,8 @@ namespace GAME
 		std::string modelName;
 		GAME::FormationStyle Movement; //used for knowing how to move the enemy
 		GAME::Invuln Spawn; //used for preventing accidental on spawn deleteion. 
+		int Score;
+		float fireRate;
 	};
 
 	struct FORMATIONS { //main way level should try spawning enmies

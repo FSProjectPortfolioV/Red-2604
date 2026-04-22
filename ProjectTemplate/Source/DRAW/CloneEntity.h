@@ -49,14 +49,16 @@
     static entt::entity SpawnEnemy(entt::registry& registry,
         const DRAW::ModelManager& manager, 
         const GAME::Transform& transform, 
-        const GAME::EnemyConfig& cfg, const float SpeedMult)
+        const GAME::EnemyConfig& cfg, const float SpeedMult, const float spawnInvul)
     {
         // Create entity
         entt::entity enemy = registry.create();
 
         // Add components
         registry.emplace<GAME::Enemy>(enemy);
-
+        registry.emplace<GAME::EnemyConfig>(enemy);
+        auto& config = registry.get<GAME::EnemyConfig>(enemy);
+        config = cfg;
         // Velocity
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
         GW::MATH::GVECTORF hardcodedmovement = { 1.0f,0.0f,0.0f,1.0f }; //THIS IS TEMP FOR ONCE I ADD AN ENEMY MOVEMENT SYSTEM
@@ -87,14 +89,15 @@
 
         // Add gameplay components
         registry.emplace<GAME::Health>(enemy, cfg.hitpoints);
-
-
+        registry.emplace<GAME::Invuln>(enemy);
+        auto& invul = registry.get<GAME::Invuln>(enemy);
+        invul.cooldown = spawnInvul;
         // Collidable tag
         registry.emplace<GAME::Collidable>(enemy);
 
         return enemy;
     }
-
+    //Token made for enemy to be queued up next
     static void EnemyTokenCreator(entt::registry& registry,
         const GAME::EnemyConfig& cfg, //enemy being used
         GAME::FormationStyle style,
@@ -115,7 +118,7 @@
     }
 
 
-
+    //Spawns enemy formation with provided information
     static void SpawnFormation(entt::registry& registry,
         GAME::FormationStyle Style, //Formation Style
         int enemyCount, // how many enemies to spawn
@@ -164,11 +167,14 @@
         temp.modelName = (*config).at(dataname).at("model").as<std::string>();
         temp.Movement = style;
         temp.speed = (*config).at(dataname).at("speed").as<float>();
+        temp.Score = (*config).at(dataname).at("score").as<int>();
+        temp.fireRate = (*config).at(dataname).at("firerate").as<float>();
+        temp.Spawn.cooldown = (*config).at(dataname).at("invul").as<float>();
         return temp;
     }
 
 
-
+    //Constalyu called method that spawns enemies in the queue aka CurrentList
     static void SpawnEnemies(entt::registry& registry, const DRAW::ModelManager& manager, std::vector<GAME::EnemyToken>& CurrentList, int& RemainingCost) {
         if (CurrentList.empty()) {
             return;
@@ -181,7 +187,7 @@
 
             RemainingCost = RemainingCost - CurrentList[0].UsageCost;
             entt::entity enemy = registry.create();
-            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
+            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult, CurrentList[0].Enemy.Spawn.cooldown);
             currentSpawnDelay = CurrentList[0].SpawnRate;
             time = 0;
             CurrentList.erase(CurrentList.begin());
