@@ -15,6 +15,8 @@ namespace GAME
 
 	void Update_GameManager(entt::registry& registry, entt::entity self)
 	{
+
+
 		if (registry.any_of<GameOver>(self))
 			return;
 		double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;

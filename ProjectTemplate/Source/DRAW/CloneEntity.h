@@ -128,7 +128,7 @@
         GAME::EnemyConfig& cfg, //enemy being used
         const DRAW::ModelManager& manager, //for knowing where to get the model from
         float SpawnDelay, // delay between enemy spawns for the formations
-        std::vector<GAME::EnemyToken>& CurrentList, 
+        std::vector<GAME::EnemyToken>& CurrentList, //Enemy queue
         int UsageCost //PER ENEMY!!!
         ) {
         double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;

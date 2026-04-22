@@ -141,7 +141,6 @@ void Physics::Collision(entt::registry& registry)
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Bullet>(*b))
 				{
-					if (!registry.any_of<Invuln>(*a)) {
 						auto& health = registry.get<Health>(*a);
 						auto& cfg = registry.get<EnemyConfig>(*a);
 						health.HP -= 1;
@@ -149,12 +148,10 @@ void Physics::Collision(entt::registry& registry)
 							Gameplay::EnemyDeath(registry, cfg);
 						}
 						registry.emplace_or_replace<ToDestroy>(*b);
-					}
 				}
 
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Bullet>(*a))
 				{
-					if (!registry.any_of<Invuln>(*b)) {
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
@@ -162,7 +159,6 @@ void Physics::Collision(entt::registry& registry)
 							Gameplay::EnemyDeath(registry, cfg);
 						}
 						registry.emplace_or_replace<ToDestroy>(*a);
-					}
 				}
 
 				// Case: Enemy to Player - Hurt the player

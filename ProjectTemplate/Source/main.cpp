@@ -221,6 +221,8 @@ void GameplayBehavior(entt::registry& registry)
 {
 	if (!registry.ctx().contains<DRAW::ModelManager>())
 		registry.ctx().emplace<DRAW::ModelManager>();
+	if (!registry.ctx().contains<GAME::LevelManager>())
+		registry.ctx().emplace<GAME::LevelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
@@ -242,8 +244,10 @@ void GameplayBehavior(entt::registry& registry)
 	registry.emplace<GAME::GameManager>(gm);
 
 	// Create level manager
-	entt::entity lm = registry.create();
-	registry.emplace<GAME::LevelManager>(lm);
+
+	GAME::LevelManager LevelManager = registry.ctx().get<GAME::LevelManager>();
+	LevelManager.tokenBudget = 10;
+	LevelManager.tokensAvailable = 10;
 
 	// Get model manager
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
