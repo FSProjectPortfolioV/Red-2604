@@ -108,7 +108,11 @@ namespace GAME
 	{
 		entt::entity player;
 		std::string side;
-		GW::MATH::GVECTORF offset;
+		GW::MATH::GVECTORF targetOffset;
+		GW::MATH::GVECTORF currentOffset;
+
+		bool canShoot = false;
+		float lerpSpeed = 4.0f;
 	};
 
 	struct Paused

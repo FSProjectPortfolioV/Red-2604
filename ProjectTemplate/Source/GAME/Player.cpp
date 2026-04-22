@@ -233,6 +233,11 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
     {
         auto& fighterData = registry.get<GAME::SideFighter>(wingmanEntity);
 
+        if(fighterData.canShoot == false)
+        {
+            continue;
+        }
+
         if (fighterData.player == self)
         {
             entt::entity bullet = registry.create();
@@ -257,7 +262,7 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
             GW::MATH::GMatrix::TranslateGlobalF(
                 transform.matrix,
-                fighterData.offset,
+                fighterData.targetOffset,
                 bulletTransform.matrix
 			);
 

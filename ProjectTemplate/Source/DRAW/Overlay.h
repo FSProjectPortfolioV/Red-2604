@@ -49,7 +49,7 @@ class Overlay
 	// push constants for the overlay
 	struct OverlayConstants
 	{
-		float offset[2] = { 0, 0 };
+		float targetOffset[2] = { 0, 0 };
 		float scale[2] = { 1, 1 };
 	}overlayConstants;
 
@@ -372,15 +372,15 @@ void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _sci
 	switch (testFlags)
 	{
 	case GW::GRAPHICS::ALIGN_X_LEFT:
-		overlayConstants.offset[0] = 0;
+		overlayConstants.targetOffset[0] = 0;
 		break;
 	case GW::GRAPHICS::ALIGN_X_RIGHT:
-		overlayConstants.offset[0] = static_cast<int>(client_width) -
+		overlayConstants.targetOffset[0] = static_cast<int>(client_width) -
 			static_cast<int>(upscaledDataWidth);
 		break;
 	case GW::GRAPHICS::ALIGN_X_CENTER:
 	default:
-		overlayConstants.offset[0] = (static_cast<int>(client_width) -
+		overlayConstants.targetOffset[0] = (static_cast<int>(client_width) -
 			static_cast<int>(upscaledDataWidth)) >> 1;
 		break;
 	}
@@ -389,15 +389,15 @@ void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _sci
 	switch (testFlags)
 	{
 	case GW::GRAPHICS::ALIGN_Y_TOP:
-		overlayConstants.offset[1] = 0;
+		overlayConstants.targetOffset[1] = 0;
 		break;
 	case GW::GRAPHICS::ALIGN_Y_BOTTOM:
-		overlayConstants.offset[1] = static_cast<int>(client_height) -
+		overlayConstants.targetOffset[1] = static_cast<int>(client_height) -
 			static_cast<int>(upscaledDataHeight);
 		break;
 	case GW::GRAPHICS::ALIGN_Y_CENTER:
 	default:
-		overlayConstants.offset[1] = (static_cast<int>(client_height) -
+		overlayConstants.targetOffset[1] = (static_cast<int>(client_height) -
 			static_cast<int>(upscaledDataHeight)) >> 1;
 		break;
 	}
@@ -409,18 +409,18 @@ void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _sci
 	_viewport.minDepth = 0.0f;
 	_viewport.maxDepth = 1.0f;
 	// use computed dimensions to limit the area rendered in Vulkan (boost performance)
-	_scissor.offset = {
-		G_CLAMP(static_cast<int>(overlayConstants.offset[0]), 0, static_cast<int>(client_width)),
-		G_CLAMP(static_cast<int>(overlayConstants.offset[1]), 0, static_cast<int>(client_height)) };
+	_scissor.targetOffset = {
+		G_CLAMP(static_cast<int>(overlayConstants.targetOffset[0]), 0, static_cast<int>(client_width)),
+		G_CLAMP(static_cast<int>(overlayConstants.targetOffset[1]), 0, static_cast<int>(client_height)) };
 	_scissor.extent = {
-		G_CLAMP(static_cast<unsigned int>(overlayConstants.offset[0])
+		G_CLAMP(static_cast<unsigned int>(overlayConstants.targetOffset[0])
 			+ upscaledDataWidth, 0, client_width),
-		G_CLAMP(static_cast<unsigned int>(overlayConstants.offset[1])
+		G_CLAMP(static_cast<unsigned int>(overlayConstants.targetOffset[1])
 			+ upscaledDataHeight, 0, client_height) };
 
 	// perform inverse operations to get the overlay to render in the correct location
-	overlayConstants.offset[0] *= -1.0f;
-	overlayConstants.offset[1] *= -1.0f;
+	overlayConstants.targetOffset[0] *= -1.0f;
+	overlayConstants.targetOffset[1] *= -1.0f;
 	overlayConstants.scale[0] /= 1.0f; // reciprocal of the scale
 	overlayConstants.scale[1] /= 1.0f; // reciprocal of the scale
 }
@@ -544,7 +544,7 @@ Overlay::Overlay(unsigned int _width, unsigned int _height,
 		// setup push constants for the overlay
 		VkPushConstantRange pushConstantRange = {};
 		pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		pushConstantRange.offset = 0;
+		pushConstantRange.targetOffset = 0;
 		pushConstantRange.size = sizeof(OverlayConstants);
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
@@ -584,7 +584,7 @@ Overlay::Overlay(unsigned int _width, unsigned int _height,
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor = {};
-		scissor.offset = { 0, 0 };
+		scissor.targetOffset = { 0, 0 };
 		scissor.extent = { _width, _height };
 
 		VkPipelineViewportStateCreateInfo viewportState = {};

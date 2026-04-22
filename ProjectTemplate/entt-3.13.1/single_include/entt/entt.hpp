@@ -3198,19 +3198,19 @@ public:
 
     constexpr dense_map_local_iterator() noexcept
         : it{},
-          offset{} {}
+          targetOffset{} {}
 
     constexpr dense_map_local_iterator(It iter, const std::size_t pos) noexcept
         : it{iter},
-          offset{pos} {}
+          targetOffset{pos} {}
 
     template<typename Other, typename = std::enable_if_t<!std::is_same_v<It, Other> && std::is_constructible_v<It, Other>>>
     constexpr dense_map_local_iterator(const dense_map_local_iterator<Other> &other) noexcept
         : it{other.it},
-          offset{other.offset} {}
+          targetOffset{other.targetOffset} {}
 
     constexpr dense_map_local_iterator &operator++() noexcept {
-        return offset = it[offset].next, *this;
+        return targetOffset = it[targetOffset].next, *this;
     }
 
     constexpr dense_map_local_iterator operator++(int) noexcept {
@@ -3223,16 +3223,16 @@ public:
     }
 
     [[nodiscard]] constexpr reference operator*() const noexcept {
-        return {it[offset].element.first, it[offset].element.second};
+        return {it[targetOffset].element.first, it[targetOffset].element.second};
     }
 
     [[nodiscard]] constexpr std::size_t index() const noexcept {
-        return offset;
+        return targetOffset;
     }
 
 private:
     It it;
-    std::size_t offset;
+    std::size_t targetOffset;
 };
 
 template<typename Lhs, typename Rhs>
@@ -4208,19 +4208,19 @@ public:
 
     constexpr dense_set_local_iterator() noexcept
         : it{},
-          offset{} {}
+          targetOffset{} {}
 
     constexpr dense_set_local_iterator(It iter, const std::size_t pos) noexcept
         : it{iter},
-          offset{pos} {}
+          targetOffset{pos} {}
 
     template<typename Other, typename = std::enable_if_t<!std::is_same_v<It, Other> && std::is_constructible_v<It, Other>>>
     constexpr dense_set_local_iterator(const dense_set_local_iterator<Other> &other) noexcept
         : it{other.it},
-          offset{other.offset} {}
+          targetOffset{other.targetOffset} {}
 
     constexpr dense_set_local_iterator &operator++() noexcept {
-        return offset = it[offset].first, *this;
+        return targetOffset = it[targetOffset].first, *this;
     }
 
     constexpr dense_set_local_iterator operator++(int) noexcept {
@@ -4229,7 +4229,7 @@ public:
     }
 
     [[nodiscard]] constexpr pointer operator->() const noexcept {
-        return std::addressof(it[offset].second);
+        return std::addressof(it[targetOffset].second);
     }
 
     [[nodiscard]] constexpr reference operator*() const noexcept {
@@ -4237,12 +4237,12 @@ public:
     }
 
     [[nodiscard]] constexpr std::size_t index() const noexcept {
-        return offset;
+        return targetOffset;
     }
 
 private:
     It it;
-    std::size_t offset;
+    std::size_t targetOffset;
 };
 
 template<typename Lhs, typename Rhs>
@@ -5527,14 +5527,14 @@ struct fnv1a_traits;
 template<>
 struct fnv1a_traits<std::uint32_t> {
     using type = std::uint32_t;
-    static constexpr std::uint32_t offset = 2166136261;
+    static constexpr std::uint32_t targetOffset = 2166136261;
     static constexpr std::uint32_t prime = 16777619;
 };
 
 template<>
 struct fnv1a_traits<std::uint64_t> {
     using type = std::uint64_t;
-    static constexpr std::uint64_t offset = 14695981039346656037ull;
+    static constexpr std::uint64_t targetOffset = 14695981039346656037ull;
     static constexpr std::uint64_t prime = 1099511628211ull;
 };
 
@@ -5582,7 +5582,7 @@ class basic_hashed_string: internal::basic_hashed_string<Char> {
 
     // Fowler–Noll–Vo hash function v. 1a - the good
     [[nodiscard]] static constexpr auto helper(const Char *str) noexcept {
-        base_type base{str, 0u, traits_type::offset};
+        base_type base{str, 0u, traits_type::targetOffset};
 
         for(; str[base.length]; ++base.length) {
             base.hash = (base.hash ^ static_cast<traits_type::type>(str[base.length])) * traits_type::prime;
@@ -5593,7 +5593,7 @@ class basic_hashed_string: internal::basic_hashed_string<Char> {
 
     // Fowler–Noll–Vo hash function v. 1a - the good
     [[nodiscard]] static constexpr auto helper(const Char *str, const std::size_t len) noexcept {
-        base_type base{str, len, traits_type::offset};
+        base_type base{str, len, traits_type::targetOffset};
 
         for(size_type pos{}; pos < len; ++pos) {
             base.hash = (base.hash ^ static_cast<traits_type::type>(str[pos])) * traits_type::prime;
@@ -15759,14 +15759,14 @@ struct sparse_set_iterator final {
 
     constexpr sparse_set_iterator() noexcept
         : packed{},
-          offset{} {}
+          targetOffset{} {}
 
     constexpr sparse_set_iterator(const Container &ref, const difference_type idx) noexcept
         : packed{std::addressof(ref)},
-          offset{idx} {}
+          targetOffset{idx} {}
 
     constexpr sparse_set_iterator &operator++() noexcept {
-        return --offset, *this;
+        return --targetOffset, *this;
     }
 
     constexpr sparse_set_iterator operator++(int) noexcept {
@@ -15775,7 +15775,7 @@ struct sparse_set_iterator final {
     }
 
     constexpr sparse_set_iterator &operator--() noexcept {
-        return ++offset, *this;
+        return ++targetOffset, *this;
     }
 
     constexpr sparse_set_iterator operator--(int) noexcept {
@@ -15784,7 +15784,7 @@ struct sparse_set_iterator final {
     }
 
     constexpr sparse_set_iterator &operator+=(const difference_type value) noexcept {
-        offset -= value;
+        targetOffset -= value;
         return *this;
     }
 
@@ -15818,12 +15818,12 @@ struct sparse_set_iterator final {
     }
 
     [[nodiscard]] constexpr difference_type index() const noexcept {
-        return offset - 1;
+        return targetOffset - 1;
     }
 
 private:
     const Container *packed;
-    difference_type offset;
+    difference_type targetOffset;
 };
 
 template<typename Container>
@@ -16948,14 +16948,14 @@ public:
 
     constexpr storage_iterator(Container *ref, const difference_type idx) noexcept
         : payload{ref},
-          offset{idx} {}
+          targetOffset{idx} {}
 
     template<bool Const = std::is_const_v<Container>, typename = std::enable_if_t<Const>>
     constexpr storage_iterator(const storage_iterator<std::remove_const_t<Container>, Size> &other) noexcept
-        : storage_iterator{other.payload, other.offset} {}
+        : storage_iterator{other.payload, other.targetOffset} {}
 
     constexpr storage_iterator &operator++() noexcept {
-        return --offset, *this;
+        return --targetOffset, *this;
     }
 
     constexpr storage_iterator operator++(int) noexcept {
@@ -16964,7 +16964,7 @@ public:
     }
 
     constexpr storage_iterator &operator--() noexcept {
-        return ++offset, *this;
+        return ++targetOffset, *this;
     }
 
     constexpr storage_iterator operator--(int) noexcept {
@@ -16973,7 +16973,7 @@ public:
     }
 
     constexpr storage_iterator &operator+=(const difference_type value) noexcept {
-        offset -= value;
+        targetOffset -= value;
         return *this;
     }
 
@@ -17005,12 +17005,12 @@ public:
     }
 
     [[nodiscard]] constexpr difference_type index() const noexcept {
-        return offset - 1;
+        return targetOffset - 1;
     }
 
 private:
     Container *payload;
-    difference_type offset;
+    difference_type targetOffset;
 };
 
 template<typename Lhs, typename Rhs, std::size_t Size>
@@ -18427,12 +18427,12 @@ public:
      */
     template<std::size_t Index>
     [[nodiscard]] auto *storage() const noexcept {
-        constexpr auto offset = sizeof...(Get);
+        constexpr auto targetOffset = sizeof...(Get);
 
-        if constexpr(Index < offset) {
+        if constexpr(Index < targetOffset) {
             return std::get<Index>(pools());
         } else {
-            return std::get<Index - offset>(filter());
+            return std::get<Index - targetOffset>(filter());
         }
     }
 
@@ -18848,12 +18848,12 @@ public:
      */
     template<std::size_t Index>
     [[nodiscard]] auto *storage() const noexcept {
-        constexpr auto offset = sizeof...(Owned) + sizeof...(Get);
+        constexpr auto targetOffset = sizeof...(Owned) + sizeof...(Get);
 
-        if constexpr(Index < offset) {
+        if constexpr(Index < targetOffset) {
             return std::get<Index>(pools());
         } else {
-            return std::get<Index - offset>(filter());
+            return std::get<Index - targetOffset>(filter());
         }
     }
 
@@ -20821,8 +20821,8 @@ class delegate<Ret(Args...)> {
             if constexpr(std::is_invocable_r_v<Ret, decltype(Candidate), type_list_element_t<Index, type_list<Args...>>...>) {
                 return static_cast<Ret>(std::invoke(Candidate, std::forward<type_list_element_t<Index, type_list<Args...>>>(std::get<Index>(arguments))...));
             } else {
-                constexpr auto offset = sizeof...(Args) - sizeof...(Index);
-                return static_cast<Ret>(std::invoke(Candidate, std::forward<type_list_element_t<Index + offset, type_list<Args...>>>(std::get<Index + offset>(arguments))...));
+                constexpr auto targetOffset = sizeof...(Args) - sizeof...(Index);
+                return static_cast<Ret>(std::invoke(Candidate, std::forward<type_list_element_t<Index + targetOffset, type_list<Args...>>>(std::get<Index + targetOffset>(arguments))...));
             }
         };
     }
@@ -20836,8 +20836,8 @@ class delegate<Ret(Args...)> {
             if constexpr(std::is_invocable_r_v<Ret, decltype(Candidate), Type &, type_list_element_t<Index, type_list<Args...>>...>) {
                 return static_cast<Ret>(std::invoke(Candidate, *curr, std::forward<type_list_element_t<Index, type_list<Args...>>>(std::get<Index>(arguments))...));
             } else {
-                constexpr auto offset = sizeof...(Args) - sizeof...(Index);
-                return static_cast<Ret>(std::invoke(Candidate, *curr, std::forward<type_list_element_t<Index + offset, type_list<Args...>>>(std::get<Index + offset>(arguments))...));
+                constexpr auto targetOffset = sizeof...(Args) - sizeof...(Index);
+                return static_cast<Ret>(std::invoke(Candidate, *curr, std::forward<type_list_element_t<Index + targetOffset, type_list<Args...>>>(std::get<Index + targetOffset>(arguments))...));
             }
         };
     }
@@ -20851,8 +20851,8 @@ class delegate<Ret(Args...)> {
             if constexpr(std::is_invocable_r_v<Ret, decltype(Candidate), Type *, type_list_element_t<Index, type_list<Args...>>...>) {
                 return static_cast<Ret>(std::invoke(Candidate, curr, std::forward<type_list_element_t<Index, type_list<Args...>>>(std::get<Index>(arguments))...));
             } else {
-                constexpr auto offset = sizeof...(Args) - sizeof...(Index);
-                return static_cast<Ret>(std::invoke(Candidate, curr, std::forward<type_list_element_t<Index + offset, type_list<Args...>>>(std::get<Index + offset>(arguments))...));
+                constexpr auto targetOffset = sizeof...(Args) - sizeof...(Index);
+                return static_cast<Ret>(std::invoke(Candidate, curr, std::forward<type_list_element_t<Index + targetOffset, type_list<Args...>>>(std::get<Index + targetOffset>(arguments))...));
             }
         };
     }
@@ -25591,19 +25591,19 @@ public:
           vert{},
           pos{},
           last{},
-          offset{} {}
+          targetOffset{} {}
 
     constexpr edge_iterator(It base, const size_type vertices, const size_type from, const size_type to, const size_type step) noexcept
         : it{std::move(base)},
           vert{vertices},
           pos{from},
           last{to},
-          offset{step} {
-        for(; pos != last && !it[pos]; pos += offset) {}
+          targetOffset{step} {
+        for(; pos != last && !it[pos]; pos += targetOffset) {}
     }
 
     constexpr edge_iterator &operator++() noexcept {
-        for(pos += offset; pos != last && !it[pos]; pos += offset) {}
+        for(pos += targetOffset; pos != last && !it[pos]; pos += targetOffset) {}
         return *this;
     }
 
@@ -25628,7 +25628,7 @@ private:
     size_type vert;
     size_type pos;
     size_type last;
-    size_type offset{};
+    size_type targetOffset{};
 };
 
 template<typename Container>
@@ -62345,9 +62345,9 @@ class meta_sequence_container::meta_iterator final {
     using vtable_type = void(const void *, const std::ptrdiff_t, meta_any *);
 
     template<typename It>
-    static void basic_vtable(const void *value, const std::ptrdiff_t offset, meta_any *other) {
+    static void basic_vtable(const void *value, const std::ptrdiff_t targetOffset, meta_any *other) {
         const auto &it = *static_cast<const It *>(value);
-        other ? other->emplace<decltype(*it)>(*it) : std::advance(const_cast<It &>(it), offset);
+        other ? other->emplace<decltype(*it)>(*it) : std::advance(const_cast<It &>(it), targetOffset);
     }
 
 public:

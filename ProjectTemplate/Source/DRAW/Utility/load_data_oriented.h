@@ -302,11 +302,11 @@ private:
 				// add instance set
 				levelInstances.push_back(instances);
 				// *NEW* Add an entry for each unique blender object
-				int offset = 0;
+				int targetOffset = 0;
 				for (auto &n : i->blenderNames) {
 					BLENDER_OBJECT obj {
 						level_strings.insert(n).first->c_str(),
-						instances.modelIndex, instances.transformStart + offset++
+						instances.modelIndex, instances.transformStart + targetOffset++
 					};
 					blenderObjects.push_back(obj);
 				}

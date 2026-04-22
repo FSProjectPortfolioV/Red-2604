@@ -95,17 +95,20 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 {
     entt::entity sideFighter = registry.create();
 
-    GW::MATH::GVECTORF offset = { 0, 0, 0, 0 };
+    GW::MATH::GVECTORF targetOffset = { 0, 0, 0, 0 };
     if (side == "LEFT")
     {
-        offset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
+        targetOffset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
     }
     else if (side == "RIGHT")
     {
-        offset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
+        targetOffset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
     }
 
-    registry.emplace<GAME::SideFighter>(sideFighter, player, side, offset);
+    GW::MATH::GVECTORF currentOffset = targetOffset;
+    currentOffset.z = -50.0f;
+
+    registry.emplace<GAME::SideFighter>(sideFighter, player, side, targetOffset, currentOffset);
     registry.emplace<GAME::Collidable>(sideFighter);
     auto& sideFighterTrans = registry.emplace<GAME::Transform>(sideFighter);
 
@@ -134,16 +137,30 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
 
+    double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
     if (registry.valid(sideFighter.player))
     {
         auto& playerTransform = registry.get<GAME::Transform>(sideFighter.player);
         auto& myTransform = registry.get<GAME::Transform>(self);
 
+        GW::MATH::GVector::LerpF(
+            sideFighter.currentOffset,
+            sideFighter.targetOffset,
+            deltaTime * sideFighter.lerpSpeed,
+            sideFighter.currentOffset
+        );
+
         GW::MATH::GMatrix::TranslateLocalF(
             playerTransform.matrix,
-            sideFighter.offset,
+            sideFighter.currentOffset,
             myTransform.matrix
         );
+
+        if (sideFighter.currentOffset.z >= sideFighter.targetOffset.z - 0.1f) 
+        {
+			sideFighter.canShoot = true;
+        }
     }
 };
 
@@ -163,9 +180,4 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
         }
     }
 };
-
-CONNECT_COMPONENT_LOGIC()
-{
-	registry.on_destroy<GAME::SideFighter>().connect<OnSideFighterDeath>();
-}
 

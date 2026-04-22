@@ -19217,7 +19217,7 @@ template <class Key, class T, class IgnoredLess = std::less<Key>,
         }
 
         const auto elements_affected = std::distance(first, last);
-        const auto offset = std::distance(Container::begin(), first);
+        const auto targetOffset = std::distance(Container::begin(), first);
 
         // This is the start situation. We need to delete elements_affected
         // elements (3 in this example: e, f, g), and need to return an
@@ -19259,7 +19259,7 @@ template <class Key, class T, class IgnoredLess = std::less<Key>,
         // first is now pointing past the last deleted element, but we cannot
         // use this iterator, because it may have been invalidated by the
         // resize call. Instead, we can return begin() + offset.
-        return Container::begin() + offset;
+        return Container::begin() + targetOffset;
     }
 
     size_type count(const key_type& key) const
