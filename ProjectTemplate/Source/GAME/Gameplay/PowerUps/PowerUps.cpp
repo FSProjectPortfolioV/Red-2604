@@ -25,7 +25,7 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
     );
 
     // Spawn it in random position
-    float spawnRange = 100.0f;
+    float spawnRange = 50.0f;
     float randX = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
     float randZ = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
 

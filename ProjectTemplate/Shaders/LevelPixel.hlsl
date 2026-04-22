@@ -1,4 +1,7 @@
 
+Texture2D mainTexture : register(t0, space1);
+SamplerState mainSampler : register(s0, space1);
+
 struct OBJ_ATTRIBUTES
 {
 	float3      Kd; // diffuse reflectivity
@@ -29,14 +32,20 @@ cbuffer SHADER_SCENE_DATA : register(b0)
 
 // an ultra simple hlsl pixel shader
 float4 main(float4 pos : SV_POSITION, float3 nrm : NORMAL,
-            float3 posW : WORLD, float3 uvw : TEXCOORD, uint index : INDEX) : SV_TARGET
+            float3 posW : WORLD, float3 uvw : TEXCOORD, nointerpolation uint index : INDEX) : SV_TARGET
 {
-    float4 diffuse = float4(SceneData[index].material.Kd, 1);
+    // 2. SAMPLE THE TEXTURE: Use the UV coordinates to get the exact pixel color from the image
+    float4 texColor = mainTexture.Sample(mainSampler, uvw.xy);
+    
+    // 3. MULTIPLY: Combine the model's base color (Kd) with the texture color
+    float4 diffuse = float4(SceneData[index].material.Kd, 1) * texColor;
+    
+    // The rest of your lighting math stays exactly the same!
     float4 specular = float4(SceneData[index].material.Ks, 1);
     float4 ambient = float4(SceneData[index].material.Ka, 1);
     float4 emissive = float4(SceneData[index].material.Ke, 1);
+    
     float lightRatio = saturate(dot(-sunDirection, normalize(nrm)));
-
     float3 viewDir = normalize(camPos.xyz - posW);
     float3 bounce = reflect(sunDirection, normalize(nrm));
     float intense = max(pow(saturate(dot(viewDir, bounce)), SceneData[index].material.Ns), 0);
@@ -44,6 +53,6 @@ float4 main(float4 pos : SV_POSITION, float3 nrm : NORMAL,
 
     float4 direct = lightRatio * sunColor;
     float4 indirect = sunAmbient * ambient;
-
+    
     return saturate(direct + indirect) * diffuse + reflected + emissive;
 }

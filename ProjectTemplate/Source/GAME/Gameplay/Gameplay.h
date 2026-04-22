@@ -12,4 +12,5 @@ struct Gameplay
 	static void EnemyTimers(entt::registry& registry, float dt);
 
 	static void EnemySpawn(entt::registry& registry, float dt);
+	static void Pause(entt::registry& registry, entt::entity manager);
 };

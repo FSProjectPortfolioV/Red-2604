@@ -101,7 +101,10 @@ bool FirebaseLeaderboardAPI::HttpPut(const std::string& host, const std::string&
         return false;
     }
 
-    bool result = WinHttpSendRequest(request, L"Content-Type: application/json\r\n", -1L, (LPVOID)jsonBody.c_str(), (DWORD)jsonBody.size(), (DWORD)jsonBody.size(), 0);
+    const wchar_t* headers = L"Content-Type: application/json\r\n";
+    DWORD headersLength = (DWORD)wcslen(headers);
+
+    bool result = WinHttpSendRequest(request, headers, headersLength, (LPVOID)jsonBody.c_str(), (DWORD)jsonBody.size(), (DWORD)jsonBody.size(), 0);
     if (result)
     {
         result = WinHttpReceiveResponse(request, NULL);

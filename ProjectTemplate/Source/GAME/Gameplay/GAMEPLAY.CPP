@@ -56,16 +56,6 @@ void Gameplay::GameOver(entt::registry& registry, entt::entity manager)
 
 void Gameplay::PlayerTimers(entt::registry& registry, float dt)
 {
-	auto invView = registry.view<GAME::Player, GAME::Invuln>();
-	for (auto p : invView)
-	{
-		auto& inv = invView.get<GAME::Invuln>(p);
-		inv.cooldown -= dt;
-
-		if (inv.cooldown <= 0)
-			registry.remove<GAME::Invuln>(p);
-	}
-
 	auto playerView = registry.view<GAME::Player>();
 	for (auto p : playerView)
 		registry.patch<GAME::Player>(p);
@@ -112,4 +102,20 @@ void Gameplay::EnemySpawn(entt::registry& registry, float dt) {
 		}
 	}
 	SpawnEnemies(registry,manager, CurrentList,OverallCost);
+}
+void Gameplay::Pause(entt::registry& registry, entt::entity manager)
+{
+	auto PauseView = registry.view<GAME::Paused>();
+	if (PauseView.empty())
+	{
+		registry.emplace<GAME::GameOver>(manager);
+		std::cout << "Game paused\n";
+	}
+	else
+	{
+		registry.remove<GAME::GameOver>(manager);
+		std::cout << "Game unpaused\n";
+		for (auto p : PauseView)
+			registry.remove<GAME::Paused>(p);
+	}
 }
