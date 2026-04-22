@@ -1,4 +1,4 @@
-# Blender 5.1.1 MTL File: 'game.blend'
+# Blender 4.5.4 LTS MTL File: 'game.blend'
 # www.blender.org
 
 newmtl Material_0
@@ -9,4 +9,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 3
-map_Kd mesh_trellis.png
+map_Kd C:/Users/nagan/Downloads/mesh_trellis.png

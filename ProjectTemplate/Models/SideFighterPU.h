@@ -73140,7 +73140,7 @@ const OBJ_MATERIAL SideFighterPU_materials[1] =
 		{ 0.000000f, 0.000000f, 0.000000f },
 		3},
 		"Material_0",
-		"mesh_trellis.png",
+		"C:/Users/nagan/Downloads/mesh_trellis.png",
 		"",
 		"",
 		"",

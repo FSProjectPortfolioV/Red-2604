@@ -147,7 +147,7 @@ void Update_Player(entt::registry& registry, entt::entity self)
         // Clone meshes 
         CloneModelToEntity(
             registry,
-            manager.collections["Bullet"],
+            manager.collections["BlueBullet"],
             bulletCollection,
             bulletTransform
         );
@@ -214,7 +214,7 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
             CloneModelToEntity(
                 registry,
-                manager.collections["Bullet"],
+                manager.collections["BlueBullet"],
                 bulletCollection,
                 bulletTransform
             );
