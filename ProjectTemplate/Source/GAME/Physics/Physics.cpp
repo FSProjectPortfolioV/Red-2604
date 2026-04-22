@@ -180,6 +180,34 @@ void Physics::Collision(entt::registry& registry)
 
 					registry.emplace_or_replace<GAME::ToDestroy>(*a);
 				}
+
+				//Case: Enemy Bullet to SideFighter - SideFighter gets destroyed, bullet gets destroyed
+				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<SideFighter>(*b))
+				{
+					std::cout << "Side Fighter Hit!" << std::endl;
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+				}
+				if (registry.all_of<EnemyBullets>(*b) && registry.all_of<SideFighter>(*a))
+				{
+					std::cout << "Side Fighter Hit!" << std::endl;
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+				}
+
+				//Case: Enemy Bullet to Player - Player gets hurt, bullet gets destroyed
+				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<Player>(*b))
+				{
+					std::cout << "Player Hit!" << std::endl;
+					HurtPlayer(registry, *b);
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+				}
+				if (registry.all_of<EnemyBullets>(*b) && registry.all_of<Player>(*a))
+				{
+					std::cout << "Player Hit!" << std::endl;
+					HurtPlayer(registry, *a);
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+				}
 			}
 		}
 	}

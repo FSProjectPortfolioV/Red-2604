@@ -1,4 +1,6 @@
 #include "PowerUps.h"
+#include "../../../CCL.h"
+
 
 void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
 {
@@ -29,7 +31,7 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
     float randX = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
     float randZ = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
 
-    GW::MATH::GMatrix::TranslateLocalF(
+    GW::MATH::GMatrix::TranslateGlobalF(
         powerUpTransform.matrix,
         GW::MATH::GVECTORF{ randX, 0.0f, randZ, 0.0f },
         powerUpTransform.matrix
@@ -104,7 +106,7 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     }
 
     registry.emplace<GAME::SideFighter>(sideFighter, player, side, offset);
-
+    registry.emplace<GAME::Collidable>(sideFighter);
     auto& sideFighterTrans = registry.emplace<GAME::Transform>(sideFighter);
 
     //Temporary, model will change
@@ -113,6 +115,7 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     std::string playerModelName = config->at("Player").at("model").as<std::string>();
 
     auto& wingmanCollection = registry.emplace<DRAW::MeshCollection>(sideFighter);
+
     CloneModelToEntity(
         registry,
         manager.collections[playerModelName],
@@ -120,12 +123,12 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
         sideFighterTrans
     );
 
-    for (auto mesh : wingmanCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = sideFighterTrans.matrix;
-    }
-}
+    //for (auto mesh : wingmanCollection.meshEntities)
+    //{
+    //    auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+    //    inst.transform = sideFighterTrans.matrix;
+    //}
+};
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
@@ -142,4 +145,27 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
             myTransform.matrix
         );
     }
+};
+
+void OnSideFighterDeath(entt::registry& registry, entt::entity self)
+{
+    auto& sideFighter = registry.get<GAME::SideFighter>(self);
+    if (registry.valid(sideFighter.player))
+    {
+        auto& sideFighterData = registry.get<GAME::HasSideFighters>(sideFighter.player);
+        if (sideFighter.side == "LEFT")
+        {
+            sideFighterData.leftAlive = false;
+        }
+        else if (sideFighter.side == "RIGHT")
+        {
+            sideFighterData.rightAlive = false;
+        }
+    }
+};
+
+CONNECT_COMPONENT_LOGIC()
+{
+	registry.on_destroy<GAME::SideFighter>().connect<OnSideFighterDeath>();
 }
+

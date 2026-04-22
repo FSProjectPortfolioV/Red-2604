@@ -176,7 +176,36 @@ void Update_Player(entt::registry& registry, entt::entity self)
             if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
             {
 				SpawnPowerUp(registry, transform.matrix);
-                
+            }
+
+            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)
+            {
+                //Spawn Enemy Bullet to test SideFighter Collision
+				entt::entity enemyBullet = registry.create();
+
+				registry.emplace<GAME::EnemyBullets>(enemyBullet);
+				registry.emplace<GAME::Velocity>(enemyBullet, GW::MATH::GVECTORF{ 0, 0, -10, 0 });
+				registry.emplace<GAME::Collidable>(enemyBullet);
+
+				auto& bulletMesh = registry.emplace<DRAW::MeshCollection>(enemyBullet);
+				auto& bulletTrans = registry.emplace<GAME::Transform>(enemyBullet);
+
+				auto& manager = registry.ctx().get<DRAW::ModelManager>();
+
+                CloneModelToEntity(
+                    registry,
+                    manager.collections["Bullet"],
+					bulletMesh,
+                    bulletTrans
+				);
+
+				bulletTrans.matrix = transform.matrix;
+
+                GW::MATH::GMatrix::TranslateGlobalF(
+                    bulletTrans.matrix,
+                    GW::MATH::GVECTORF{ 0.0f, -1.0f, 25.0f, 0.0f },
+                    bulletTrans.matrix
+                );
             }
         }
     }
