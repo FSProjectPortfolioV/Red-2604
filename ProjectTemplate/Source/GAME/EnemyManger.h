@@ -23,8 +23,7 @@ namespace GAME
 		int hitpoints;
 		float Scale;
 		std::string modelName;
-		GAME::FormationStyle Movement; //used for knowing how to move the enemy
-		GAME::Invuln Spawn; //used for preventing accidental on spawn deleteion. 
+		GAME::FormationStyle Movement; //used for knowing how to move the enemy 
 		int Score;
 		float fireRate;
 	};

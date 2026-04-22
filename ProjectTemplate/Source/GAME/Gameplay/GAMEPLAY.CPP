@@ -65,19 +65,7 @@ void Gameplay::PlayerTimers(entt::registry& registry, float dt)
 
 void Gameplay::EnemyTimers(entt::registry& registry, float dt)
 {
-	auto invView = registry.view<GAME::Enemy, GAME::Invuln>();
-	for (auto e : invView)
-	{
-		auto& inv = invView.get<GAME::Invuln>(e);
-		inv.cooldown -= dt;
 
-		if (inv.cooldown <= 0)
-			registry.remove<GAME::Invuln>(e);
-	}
-
-	//auto playerView = registry.view<GAME::Player>();
-	//for (auto p : playerView)
-	//	registry.patch<GAME::Player>(p);
 }
 
 void Gameplay::EnemySpawn(entt::registry& registry, float dt) {
@@ -120,4 +108,9 @@ void Gameplay::Pause(entt::registry& registry, entt::entity manager)
 		for (auto p : PauseView)
 			registry.remove<GAME::Paused>(p);
 	}
+}
+
+void Gameplay::EnemyMovementUpdates(entt::registry& registry)
+{
+ //WIP
 }

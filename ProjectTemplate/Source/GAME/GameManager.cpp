@@ -23,6 +23,7 @@ namespace GAME
 
 		Physics::Velocity(registry, dt);
 		Physics::Collision(registry);
+		Physics::WorldLimit(registry);
 		//Spawn enemy by pressing e, has a delay (for testing)!
 		Gameplay::EnemySpawn(registry,dt);
 

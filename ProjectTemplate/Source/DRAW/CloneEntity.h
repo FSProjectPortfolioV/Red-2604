@@ -45,11 +45,37 @@
         }
         dest.collider = source.collider;
     }
+    //Used to set movement of enemy based on formation style
+    static GW::MATH::GVECTORF SetMovement(GAME::FormationStyle style) {
+        GW::MATH::GVECTORF Move = { 0,0,0,1 };
+        if (style == GAME::FormationStyle::WaveLeft) {  //starts from bottom left and makes a "wave" to the top of the screen
+            Move = { 1.0f,0,0,1 };
+        }
+        else if (style == GAME::FormationStyle::WaveRight) {  //starts from bottom right and makes a "wave" to the top of the screen
+            Move = { -1.0f,0,0,1 };
+        }
+        else if (style == GAME::FormationStyle::ArrowHeadDown) {  //starts from the top and makes arrow facing down 
+            Move = { 0,0,1.0f,1 };
+        }
+        else if (style == GAME::FormationStyle::ArrowHeadLeft) { //starts from the left and makes arrow facing right
+            Move = { 1.0f,0,0,1 };
+        }
+        else if (style == GAME::FormationStyle::ArrowHeadRight) { //starts from the right and makes arrow facing left
+            Move = { -1.0f,0,0,1 };
+        }
+        else if (style == GAME::FormationStyle::BigGuy) { //comes from the right as a mini boss
+            Move = { 1.0f,0,0,1 };
+        }
+        else if (style == GAME::FormationStyle::TheFinal) { //comes from the left as the final boss
+            Move = { -1.0f,0,0,1 };
+        }
+        return Move;
+    }
 
     static entt::entity SpawnEnemy(entt::registry& registry,
         const DRAW::ModelManager& manager, 
         const GAME::Transform& transform, 
-        const GAME::EnemyConfig& cfg, const float SpeedMult, const float spawnInvul)
+        const GAME::EnemyConfig& cfg, const float SpeedMult)
     {
         // Create entity
         entt::entity enemy = registry.create();
@@ -61,8 +87,10 @@
         config = cfg;
         // Velocity
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
-        GW::MATH::GVECTORF hardcodedmovement = { 1.0f,0.0f,0.0f,1.0f }; //THIS IS TEMP FOR ONCE I ADD AN ENEMY MOVEMENT SYSTEM
-        vel.direction = hardcodedmovement;
+
+        //set the correct movement based on formation style
+        vel.direction = SetMovement(config.Movement);
+        //give the correct speed
         vel.direction.x *= cfg.speed * SpeedMult;
         vel.direction.z *= cfg.speed * SpeedMult;
 
@@ -89,9 +117,6 @@
 
         // Add gameplay components
         registry.emplace<GAME::Health>(enemy, cfg.hitpoints);
-        registry.emplace<GAME::Invuln>(enemy);
-        auto& invul = registry.get<GAME::Invuln>(enemy);
-        invul.cooldown = spawnInvul;
         // Collidable tag
         registry.emplace<GAME::Collidable>(enemy);
 
@@ -141,22 +166,51 @@
             }
         }
         else if (Style == GAME::FormationStyle::WaveRight) {
-
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
         }
-        else if (Style == GAME::FormationStyle::ArrowHeadDown) {
-
+        else if (Style == GAME::FormationStyle::ArrowHeadDown) { //WIP
+            for (int i = 0; i < enemyCount; i++) {
+                if (i >= 2) {
+                    spacing = spacing * -i;
+                }
+                GW::MATH::GVECTORF Spaced = { 0,0,0,1 };
+                if (i > 0) {
+                    Spaced = { (float)spacing,0,0,1 };
+                }
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
         }
-        else if (Style == GAME::FormationStyle::ArrowHeadLeft) {
-
+        else if (Style == GAME::FormationStyle::ArrowHeadLeft) { //WIP
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
+        } 
+        else if (Style == GAME::FormationStyle::ArrowHeadRight) { //WIP
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
         }
-        else if (Style == GAME::FormationStyle::ArrowHeadRight) {
-
+        else if (Style == GAME::FormationStyle::BigGuy) { //WIP
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
         }
-        else if (Style == GAME::FormationStyle::BigGuy) {
-
-        }
-        else if (Style == GAME::FormationStyle::TheFinal) {
-
+        else if (Style == GAME::FormationStyle::TheFinal) { //WIP
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+            }
         }
     }
     //keep all enemies using the same type of data with different stats, only the name changing. //Edit for real enemy stats
@@ -168,13 +222,12 @@
         temp.Movement = style;
         temp.speed = (*config).at(dataname).at("speed").as<float>();
         temp.Score = (*config).at(dataname).at("score").as<int>();
-        temp.fireRate = (*config).at(dataname).at("firerate").as<float>();
-        temp.Spawn.cooldown = (*config).at(dataname).at("invul").as<float>();
+        temp.fireRate = (*config).at(dataname).at("firerate").as<float>(); 
         return temp;
     }
 
 
-    //Constalyu called method that spawns enemies in the queue aka CurrentList
+    //Constantly called method that spawns enemies in the queue aka CurrentList
     static void SpawnEnemies(entt::registry& registry, const DRAW::ModelManager& manager, std::vector<GAME::EnemyToken>& CurrentList, int& RemainingCost) {
         if (CurrentList.empty()) {
             return;
@@ -187,9 +240,11 @@
 
             RemainingCost = RemainingCost - CurrentList[0].UsageCost;
             entt::entity enemy = registry.create();
-            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult, CurrentList[0].Enemy.Spawn.cooldown);
+            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
             currentSpawnDelay = CurrentList[0].SpawnRate;
             time = 0;
             CurrentList.erase(CurrentList.begin());
         }
     }
+
+    
