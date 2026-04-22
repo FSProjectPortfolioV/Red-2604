@@ -206,3 +206,43 @@ void Physics::Collision(entt::registry& registry)
 		}
 	}
 }
+//Made to have enemies and bullets delete on bounds contact since there's no traditional collision
+void Physics::WorldLimit(entt::registry& registry) {
+	if (registry.ctx().contains<GAME::Bounds>()) {
+		auto& bounds = registry.ctx().get<GAME::Bounds>();
+		auto& EnemyTrans = registry.view<GAME::Enemy, GAME::Transform>();
+		auto& PlayerBulletTrans = registry.view<GAME::Bullet, GAME::Transform>();
+		auto& EnemyBulletTrans = registry.view<GAME::EnemyBullets, GAME::Transform>();
+		float offset = 4; //Used so the deletion is a bit beyond bounds and offscreen.
+		//Enemy Bounds check
+		for (auto& entity : EnemyTrans) {
+			auto& entTrans = registry.get<GAME::Transform>(entity);
+			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+		}
+		//Player bullets bounds check
+		for (auto& entity : PlayerBulletTrans) {
+			auto& entTrans = registry.get<GAME::Transform>(entity);
+			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+		}
+		//Enemy bullets bounds check
+		for (auto& entity : EnemyBulletTrans) {
+			auto& entTrans = registry.get<GAME::Transform>(entity);
+			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+		}
+	}
+}
