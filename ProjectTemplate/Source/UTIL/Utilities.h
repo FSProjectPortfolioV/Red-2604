@@ -30,5 +30,6 @@ namespace UTIL
 	// Generate a random float between min and max
 	float RandomFloat(float min, float max);
 
+
 } // namespace UTIL
 #endif // !UTILITIES_H_

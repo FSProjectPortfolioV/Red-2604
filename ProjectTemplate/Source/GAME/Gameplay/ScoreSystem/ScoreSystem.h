@@ -23,6 +23,16 @@ public:
 		return totalScore;
 	}
 
+	void SetScore(int score)
+	{
+		totalScore = score;
+
+		if (totalScore < 0)
+		{
+			totalScore = 0;
+		}
+	}
+
 private:
 	int totalScore = 0;
 };

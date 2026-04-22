@@ -15,6 +15,8 @@ namespace GAME
 
 	void Update_GameManager(entt::registry& registry, entt::entity self)
 	{
+
+
 		if (registry.any_of<GameOver>(self))
 			return;
 		double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
@@ -22,24 +24,7 @@ namespace GAME
 		Physics::Velocity(registry, dt);
 		Physics::Collision(registry);
 		//Spawn enemy by pressing e, has a delay (for testing)!
-		static bool testonce = true;
-		float state = 0.0f;
-		auto& input = registry.ctx().get<UTIL::Input>();
-		static float time = 0;
-		time += dt;
-		if (input.immediateInput.GetState(G_KEY_E, state) == GW::GReturn::SUCCESS && state > 0.0f) {
-			auto& manager = registry.ctx().get<DRAW::ModelManager>();
-			GAME::Transform SpawnPoint;
-			GW::MATH::GMatrix::IdentityF(SpawnPoint.matrix);
-			GW::MATH::GVECTORF Location = { 0,0,0,0 };
-			GW::MATH::GMatrix::TranslateGlobalF(SpawnPoint.matrix, Location, SpawnPoint.matrix);
-			std::string enemy = "Enemy1";
-			EnemyConfig TEST = EnemyCFGCreator(registry, enemy, GAME::FormationStyle::WaveLeft);
-			if (time > 2) {
-				SpawnFormation(registry, GAME::FormationStyle::WaveLeft, 3, 5, 1, SpawnPoint, TEST, manager, 0.5f);
-				time = 0;
-			}
-		}
+		Gameplay::EnemySpawn(registry,dt);
 
 		Gameplay::PlayerTimers(registry, dt);
 		Rendering::SyncTransforms(registry);

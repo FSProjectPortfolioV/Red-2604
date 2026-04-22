@@ -10,6 +10,13 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
 void Update_Player(entt::registry& registry, entt::entity self)
 {
+    // Check if player dies
+    auto& health = registry.get<GAME::Health>(self);
+    if (health.HP <= 0)
+    {
+        return;
+    }
+
     auto& transform = registry.get<GAME::Transform>(self);
     auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
 
@@ -58,6 +65,13 @@ void Update_Player(entt::registry& registry, entt::entity self)
         newMat
     );
     transform.matrix = newMat;
+
+    // Clamp player position to screen bounds
+    if (registry.ctx().contains<GAME::Bounds>()) {
+        auto& bounds = registry.ctx().get<GAME::Bounds>();
+        transform.matrix.row4.x = std::clamp(transform.matrix.row4.x, bounds.left, bounds.right);
+        transform.matrix.row4.z = std::clamp(transform.matrix.row4.z, bounds.bottom, bounds.top);
+    }
 
     // Firing cooldown
     float fireRate = config->at("Player").at("firerate").as<float>();
