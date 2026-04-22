@@ -2,7 +2,7 @@
 #include "../../../CCL.h"
 
 
-void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
+void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MATH::GMATRIXF& transform)
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
@@ -36,12 +36,6 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
         GW::MATH::GVECTORF{ randX, 0.0f, randZ, 0.0f },
         powerUpTransform.matrix
     );
-
-    for (auto mesh : powerUpCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = powerUpTransform.matrix;
-    }
 }
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type)

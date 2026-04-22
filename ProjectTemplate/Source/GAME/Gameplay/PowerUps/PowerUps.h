@@ -4,10 +4,7 @@
 #include "../../../DRAW/CloneEntity.h"
 #include "../../../CCL.h"
 
-
-
-
-void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform);
+void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MATH::GMATRIXF& transform);
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type);
 

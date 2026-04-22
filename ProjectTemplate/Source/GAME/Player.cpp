@@ -189,7 +189,7 @@ void Update_Player(entt::registry& registry, entt::entity self)
             // Check if a key was specifically pressed down and if it's 'C'
             if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
             {
-				SpawnPowerUp(registry, transform.matrix);
+				SpawnPowerUp(registry, GAME::PowerUpType::SideFighterPU, transform.matrix);
             }
 
             if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)

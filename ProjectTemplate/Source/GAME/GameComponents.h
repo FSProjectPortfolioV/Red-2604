@@ -91,6 +91,7 @@ namespace GAME
 	{
 		None,
 		SideFighterPU,
+		MultiShot,
 	};
 
 	struct PowerUp
