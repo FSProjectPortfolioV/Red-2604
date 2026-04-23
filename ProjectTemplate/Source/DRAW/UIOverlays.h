@@ -257,6 +257,7 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	SetRegularUI(registry, font, W, H);
 	FlashingEffect(registry, font, (W / 2) - 100, (H / 4) - 50, MenuOptions[MenuOptions.size() - 1]);
 	RegularOptions(font, W, H);
+	if(settingsOpen)
 	for (int i = 6; i > 1; i--){
 		RenderOnScreen(font, (W / 3), 100 + (i * 75), MenuOptions[i]);
 	}
