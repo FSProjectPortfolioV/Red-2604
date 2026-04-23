@@ -740,7 +740,7 @@ namespace DRAW
 		auto& overlay = registry.get<Overlay>(entity);
 		auto& blitter = registry.get<GW::GRAPHICS::GBlitter>(entity);
 		auto& font = registry.get<BLIT_Font>(entity);
-		UpdateUIOverlays(registry, 1, overlay, blitter, font, windowWidth, windowHeight);
+		UpdateUIOverlays(registry, 3, overlay, blitter, font, windowWidth, windowHeight);
 		overlay.RenderOverlay();
 
 		vulkanRenderer.vlkSurface.EndFrame(true);
