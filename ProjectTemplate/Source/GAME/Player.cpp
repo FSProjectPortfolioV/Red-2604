@@ -189,7 +189,9 @@ void Update_Player(entt::registry& registry, entt::entity self)
                 GW::MATH::GMATRIXF tempLoc = transform.matrix;
                 tempLoc.row4.z += 25.0f;
 
-				SpawnPowerUp(registry, GAME::PowerUpType::MultiShotPU, tempLoc);
+                GAME::PowerUpType randomPU = static_cast<GAME::PowerUpType>(rand() % static_cast<int>(GAME::PowerUpType::COUNT));
+
+				SpawnPowerUp(registry, randomPU, tempLoc);
             }
 
             if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)

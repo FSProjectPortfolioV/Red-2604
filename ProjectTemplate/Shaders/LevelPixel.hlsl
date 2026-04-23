@@ -43,7 +43,7 @@ float4 main(float4 pos : SV_POSITION, float3 nrm : NORMAL,
     // The rest of your lighting math stays exactly the same!
     float4 specular = float4(SceneData[index].material.Ks, 1);
     float4 ambient = float4(SceneData[index].material.Ka, 1);
-    float4 emissive = float4(SceneData[index].material.Ke, 1);
+    float4 emissive = float4(SceneData[index].material.Ke, 1) * texColor;
     
     float lightRatio = saturate(dot(-sunDirection, normalize(nrm)));
     float3 viewDir = normalize(camPos.xyz - posW);

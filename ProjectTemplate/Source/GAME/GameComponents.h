@@ -89,9 +89,10 @@ namespace GAME
 
 	enum PowerUpType
 	{
-		None,
 		SideFighterPU,
 		MultiShotPU,
+
+		COUNT	// Always keep this as the last entry to know how many power-ups there are
 	};
 
 	struct PowerUp
@@ -109,7 +110,7 @@ namespace GAME
 				modelName = "SideFighterPU";
 				break;
 			case PowerUpType::MultiShotPU:
-				modelName = "SideFighterPU";
+				modelName = "MultiShotPU";
 				break;
 			}
 		};

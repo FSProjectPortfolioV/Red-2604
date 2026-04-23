@@ -111,7 +111,7 @@ namespace DRAW
 					if (manager.textures.find(texName) == manager.textures.end())
 					{
 						TextureData newTex;
-						std::string fullPath = gpuLevel.modelFolder + "/Textures/" + texName;
+						std::string fullPath = gpuLevel.modelFolder + "/" + texName;
 						UploadTextureToGPU(vulkanRenderer.vlkSurface, fullPath,
 							newTex.memory, newTex.image, newTex.view, false);
 

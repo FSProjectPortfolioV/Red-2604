@@ -1,7 +1,7 @@
 # Blender 5.1.1 MTL File: 'game.blend'
 # www.blender.org
 
-newmtl Material_0
+newmtl Material_0.001
 Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Ks 0.000000 0.000000 0.000000
@@ -9,4 +9,4 @@ Ke 3.984332 4.000076 3.730561
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd Textures/mesh_trellis.png
+map_Kd Textures/MultiShot_Txt.png
