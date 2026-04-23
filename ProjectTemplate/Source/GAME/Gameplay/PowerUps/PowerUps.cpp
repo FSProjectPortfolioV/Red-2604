@@ -1,6 +1,8 @@
 #include "PowerUps.h"
+#include "../../../CCL.h"
 
-void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
+
+void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MATH::GMATRIXF& transform)
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
@@ -10,7 +12,7 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
     vel.direction = powerUpDir;
 
 	//Temporary, should be set based on the type of powerup
-    registry.emplace<GAME::PowerUp>(powerUp, GAME::PowerUpType::SideFighterPU);
+    auto& powerUpComponent = registry.emplace<GAME::PowerUp>(powerUp, type);
     registry.emplace<GAME::Collidable>(powerUp);
 
     auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
@@ -19,40 +21,33 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
 
     CloneModelToEntity(
         registry,
-        manager.collections["SideFighterPU"],
+        manager.collections[powerUpComponent.modelName],
         powerUpCollection,
         powerUpTransform
     );
 
-    // Spawn it in random position
-    float spawnRange = 50.0f;
-    float randX = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-    float randZ = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-
-    GW::MATH::GMatrix::TranslateLocalF(
+    GW::MATH::GMatrix::TranslateGlobalF(
         powerUpTransform.matrix,
-        GW::MATH::GVECTORF{ randX, 0.0f, randZ, 0.0f },
+        GW::MATH::GVECTORF{ transform.row4.x, 0.0f, transform.row4.z, 0.0f },
         powerUpTransform.matrix
     );
-
-    for (auto mesh : powerUpCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = powerUpTransform.matrix;
-    }
 }
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type)
 {
     switch (type)
     {
-    case GAME::PowerUpType::SideFighterPU:
+        case GAME::PowerUpType::SideFighterPU:
 
-		SideFighterPU(registry, player);
-        break;
+		    SideFighterPU(registry, player);
+            break;
 
-    default:
-        break;
+	    case GAME::PowerUpType::MultiShotPU:
+            MultiShotPU(registry, player);
+            break;
+
+        default:
+            break;
 	}
 }
 
@@ -93,18 +88,21 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 {
     entt::entity sideFighter = registry.create();
 
-    GW::MATH::GVECTORF offset = { 0, 0, 0, 0 };
+    GW::MATH::GVECTORF targetOffset = { 0, 0, 0, 0 };
     if (side == "LEFT")
     {
-        offset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
+        targetOffset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
     }
     else if (side == "RIGHT")
     {
-        offset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
+        targetOffset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
     }
 
-    registry.emplace<GAME::SideFighter>(sideFighter, player, side, offset);
+    GW::MATH::GVECTORF currentOffset = targetOffset;
+    currentOffset.z = -50.0f;
 
+    registry.emplace<GAME::SideFighter>(sideFighter, player, side, targetOffset, currentOffset);
+    registry.emplace<GAME::Collidable>(sideFighter);
     auto& sideFighterTrans = registry.emplace<GAME::Transform>(sideFighter);
 
     //Temporary, model will change
@@ -113,6 +111,7 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     std::string playerModelName = config->at("Player").at("model").as<std::string>();
 
     auto& wingmanCollection = registry.emplace<DRAW::MeshCollection>(sideFighter);
+
     CloneModelToEntity(
         registry,
         manager.collections[playerModelName],
@@ -120,26 +119,62 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
         sideFighterTrans
     );
 
-    for (auto mesh : wingmanCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = sideFighterTrans.matrix;
-    }
+    //for (auto mesh : wingmanCollection.meshEntities)
+    //{
+    //    auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+    //    inst.transform = sideFighterTrans.matrix;
+    //}
 }
+void MultiShotPU(entt::registry& registry, entt::entity player)
+{
+	registry.emplace_or_replace<GAME::MultiShot>(player);
+};
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
+
+    double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 
     if (registry.valid(sideFighter.player))
     {
         auto& playerTransform = registry.get<GAME::Transform>(sideFighter.player);
         auto& myTransform = registry.get<GAME::Transform>(self);
 
+        GW::MATH::GVector::LerpF(
+            sideFighter.currentOffset,
+            sideFighter.targetOffset,
+            deltaTime * sideFighter.lerpSpeed,
+            sideFighter.currentOffset
+        );
+
         GW::MATH::GMatrix::TranslateLocalF(
             playerTransform.matrix,
-            sideFighter.offset,
+            sideFighter.currentOffset,
             myTransform.matrix
         );
+
+        if (sideFighter.currentOffset.z >= sideFighter.targetOffset.z - 0.1f) 
+        {
+			sideFighter.canShoot = true;
+        }
     }
-}
+};
+
+void OnSideFighterDeath(entt::registry& registry, entt::entity self)
+{
+    auto& sideFighter = registry.get<GAME::SideFighter>(self);
+    if (registry.valid(sideFighter.player))
+    {
+        auto& sideFighterData = registry.get<GAME::HasSideFighters>(sideFighter.player);
+        if (sideFighter.side == "LEFT")
+        {
+            sideFighterData.leftAlive = false;
+        }
+        else if (sideFighter.side == "RIGHT")
+        {
+            sideFighterData.rightAlive = false;
+        }
+    }
+};
+

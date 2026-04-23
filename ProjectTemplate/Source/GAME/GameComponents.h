@@ -56,11 +56,19 @@ namespace GAME
 		int HP;
 	};
 
-	struct Shatters 
+	struct Lives
 	{
-		int remaining;
-		int clones;
-		float scaleDown;
+		int count = 3;
+	};
+
+	struct RespawnTimer
+	{
+		float timeRemaining = 0.0f;
+	};
+
+	struct Visible
+	{
+		bool show = true;
 	};
 
 	struct Invuln 
@@ -83,11 +91,28 @@ namespace GAME
 	{
 		None,
 		SideFighterPU,
+		MultiShotPU,
 	};
 
 	struct PowerUp
 	{
 		PowerUpType type;
+		std::string modelName;
+
+		PowerUp(PowerUpType puType)
+		{
+			type = puType;
+
+			switch (type)
+			{
+			case PowerUpType::SideFighterPU:
+				modelName = "SideFighterPU";
+				break;
+			case PowerUpType::MultiShotPU:
+				modelName = "SideFighterPU";
+				break;
+			}
+		};
 	};
 
 	struct HasSideFighters
@@ -100,7 +125,20 @@ namespace GAME
 	{
 		entt::entity player;
 		std::string side;
-		GW::MATH::GVECTORF offset;
+		GW::MATH::GVECTORF targetOffset;
+		GW::MATH::GVECTORF currentOffset;
+
+		bool canShoot = false;
+		float lerpSpeed = 4.0f;
+	};
+
+	struct MultiShot
+	{
+		std::vector<GW::MATH::GVECTORF> directions = {
+		GW::MATH::GVECTORF{ -1, 0, 1, 0 },
+		GW::MATH::GVECTORF{ 0, 0, 1, 0 },
+		GW::MATH::GVECTORF{ 1, 0, 1, 0 }
+		};
 	};
 
 	struct Paused

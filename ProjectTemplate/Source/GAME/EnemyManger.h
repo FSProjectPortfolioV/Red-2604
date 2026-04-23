@@ -17,10 +17,28 @@ namespace GAME
 		TheFinal =6,
 	};
 	
+	struct EnemyConfig
+	{
+		float speed;
+		int hitpoints;
+		float Scale;
+		std::string modelName;
+		GAME::FormationStyle Movement; //used for knowing how to move the enemy 
+		int Score;
+		float fireRate;
+	};
+
 	struct FORMATIONS { //main way level should try spawning enmies
 		FormationStyle Form;
 		int UsageCost;
 	};
 
-
+	struct  EnemyToken {
+		EnemyConfig Enemy;
+		float SpawnRate;
+		FormationStyle Style;
+		int UsageCost;
+		GAME::Transform SpawnLocation;
+		float SpeedMult;
+	};
 }

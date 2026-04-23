@@ -10160,8 +10160,8 @@ namespace GW
 						lock.lock();
 						if (0 <= _seekFrom + _amount && _seekFrom + _amount < fileSize) {
 							// seek to the new position relative to _seekFrom
-							std::streamoff offset = static_cast<unsigned long long>(_seekFrom) + static_cast<long long>(_amount);
-							file.seekg(offset, std::ios_base::beg);
+							std::streamoff targetOffset = static_cast<unsigned long long>(_seekFrom) + static_cast<long long>(_amount);
+							file.seekg(targetOffset, std::ios_base::beg);
 							
 							// set the output to the new current position
 							_outCurrPos = static_cast<unsigned int>(file.tellg());
@@ -58027,14 +58027,14 @@ public:
 
     // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
     // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
-    GW::GReturn GetOffset(size_t& offset) const
+    GW::GReturn GetOffset(size_t& targetOffset) const
     {
         if (m_dataOffset == WR_INVALID_OFFSET)
         {
             return GW::GReturn::FAILURE;
         }
 
-        offset = m_dataOffset;
+        targetOffset = m_dataOffset;
         return GW::GReturn::SUCCESS;
     }
 
@@ -62792,14 +62792,14 @@ public:
 
     // This will return a failure if the offset isn't set. We have to check to ensure that the offset is valid and the
     // file is reading the data in the correct manner, otherwise the offset will be invalid (0xFFFFFFFF).
-    GW::GReturn GetOffset(size_t& offset) const
+    GW::GReturn GetOffset(size_t& targetOffset) const
     {
         if (m_dataOffset == WR_INVALID_OFFSET)
         {
             return GW::GReturn::FAILURE;
         }
 
-        offset = m_dataOffset;
+        targetOffset = m_dataOffset;
         return GW::GReturn::SUCCESS;
     }
 
