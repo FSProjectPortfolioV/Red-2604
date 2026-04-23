@@ -11,6 +11,7 @@
 ScoreSystem Scorring;
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
+bool flashOn = true;
 int leftStart;
 int rightStart;
 int rightScroll;
@@ -18,39 +19,42 @@ int leftScroll;
 float keyTimer = 0.0f;
 float keyPress = 0.08f;
 float screenTimer = 0.0f;
-float screenTimerStart = 3.0f;
+float screenTimerStart = 2.35f;
 float screenTransition = 4 * screenTimerStart;
 float screenTransitionStart = 0.0f;
+int LineSpace = -100;
 int FinaleIdx = 1;
 int FinaleIdx2 = 1;
+int FinaleIdx3 = 1;
+bool settingsOpen = false;
 
-std::string FinalStats[]{
+std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
 	"PERCENTAGE",
 	"TODAY'S TOP"
 };
 
-std::string LevelStats[]{
+std::vector<std::string> LevelStats{
 	"TERMINATING CRAFTS",
 	"BONUS",
 	"0000 PTS",
 	"R X 1000 = 3000 PTS"
 };
 
-std::string LevelBegin[]{
+std::vector<std::string> LevelBegin{
 	"Rank",
 	"LAST ## STAGE",
 	"READY",
 	"PLAYER 1"
 };
 
-std::string UI[]{
+std::vector<std::string> UI{
 	"1UP",
 	"2UP",
 	"HIGH SCORE",
 };
 
-std::string GameStart[]{
+std::vector<std::string> GameStart{
 	"2026 CRIMSON MILLENIA",
 	"CRIMSON ",
 	"MILLENIA",
@@ -58,22 +62,39 @@ std::string GameStart[]{
 	"PRESS START"
 };
 
-std::string EndGame[]{
+std::vector<std::string> EndGame{
 	"ENEMIES DESTROYED",
 	"SPECIAL BONUS",
 	"00, 000, 000 PTS",
 	"BY CRIMSON MILLENIA",
-	"PS. IF YA'LL WANT. . ."
+	"PS. IF YA'LL WANT. . .",
+	//Always last
+	"GAME OVER"
 };
 
-float ScreenTimers[(sizeof(EndGame) / sizeof(std::string)) + (sizeof(FinalStats) / sizeof(std::string))]{};
-int KeyCounters[(sizeof(EndGame) / sizeof(std::string)) + (sizeof(FinalStats) / sizeof(std::string))]{};
+std::vector<std::string> MenuOptions{
+	"RESET",
+	"SETTINGS",
+	"CREDITS",
+	"MASTER VOLUME",
+	"MUSIC VOLUME",
+	"SFX VOLUME",
+	"LEADERBOARD",
+	//Always last
+	"OPTIONS"
+};
 
+static std::vector<float> ScreenTimers((EndGame.size()) + FinalStats.size());
+static std::vector<int> KeyCounters(EndGame.size() + FinalStats.size());
+static std::vector<std::string> forTyping{};
+
+void FlashingEffect(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text);
 std::string TypewriterEffect(entt::registry& registry,std::string& dest, std::string& text, float& timer, int& keyIndex);
-std::string countLives(entt::registry& registry);
+void TypeLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>& texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount);
+void countLives(entt::registry& registry, BLIT_Font& font, int W, int H);
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H);
-void TypeOutVictory(entt::registry& registry, BLIT_Font& font, int W, int H, int statIndex, std::string* victoryText);
 void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text);
+void RegularOptions(BLIT_Font& font, int W, int H);
 
 void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
@@ -94,14 +115,7 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	bltr.ClearColor(0x00000000);
-	RenderOnScreen(font, W / 8, 25, UI[0]);
-	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
-	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
-	//font.DrawTextImmediate(W - 75, H - 20, UI[3].c_str(), 3);
-	std::string score = std::to_string(Scorring.GetScore());
-	RenderOnScreen(font, (W / 2), 60, score);
-	RenderOnScreen(font, (W / 8) + 15, 60, score);
-	RenderOnScreen(font, 5, H - 20, countLives(registry));
+	SetRegularUI(registry, font, W, H);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -125,13 +139,7 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	RenderOnScreen(font, leftStart, H - 70, GameStart[1]);
 	RenderOnScreen(font, rightStart, H - 70, GameStart[2]);
 	RenderOnScreen(font, (W / 2) - 35, (H / 2), GameStart[3]);
-	if (flashTimer < flashEnd) {
-		flashTimer += deltaTime;
-		RenderOnScreen(font, (W / 2) - 100, (H / 2) + 100, GameStart[4]);
-	}
-	if (flashTimer > flashEnd) {
-		flashTimer = 0.00f;
-	}
+	FlashingEffect(registry, font, W, H, GameStart[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr); 
@@ -144,7 +152,7 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
 	std::string statHeader;
-	TypewriterEffect(registry, statHeader, LevelStats[0], keyTimer, KeyCounters[0]);
+	statHeader = TypewriterEffect(registry, statHeader, LevelStats[0], keyTimer, KeyCounters[0]);
 	RenderOnScreen(font, (W / 4) + 25, (H / 2) - 50, statHeader);
 	if (statHeader == LevelStats[0]) {
 		RenderOnScreen(font, (W / 2) - 50, (H / 2) + 50, LevelStats[1]);
@@ -182,7 +190,7 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 		std::string statHeader;
 		std::string statHeader2;
 		std::string statHeader3;
-		if (FinaleIdx != FinalStats->length()) {
+		if (FinaleIdx != FinalStats.size()) {
 			if (screenTimer < screenTimerStart) {
 				screenTimer += deltaTime;
 			}
@@ -192,29 +200,13 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 				ScreenTimers[FinaleIdx - 1] = 0.0f;
 			}
 		}
-		if (FinaleIdx >= 1) {
-			TypewriterEffect(registry, statHeader, FinalStats[0], ScreenTimers[0], KeyCounters[0]);
-			RenderOnScreen(font, (W / 4), (H / 2) - 200, statHeader);
-		}
-		if (FinaleIdx >= 2) {
-			TypewriterEffect(registry, statHeader2, FinalStats[1], ScreenTimers[1], KeyCounters[1]);
-			RenderOnScreen(font, (W / 4), (H / 2) - 150, statHeader2);
-		}
-		if (FinaleIdx >= 3) {
-			TypewriterEffect(registry, statHeader3, FinalStats[2], ScreenTimers[2], KeyCounters[2]);
-			RenderOnScreen(font, (W / 4), (H / 2) - 100, statHeader3);
-		}
-		if (FinaleIdx == FinalStats->length()) {
+		TypeLines(registry, font, (W / 3), (H / 2) - 200, FinalStats, ScreenTimers, KeyCounters, FinaleIdx);
+		if (FinaleIdx == FinalStats.size()) {
 			screenTimer = 0.0f;
 		}
 	}
 	else {
-		std::string victoryText;
-		std::string victoryText1;
-		std::string victoryText2;
-		std::string victoryText3;
-		std::string victoryText4;
-		if (FinaleIdx2 != EndGame->length()) {
+		if (FinaleIdx2 != EndGame.size()) {
 			if (screenTimer < screenTimerStart) {
 				screenTimer += deltaTime;
 				ScreenTimers[FinaleIdx + FinaleIdx2 - 2] = 0.0f;
@@ -225,27 +217,60 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 				FinaleIdx2++;
 			}
 		}
-		if (FinaleIdx2 >= 1) {
-			TypewriterEffect(registry, victoryText, EndGame[0], ScreenTimers[3], KeyCounters[3]);
-			RenderOnScreen(font, (W / 3), (H / 2) - 225, victoryText);
+		TypeLines(registry, font, (W / 3), (H / 2) - 225, EndGame, ScreenTimers, KeyCounters, FinaleIdx2);
+	}
+	unsigned int* pixels;
+	ovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+	ovl.Unlock();
+	ovl.TransferOverlay();
+}
+
+static void LoseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+	bltr.ClearColor(0x00000000);
+	SetRegularUI(registry, font, W, H);
+	if (FinaleIdx != FinalStats.size()) {
+		if (screenTimer < screenTimerStart) {
+			screenTimer += deltaTime;
 		}
-		if (FinaleIdx2 >= 2) {
-			TypewriterEffect(registry, victoryText1, EndGame[1], ScreenTimers[4], KeyCounters[4]);
-			RenderOnScreen(font, (W / 3), (H / 2) - 125, victoryText1);
-		}
-		if (FinaleIdx2 >= 3) {
-			TypewriterEffect(registry, victoryText2, EndGame[2], ScreenTimers[5], KeyCounters[5]);
-			RenderOnScreen(font, (W / 3), (H / 2) - 25, victoryText2);
-		}
-		if (FinaleIdx2 >= 4) {
-			TypewriterEffect(registry, victoryText3, EndGame[3], ScreenTimers[6], KeyCounters[6]);
-			RenderOnScreen(font, (W / 3), (H / 2) + 75, victoryText3);
-		}
-		if (FinaleIdx2 >= 5) {
-			TypewriterEffect(registry, victoryText4, EndGame[4], ScreenTimers[7], KeyCounters[7]);
-			RenderOnScreen(font, (W / 3), (H / 2) + 175, victoryText4);
+		else {
+			screenTimer = 0.0f;
+			FinaleIdx3++;
+			ScreenTimers[FinaleIdx3 - 1] = 0.0f;
 		}
 	}
+	TypeLines(registry, font, W/3 - 100, H/4, FinalStats, ScreenTimers, KeyCounters, FinaleIdx3);
+	if(KeyCounters[2] >= FinalStats[2].length()) {
+		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) + 100, EndGame[5]);
+		RegularOptions(font, W, H);
+	}
+	unsigned int* pixels;
+	ovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+	ovl.Unlock();
+	ovl.TransferOverlay();
+}
+
+static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	bltr.ClearColor(0x00000000);
+	SetRegularUI(registry, font, W, H);
+	FlashingEffect(registry, font, (W / 2) - 100, (H / 4) - 50, MenuOptions[MenuOptions.size() - 1]);
+	RegularOptions(font, W, H);
+	for (int i = 6; i > 1; i--){
+		RenderOnScreen(font, (W / 3), 100 + (i * 75), MenuOptions[i]);
+	}
+	unsigned int* pixels;
+	ovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+	ovl.Unlock();
+	ovl.TransferOverlay();
+}
+
+static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	bltr.ClearColor(0x00000000);
+	SetRegularUI(registry, font, W, H);
+	RenderOnScreen(font, (W / 2) - 50, (H / 2) + 50, "HIGH SCORE");
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -265,20 +290,37 @@ void UpdateUIOverlays(entt::registry& registry, int state, Overlay& ovl, GW::GRA
 		GameplayUI(registry, ovl, bltr, font, W, H);
 	break;
 	case 3:
-		EndOfLevel(registry, ovl, bltr, font, W, H);
+		PauseMenu(registry, ovl, bltr, font, W, H);
 	break;
 	case 4:
-		WinScreen(registry, ovl, bltr, font, W, H);
+		EndOfLevel(registry, ovl, bltr, font, W, H);
 	break;
 	case 5:
-
+		LoseMenu(registry, ovl, bltr, font, W, H);
 	break;
 	case 6:
-
+		WinScreen(registry, ovl, bltr, font, W, H);
 	break;
 	case 7:
-
+		HighScoreMenu(registry, ovl, bltr, font, W, H);
 	break;
+	}
+}
+
+void FlashingEffect(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text) {
+	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+	if (flashTimer <= flashEnd && flashOn) {
+		flashTimer += deltaTime;
+		RenderOnScreen(font, W, H, text);
+	}
+	else {
+		flashOn = false;
+	}
+	if (flashTimer >= 0.0f && !flashOn) {
+		flashTimer -= deltaTime;
+	}
+	else {
+		flashOn = true;
 	}
 }
 
@@ -291,6 +333,9 @@ std::string TypewriterEffect(entt::registry& registry, std::string& dest, std::s
 			keyIndex++;
 		}
 	}
+	else {
+		return text;
+	}
 	dest = "";
 	for (int i = 0; i < keyIndex; i++) {
 		dest += text[i];
@@ -298,7 +343,7 @@ std::string TypewriterEffect(entt::registry& registry, std::string& dest, std::s
 	return dest;
 }
 
-std::string countLives(entt::registry& registry) {
+void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	std::string hits;
 	auto player = registry.view<GAME::Player>();
 	for (auto entity : player) {
@@ -307,7 +352,7 @@ std::string countLives(entt::registry& registry) {
 			hits[i] = '^';
 		}
 	}
-	return hits;
+	font.DrawTextImmediate(5, H - 20, hits.c_str(), hits.length());
 }
 
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
@@ -318,9 +363,26 @@ void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	std::string score = std::to_string(Scorring.GetScore());
 	font.DrawTextImmediate((W / 2), 60, score.c_str(), score.length());
 	font.DrawTextImmediate((W / 8) + 15, 60, score.c_str(), score.length());
-	font.DrawTextImmediate(5, H - 20, countLives(registry).c_str(), countLives(registry).length());
+	countLives(registry, font, W, H);
 }
 
 void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text) {
 	font.DrawTextImmediate(W, H, text.c_str(), text.length());
+}
+
+void TypeLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>& 
+texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount) {
+	forTyping.resize(texts.size());
+	if (lineCount > texts.size()) {
+		lineCount = texts.size();
+	}
+	for (int i = 0; i < lineCount; i++) {
+		forTyping[i] = (TypewriterEffect(registry, forTyping[i], texts[i], timers[i], keyIndices[i]));
+		RenderOnScreen(font, W, H - (i * LineSpace), forTyping[i]);
+	}
+}
+
+void RegularOptions(BLIT_Font& font, int W, int H) {
+	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
+	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
 }
