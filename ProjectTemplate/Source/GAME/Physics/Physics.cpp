@@ -185,6 +185,7 @@ void Physics::Collision(entt::registry& registry)
 					}
 				}
 
+				//Power Ups
 				// Case: Player to Power-Ups - Player gets the power-up, power-up gets destroyed
 				if (registry.all_of<Player>(*a) && registry.all_of<PowerUp>(*b))
 				{
@@ -203,6 +204,7 @@ void Physics::Collision(entt::registry& registry)
 					registry.emplace_or_replace<GAME::ToDestroy>(*a);
 				}
 
+				
 				//Case: Enemy Bullet to SideFighter - SideFighter gets destroyed, bullet gets destroyed
 				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<SideFighter>(*b))
 				{

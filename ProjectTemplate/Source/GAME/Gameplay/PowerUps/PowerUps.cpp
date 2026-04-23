@@ -12,7 +12,7 @@ void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MA
     vel.direction = powerUpDir;
 
 	//Temporary, should be set based on the type of powerup
-    registry.emplace<GAME::PowerUp>(powerUp, GAME::PowerUpType::SideFighterPU);
+    auto& powerUpComponent = registry.emplace<GAME::PowerUp>(powerUp, type);
     registry.emplace<GAME::Collidable>(powerUp);
 
     auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
@@ -21,19 +21,14 @@ void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MA
 
     CloneModelToEntity(
         registry,
-        manager.collections["SideFighterPU"],
+        manager.collections[powerUpComponent.modelName],
         powerUpCollection,
         powerUpTransform
     );
 
-    // Spawn it in random position
-    float spawnRange = 50.0f;
-    float randX = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-    float randZ = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-
     GW::MATH::GMatrix::TranslateGlobalF(
         powerUpTransform.matrix,
-        GW::MATH::GVECTORF{ randX, 0.0f, randZ, 0.0f },
+        GW::MATH::GVECTORF{ transform.row4.x, 0.0f, transform.row4.z, 0.0f },
         powerUpTransform.matrix
     );
 }
@@ -42,13 +37,17 @@ void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpT
 {
     switch (type)
     {
-    case GAME::PowerUpType::SideFighterPU:
+        case GAME::PowerUpType::SideFighterPU:
 
-		SideFighterPU(registry, player);
-        break;
+		    SideFighterPU(registry, player);
+            break;
 
-    default:
-        break;
+	    case GAME::PowerUpType::MultiShotPU:
+            MultiShotPU(registry, player);
+            break;
+
+        default:
+            break;
 	}
 }
 
@@ -125,6 +124,10 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     //    auto& inst = registry.get<DRAW::GPUInstance>(mesh);
     //    inst.transform = sideFighterTrans.matrix;
     //}
+}
+void MultiShotPU(entt::registry& registry, entt::entity player)
+{
+	registry.emplace_or_replace<GAME::MultiShot>(player);
 };
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
