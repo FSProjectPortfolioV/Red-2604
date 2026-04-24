@@ -27,6 +27,9 @@ int FinaleIdx = 1;
 int FinaleIdx2 = 1;
 int FinaleIdx3 = 1;
 bool settingsOpen = false;
+bool levelStart = false;
+int OverlayIndex = 0;
+int PrevOverlayIndex = 0;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -59,7 +62,7 @@ std::vector<std::string> GameStart{
 	"CRIMSON ",
 	"MILLENIA",
 	"2851",
-	"PRESS START"
+	"PRESS SPACEBAR"
 };
 
 std::vector<std::string> EndGame{
@@ -74,7 +77,7 @@ std::vector<std::string> EndGame{
 
 std::vector<std::string> MenuOptions{
 	"RESET",
-	"SETTINGS",
+	"SETTINGS [O]",
 	"CREDITS",
 	"MASTER VOLUME",
 	"MUSIC VOLUME",
@@ -125,21 +128,21 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 
 static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+	if (rightStart > rightScroll) {
+		rightStart -= deltaTime * 222;
+	}
+	if (leftStart < leftScroll) {
+		leftStart += deltaTime * 300;
+	}
 	bltr.ClearColor(0x00000000);
 	RenderOnScreen(font, W / 8, 25, UI[0]);
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
 	RenderOnScreen(font, (W / 2) - 150, H - 25, GameStart[0]);
-	if (rightStart > rightScroll) {
-		rightStart -= deltaTime;
-	}
-	if (leftStart < leftScroll) {
-		leftStart += deltaTime * 300;
-	}
 	RenderOnScreen(font, leftStart, H - 70, GameStart[1]);
 	RenderOnScreen(font, rightStart, H - 70, GameStart[2]);
-	RenderOnScreen(font, (W / 2) - 35, (H / 2), GameStart[3]);
-	FlashingEffect(registry, font, W, H, GameStart[4]);
+	RenderOnScreen(font, (W / 2), (H / 2), GameStart[3]);
+	FlashingEffect(registry, font, (W / 2) - 120, (H / 2) + 100, GameStart[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr); 
@@ -149,6 +152,13 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 
 static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+	if (screenTimer < screenTimerStart) {
+		screenTimer += deltaTime;
+	}
+	else {
+		screenTimer = 0.0f;
+		levelStart = false;
+	}
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
 	std::string statHeader;
@@ -167,13 +177,20 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 }
 
 static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+	if (screenTimer < screenTimerStart) {
+		screenTimer += deltaTime;
+	}
+	else {
+		levelStart = true;
+	}
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
-	RenderOnScreen(font, (W / 2) - 35, (H / 2) + 50, LevelBegin[0]);
-	RenderOnScreen(font, (W / 2) - 125, (H / 2) + 100, LevelBegin[1]);
+	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[0]);
+	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, LevelBegin[1]);
 	//RenderOnScreen(font, (W / 2) - 125, (H / 2) + 100, LevelBegin[1]);
-	RenderOnScreen(font, (W / 2) - 50, (H / 2) + 150, LevelBegin[2]);
-	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 200, LevelBegin[3]);
+	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[2]);
+	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[3]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -348,9 +365,9 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	std::string hits;
 	auto player = registry.view<GAME::Player>();
 	for (auto entity : player) {
-		auto hitpoints = registry.get<GAME::Health>(entity).HP;
+		auto hitpoints = registry.get<GAME::Lives>(entity).count;
 		for (int i = 0; i < hitpoints; i++) {
-			hits[i] = '^';
+			hits += '^';
 		}
 	}
 	font.DrawTextImmediate(5, H - 20, hits.c_str(), hits.length());

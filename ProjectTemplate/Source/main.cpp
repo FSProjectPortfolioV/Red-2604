@@ -15,7 +15,7 @@
 #include "GAME/Gameplay/ScoreSystem/HighscoreScreenController.h"
 #include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
-
+#include <filesystem>
 
 // Local routines for specific application behavior
 void GraphicsBehavior(entt::registry& registry);
@@ -70,15 +70,6 @@ void GraphicsBehavior(entt::registry& registry)
 
 	// Add Gateware Audio System, for music and sound effects
 
-	using namespace GW::AUDIO;
-	GAudio& gAudio = registry.ctx().emplace<GAudio>();
-	gAudio.Create();
-	gAudio.SetMasterVolume(0.1f);
-
-	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	const char* bgMusic = (*config).at("Sounds").at("gpmusic").as<const char*>();
-	gMusic.Create(bgMusic, gAudio, 0.1f);
-	gMusic.Play(true);
 
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
@@ -106,6 +97,9 @@ void GraphicsBehavior(entt::registry& registry)
 	pressEvents.Create(32);
 	input.bufferedInput.Register(pressEvents);
 	input.gamePads.Register(pressEvents);
+
+
+	
 
 	// Create a transient component to initialize the Renderer
 	std::string vertShader = (*config).at("Shaders").at("vertex").as<std::string>();
@@ -225,6 +219,18 @@ void GameplayBehavior(entt::registry& registry)
 		registry.ctx().emplace<GAME::LevelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+
+	using namespace GW::AUDIO;
+	GAudio& gAudio = registry.ctx().emplace<GAudio>();
+	auto result = gAudio.Create();
+	gAudio.SetMasterVolume(0.1f);
+
+	GMusic& gMusic = registry.ctx().emplace<GMusic>();
+	const char* bgMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
+	std::filesystem::current_path();
+	std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
+	auto a = gMusic.Create(bgMusic, gAudio, 0.1f);
+	gMusic.Play(true);
 
 
 	// Create player
