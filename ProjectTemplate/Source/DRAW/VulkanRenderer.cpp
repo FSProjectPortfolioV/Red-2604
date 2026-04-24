@@ -741,44 +741,7 @@ namespace DRAW
 		auto& blitter = registry.get<GW::GRAPHICS::GBlitter>(entity);
 		auto& font = registry.get<BLIT_Font>(entity);
 
-		auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
-		GW::GEvent event;
-		while (+pressEvents.Pop(event))
-		{
-			GW::INPUT::GBufferedInput::Events inputEvent;
-			GW::INPUT::GBufferedInput::EVENT_DATA inputData;
-
-			if (+event.Read(inputEvent, inputData))
-			{
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
-					&& OverlayIndex != 0 && OverlayIndex != 1 && OverlayIndex != 4 
-					&& OverlayIndex != 5 && OverlayIndex != 6 && OverlayIndex != 7) {
-
-					if (OverlayIndex == 3) {
-						OverlayIndex = PrevOverlayIndex;
-					}
-					else {
-						PrevOverlayIndex = OverlayIndex;
-						OverlayIndex = 3;
-					}
-				}
-
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_O
-					&& OverlayIndex == 3) {
-					settingsOpen = !settingsOpen;
-				}
-
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
-					&& OverlayIndex == 0) {
-					OverlayIndex = 1;
-				}
-				if (levelStart) {
-					OverlayIndex = 2;
-					levelStart = false;
-				}
-			}
-		}
-		UpdateUIOverlays(registry, OverlayIndex, overlay, blitter, font, windowWidth, windowHeight);
+		UpdateUIOverlays(registry, overlay, blitter, font, windowWidth, windowHeight);
 		overlay.RenderOverlay();
 
 		vulkanRenderer.vlkSurface.EndFrame(true);

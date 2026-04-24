@@ -8,6 +8,8 @@
 #include "Cleanup/Cleanup.h"
 #include "Rendering/Rendering.h"
 #include "../../Source/UTIL/Debug.h"
+#include "Gameplay/ScoreSystem/HighscoreScreenController.h"
+#include "Gameplay/ScoreSystem/InitialsEntrySystem.h"
 
 namespace GAME
 {
@@ -15,8 +17,6 @@ namespace GAME
 
 	void Update_GameManager(entt::registry& registry, entt::entity self)
 	{
-
-
 		if (registry.any_of<GameOver>(self))
 			return;
 		double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
@@ -34,25 +34,54 @@ namespace GAME
 		Cleanup::Destroy(registry);
 	}
 
-	void Update_LevelManager(entt::registry& registry, entt::entity self)
-	{
-		auto& lm = registry.get<GAME::LevelManager>(self);
-		double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+    void Update_LevelManager(entt::registry& registry, entt::entity self)
+    {
+        auto& lm = registry.get<GAME::LevelManager>(self);
+        double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 
-		if (lm.levelComplete)
-			return;
+        if (lm.levelComplete)
+            return;
 
-		lm.time += (float)dt;
+        lm.time += (float)dt;
 
-		// Spawn waves at the correct time (TODO)
+        // Fire any waves whose trigger time has been reached
+        while (lm.nextWaveIndex < (int)lm.level.waves.size() &&
+            lm.time >= lm.level.waves[lm.nextWaveIndex].triggerTime)
+        {
+            std::cout << "[LevelManager] Spawning wave " << lm.nextWaveIndex
+                << " at t=" << lm.time << "\n";
+            Gameplay::EnemySpawn(registry, lm.level.waves[lm.nextWaveIndex].token);
+            lm.nextWaveIndex++;
+        }
 
-		// End of level
-		/*if (no waves remaining)
-		{
-			lm.levelComplete = true;
-			std::cout << "Level Complete\n";
-		}*/
-	}
+        // Level complete when time is up and all waves have spawned
+        if (lm.time >= lm.level.duration &&
+            lm.nextWaveIndex >= (int)lm.level.waves.size())
+        {
+            lm.levelComplete = true;
+            std::cout << "[LevelManager] Level Complete at t=" << lm.time << "\n";
+
+            // Trigger highscore screen
+            auto& highscore = registry.ctx().get<HighscoreScreenController>();
+            if (highscore.Begin(registry))
+            {
+                if (highscore.IsNewHighscore())
+                {
+                    std::cout << "New Highscore!\n";
+                    auto& initials = registry.ctx().get<InitialsEntrySystem>();
+                    initials.Reset();
+                }
+                else
+                {
+                    std::cout << "No new highscore\n";
+                }
+            }
+            else
+            {
+                std::cout << "Leaderboard failed to load\n";
+            }
+        }
+    }
 
 	CONNECT_COMPONENT_LOGIC()
 	{
