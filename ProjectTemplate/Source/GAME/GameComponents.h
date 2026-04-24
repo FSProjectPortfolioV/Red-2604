@@ -134,9 +134,13 @@ namespace GAME
 
 	enum PowerUpType
 	{
-		None,
+		NONE,
 		SideFighterPU,
 		MultiShotPU,
+		ScreenWipePU,
+		ExtraLifePU,
+		BonusPointsPU,
+		COUNT	// Always keep this as the last entry to know how many power-ups there are
 	};
 
 	struct PowerUp
@@ -153,8 +157,13 @@ namespace GAME
 			case PowerUpType::SideFighterPU:
 				modelName = "SideFighterPU";
 				break;
+
 			case PowerUpType::MultiShotPU:
-				modelName = "SideFighterPU";
+				modelName = "MultiShotPU";
+				break;
+
+			case PowerUpType::ScreenWipePU:
+				modelName = "ScreenWipePU";
 				break;
 			}
 		};
@@ -184,6 +193,18 @@ namespace GAME
 		GW::MATH::GVECTORF{ 0, 0, 1, 0 },
 		GW::MATH::GVECTORF{ 1, 0, 1, 0 }
 		};
+	};
+
+	struct PUCarrier 
+	{
+	};
+
+	enum DamageType
+	{
+		PlayerBullet,
+		EnemyBullet,
+		Collision,
+		ScreenWipe
 	};
 
 	struct Paused

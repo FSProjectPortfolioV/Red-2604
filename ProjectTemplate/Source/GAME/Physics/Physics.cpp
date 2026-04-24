@@ -144,9 +144,8 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*a);
 						auto& cfg = registry.get<EnemyConfig>(*a);
 						health.HP -= 1;
-						
-						// Condition check unnecessary here. It's performed inside the function.
-						Gameplay::EnemyDeath(registry, cfg);
+
+						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*b);
 				}
 
@@ -155,9 +154,8 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
-						if (health.HP == 0) {
-							Gameplay::EnemyDeath(registry, cfg);
-						}
+						
+						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*a);
 				}
 

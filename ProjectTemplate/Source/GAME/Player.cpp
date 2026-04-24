@@ -183,53 +183,55 @@ void Update_Player(entt::registry& registry, entt::entity self)
     auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
     GW::GEvent event;
 
-    while (+pressEvents.Pop(event))
-    {
-        GW::INPUT::GBufferedInput::Events inputEvent;
-        GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+    //while (+pressEvents.Pop(event))
+    //{
+    //    GW::INPUT::GBufferedInput::Events inputEvent;
+    //    GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
-        if (+event.Read(inputEvent, inputData))
-        {
-            // Check if a key was specifically pressed down and if it's 'C'
-            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
-            {
-                GW::MATH::GMATRIXF tempLoc = transform.matrix;
-                tempLoc.row4.z += 25.0f;
+    //    if (+event.Read(inputEvent, inputData))
+    //    {
+    //        // Check if a key was specifically pressed down and if it's 'C'
+    //        if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
+    //        {
+    //            GW::MATH::GMATRIXF tempLoc = transform.matrix;
+    //            tempLoc.row4.z += 25.0f;
 
-				SpawnPowerUp(registry, GAME::PowerUpType::MultiShotPU, tempLoc);
-            }
+    //            GAME::PowerUpType randomPU = static_cast<GAME::PowerUpType>(rand() % static_cast<int>(GAME::PowerUpType::COUNT));
 
-            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)
-            {
-                //Spawn Enemy Bullet to test SideFighter Collision
-				entt::entity enemyBullet = registry.create();
+				//SpawnPowerUp(registry, randomPU, tempLoc);
+    //        }
 
-				registry.emplace<GAME::EnemyBullets>(enemyBullet);
-				registry.emplace<GAME::Velocity>(enemyBullet, GW::MATH::GVECTORF{ 0, 0, -10, 0 });
-				registry.emplace<GAME::Collidable>(enemyBullet);
+    //        if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)
+    //        {
+    //            //Spawn Enemy Bullet to test SideFighter Collision
+				//entt::entity enemyBullet = registry.create();
 
-				auto& bulletMesh = registry.emplace<DRAW::MeshCollection>(enemyBullet);
-				auto& bulletTrans = registry.emplace<GAME::Transform>(enemyBullet);
+				//registry.emplace<GAME::EnemyBullets>(enemyBullet);
+				//registry.emplace<GAME::Velocity>(enemyBullet, GW::MATH::GVECTORF{ 0, 0, -10, 0 });
+				//registry.emplace<GAME::Collidable>(enemyBullet);
 
-				auto& manager = registry.ctx().get<DRAW::ModelManager>();
+				//auto& bulletMesh = registry.emplace<DRAW::MeshCollection>(enemyBullet);
+				//auto& bulletTrans = registry.emplace<GAME::Transform>(enemyBullet);
 
-                CloneModelToEntity(
-                    registry,
-                    manager.collections["Bullet"],
-					bulletMesh,
-                    bulletTrans
-				);
+				//auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
-				bulletTrans.matrix = transform.matrix;
+    //            CloneModelToEntity(
+    //                registry,
+    //                manager.collections["Bullet"],
+				//	bulletMesh,
+    //                bulletTrans
+				//);
 
-                GW::MATH::GMatrix::TranslateGlobalF(
-                    bulletTrans.matrix,
-                    GW::MATH::GVECTORF{ 0.0f, -1.0f, 25.0f, 0.0f },
-                    bulletTrans.matrix
-                );
-            }
-        }
-    }
+				//bulletTrans.matrix = transform.matrix;
+
+    //            GW::MATH::GMatrix::TranslateGlobalF(
+    //                bulletTrans.matrix,
+    //                GW::MATH::GVECTORF{ 0.0f, -1.0f, 25.0f, 0.0f },
+    //                bulletTrans.matrix
+    //            );
+    //        }
+    //    }
+    //}
 }
 
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir)

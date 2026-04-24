@@ -2,9 +2,11 @@
 #include "../../DRAW/CloneEntity.h"
 #include "../../GAME/Gameplay/ScoreSystem/ScoreSystem.h"
 #include "../GameComponents.h"
+#include "../../GAME/Gameplay/PowerUps/PowerUps.h"
+
 struct Gameplay
 {
-	static void EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg); //MAIN WAY OF HANDLING ENEMIES DYING
+	static void EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg, GAME::DamageType damageSource); //MAIN WAY OF HANDLING ENEMIES DYING
 
     static void GameOver(entt::registry& registry, entt::entity manager);
 
