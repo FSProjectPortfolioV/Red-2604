@@ -13,6 +13,8 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 
 void MultiShotPU(entt::registry& registry, entt::entity player);
 
+void ScreenWipePU(entt::registry& registry);
+
 void Update_SideFighter(entt::registry& registry, entt::entity self);
 void OnSideFighterDeath(entt::registry& registry, entt::entity self);
 

@@ -1,5 +1,6 @@
 #include "PowerUps.h"
 #include "../../../CCL.h"
+#include "../Gameplay.h"
 
 
 void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform, GAME::PowerUpType type)
@@ -57,6 +58,9 @@ void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpT
             MultiShotPU(registry, player);
             break;
 
+            case GAME::PowerUpType::ScreenWipePU:
+                ScreenWipePU(registry);
+				break;
         default:
             break;
 	}
@@ -136,9 +140,32 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     //    inst.transform = sideFighterTrans.matrix;
     //}
 }
+
 void MultiShotPU(entt::registry& registry, entt::entity player)
 {
 	registry.emplace_or_replace<GAME::MultiShot>(player);
+}
+void ScreenWipePU(entt::registry& registry)
+{
+	auto& allEnemies = registry.view<GAME::Enemy>();
+
+    for (auto enemy : allEnemies)
+    {
+		auto& enemyTrans = registry.get<GAME::Transform>(enemy);
+
+        if (registry.ctx().contains<GAME::Bounds>()) {
+            auto& bounds = registry.ctx().get<GAME::Bounds>();
+            
+            if(enemyTrans.matrix.row4.x > bounds.left && enemyTrans.matrix.row4.x < bounds.right &&
+               enemyTrans.matrix.row4.z > bounds.bottom && enemyTrans.matrix.row4.z < bounds.top)
+            {
+				auto& enemyHealth = registry.get<GAME::Health>(enemy);
+                auto& cfg = registry.get<GAME::EnemyConfig>(enemy);
+				enemyHealth.HP = 0;
+                Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::ScreenWipe);
+			}
+        }
+	}
 };
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
@@ -152,10 +179,12 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
         auto& playerTransform = registry.get<GAME::Transform>(sideFighter.player);
         auto& myTransform = registry.get<GAME::Transform>(self);
 
+        float t = 1.0f - std::exp(-sideFighter.lerpSpeed * deltaTime);
+
         GW::MATH::GVector::LerpF(
             sideFighter.currentOffset,
             sideFighter.targetOffset,
-            deltaTime * sideFighter.lerpSpeed,
+            t,
             sideFighter.currentOffset
         );
 
@@ -209,7 +238,7 @@ GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry)
     DropChance dropChances[] = {
         { GAME::PowerUpType::SideFighterPU, SideFighter },
         { GAME::PowerUpType::MultiShotPU, MultiShot },
-        //{ GAME::PowerUpType::ScreenWipePU, ScreenWipe },
+        { GAME::PowerUpType::ScreenWipePU, ScreenWipe },
         //{ GAME::PowerUpType::ExtraLifePU, ExtraLife },
         //{ GAME::PowerUpType::BonusPointsPU, BonusPoints }
 	};

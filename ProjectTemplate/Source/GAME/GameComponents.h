@@ -112,8 +112,13 @@ namespace GAME
 			case PowerUpType::SideFighterPU:
 				modelName = "SideFighterPU";
 				break;
+
 			case PowerUpType::MultiShotPU:
 				modelName = "MultiShotPU";
+				break;
+
+			case PowerUpType::ScreenWipePU:
+				modelName = "ScreenWipePU";
 				break;
 			}
 		};
