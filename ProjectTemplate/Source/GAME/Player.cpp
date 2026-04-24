@@ -131,9 +131,16 @@ void Update_Player(entt::registry& registry, entt::entity self)
         // Clone meshes
         auto& manager = registry.ctx().get<DRAW::ModelManager>();
         auto& bulletCollection = registry.emplace<DRAW::MeshCollection>(bullet);
-        CloneModelToEntity(registry, manager.collections["Bullet"], bulletCollection, bulletTransform);
 
-        // Set position
+        // Clone meshes 
+        CloneModelToEntity(
+            registry,
+            manager.collections["BlueBullet"],
+            bulletCollection,
+            bulletTransform
+        );
+
+        // Override the transform
         bulletTransform.matrix = transform.matrix;
 
         for (auto mesh : bulletCollection.meshEntities) {
@@ -257,7 +264,7 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
             CloneModelToEntity(
                 registry,
-                manager.collections["Bullet"],
+                manager.collections["BlueBullet"],
                 bulletCollection,
                 bulletTransform
             );

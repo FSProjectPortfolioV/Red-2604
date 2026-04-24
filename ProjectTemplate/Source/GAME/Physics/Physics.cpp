@@ -144,9 +144,8 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*a);
 						auto& cfg = registry.get<EnemyConfig>(*a);
 						health.HP -= 1;
-						if (health.HP == 0) {
-							Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
-						}
+
+						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*b);
 				}
 
@@ -155,9 +154,8 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
-						if (health.HP == 0) {
-							Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
-						}
+						
+						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*a);
 				}
 
@@ -242,25 +240,35 @@ void Physics::Collision(entt::registry& registry)
 		}
 	}
 }
-//Made to have enemies and bullets delete on bounds contact since there's no traditional collision
+
 void Physics::WorldLimit(entt::registry& registry) {
 	if (registry.ctx().contains<GAME::Bounds>()) {
 		auto& bounds = registry.ctx().get<GAME::Bounds>();
-		auto& EnemyTrans = registry.view<GAME::Enemy, GAME::Transform>();
-		auto& PlayerBulletTrans = registry.view<GAME::Bullet, GAME::Transform>();
-		auto& EnemyBulletTrans = registry.view<GAME::EnemyBullets, GAME::Transform>();
-		float offset = 4; //Used so the deletion is a bit beyond bounds and offscreen.
-		//Enemy Bounds check
-		for (auto& entity : EnemyTrans) {
+		float offset = 4.0f;
+
+		// Enemy bounds check - only destroy on their exit side
+		auto enemyView = registry.view<GAME::Enemy, GAME::Transform, GAME::EnemyExitSide>();
+		for (auto entity : enemyView) {
 			auto& entTrans = registry.get<GAME::Transform>(entity);
-			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
-				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			auto& exitSide = registry.get<GAME::EnemyExitSide>(entity);
+			float x = entTrans.matrix.row4.x;
+			float z = entTrans.matrix.row4.z;
+
+			bool outOfBounds = false;
+			switch (exitSide.side)
+			{
+			case GAME::ExitSide::Right:  outOfBounds = x > bounds.right + offset; break;
+			case GAME::ExitSide::Left:   outOfBounds = x < bounds.left - offset; break;
+			case GAME::ExitSide::Bottom: outOfBounds = z < bounds.bottom - offset; break;
+			case GAME::ExitSide::Top:    outOfBounds = z > bounds.top + offset; break;
 			}
-			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+
+			if (outOfBounds)
 				registry.emplace_or_replace<GAME::ToDestroy>(entity);
-			}
 		}
-		//Player bullets bounds check
+
+		// Player bullets bounds check
+		auto& PlayerBulletTrans = registry.view<GAME::Bullet, GAME::Transform>();
 		for (auto& entity : PlayerBulletTrans) {
 			auto& entTrans = registry.get<GAME::Transform>(entity);
 			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
@@ -270,7 +278,9 @@ void Physics::WorldLimit(entt::registry& registry) {
 				registry.emplace_or_replace<GAME::ToDestroy>(entity);
 			}
 		}
-		//Enemy bullets bounds check
+
+		// Enemy bullets bounds check
+		auto& EnemyBulletTrans = registry.view<GAME::EnemyBullets, GAME::Transform>();
 		for (auto& entity : EnemyBulletTrans) {
 			auto& entTrans = registry.get<GAME::Transform>(entity);
 			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {

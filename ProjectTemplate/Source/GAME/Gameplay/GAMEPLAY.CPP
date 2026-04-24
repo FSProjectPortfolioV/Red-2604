@@ -9,14 +9,18 @@ void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg
 	auto view = registry.view<Enemy, Health, Transform, DRAW::MeshCollection>();
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+
 	for (auto entity : view)
 	{
 		auto& health = view.get<Health>(entity);
 		if (health.HP > 0)
-			continue; // still alive
-		auto& LevelManager = registry.ctx().get<GAME::LevelManager>();
+			continue;
+
 		registry.ctx().get<ScoreSystem>().AddPoints(cfg.Score);
-		LevelManager.tokensAvailable++;
+		lm.level.tokensAvailable++;
 		std::cout << "Current Score: " << registry.ctx().get<ScoreSystem>().GetScore() << std::endl;
 		// Dead enemy
 		// Destroy the original enemy
@@ -77,31 +81,52 @@ void Gameplay::EnemyTimers(entt::registry& registry, float dt)
 
 }
 
-void Gameplay::EnemySpawn(entt::registry& registry, float dt) {
-
-	static bool testonce = true;
-	float state = 0.0f;
-	auto& input = registry.ctx().get<UTIL::Input>();
-	static float time = 0;
-	time += dt;
-	auto& LevelManager = registry.ctx().get<GAME::LevelManager>();
-	static std::vector<GAME::EnemyToken> CurrentList; //MAIN ENEMY LIST
+void Gameplay::EnemySpawn(entt::registry& registry, float dt)
+{
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
-	if (input.immediateInput.GetState(G_KEY_E, state) == GW::GReturn::SUCCESS && state > 0.0f) {
-		
-		GAME::Transform SpawnPoint;
-		GW::MATH::GMatrix::IdentityF(SpawnPoint.matrix);
-		GW::MATH::GVECTORF Location = { -35,-4,0,0 };
-		GW::MATH::GMatrix::TranslateGlobalF(SpawnPoint.matrix, Location, SpawnPoint.matrix);
-		std::string enemy = "Enemy1";
-		GAME::EnemyConfig TEST = EnemyCFGCreator(registry, enemy, GAME::FormationStyle::WaveLeft);
-		if (time > 2 && LevelManager.tokenBudget == LevelManager.tokensAvailable) { //THIS STOPS EXTRA FORMATIONS FROM SPAWNING!
-			SpawnFormation(registry, GAME::FormationStyle::WaveLeft, 5, 5, 1, SpawnPoint, TEST, manager, 0.5f,CurrentList,1); //call as many formations here so they're queued!
-			time = 0;
-		}
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	for (auto entity : lmView)
+	{
+		auto& lm = registry.get<GAME::LevelManager>(entity);
+		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
 	}
-	SpawnEnemies(registry,manager, CurrentList, LevelManager.tokensAvailable);
 }
+
+void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token)
+{
+	auto& manager = registry.ctx().get<DRAW::ModelManager>();
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	for (auto entity : lmView)
+	{
+		auto& lm = registry.get<GAME::LevelManager>(entity);
+
+		auto& bounds = registry.ctx().get<GAME::Bounds>();
+		GAME::Transform spawnTransform = GetOffscreenSpawn(
+			bounds,
+			token.Style,
+			token.SpawnLocation.matrix.row4.x,
+			token.SpawnLocation.matrix.row4.z,
+			10.0f
+		);
+
+		SpawnFormation(
+			registry,
+			token.Style,
+			5, 5, 1,
+			spawnTransform,
+			token.Enemy,
+			manager,
+			token.SpeedMult,
+			lm.level.spawnQueue,
+			token.UsageCost
+		);
+
+		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
+	}
+}
+
 void Gameplay::Pause(entt::registry& registry, entt::entity manager)
 {
 	auto PauseView = registry.view<GAME::Paused>();

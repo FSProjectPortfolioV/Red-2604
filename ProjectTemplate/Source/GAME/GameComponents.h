@@ -1,6 +1,5 @@
+#pragma once
 #include "../../gateware-main/Gateware.h"
-#ifndef GAME_COMPONENTS_H_
-#define GAME_COMPONENTS_H_
 
 namespace GAME
 {
@@ -15,29 +14,76 @@ namespace GAME
 	struct GameOver {};
 
 	///*** Components ***///
+
+	struct GameManager {};
+	
 	struct Transform
 	{
 		GW::MATH::GMATRIXF matrix;
 	};
 
-	struct GameManager {};
+	enum FormationStyle {
+		WaveLeft = 0,
+		WaveRight = 1,
+		ArrowHeadDown = 2,
+		ArrowHeadLeft = 3,
+		ArrowHeadRight = 4,
+		BigGuy = 5,
+		TheFinal = 6,
+	};
 
-	struct LevelEvent 
+	struct EnemyConfig
+	{
+		float speed;
+		int hitpoints;
+		float Scale;
+		std::string modelName;
+		FormationStyle Movement;
+		int Score;
+		float fireRate;
+		bool isPUCarrier;
+	};
+
+	struct FORMATIONS {
+		FormationStyle Form;
+		int UsageCost;
+	};
+
+	struct EnemyToken {
+		EnemyConfig Enemy;
+		float SpawnRate;
+		FormationStyle Style;
+		int UsageCost;
+		Transform SpawnLocation;
+		float SpeedMult;
+	};
+
+	struct Wave
+	{
+		float triggerTime;
+		EnemyToken token;
+	};
+
+	struct LevelData
+	{
+		std::vector<Wave> waves;
+		float duration;
+		std::vector<EnemyToken> spawnQueue;
+		int tokensAvailable = 0;
+	};
+
+	struct LevelEvent
 	{
 		float triggerTime;
 		std::string formationName;
 	};
 
-	struct LevelManager {
-		float time = 0;
-		int tokenBudget = 10;
-		int tokensAvailable = 10;
-
-		size_t nextEvent = 0;
-		std::vector<LevelEvent> timeline;
-
-		std::queue<std::string> formationQueue; // names of formations waiting to spawn
+	struct LevelManager
+	{
+		float time = 0.0f;
 		bool levelComplete = false;
+		LevelData level;
+		int nextWaveIndex = 0;
 	};
 
 
@@ -150,18 +196,6 @@ namespace GAME
 		};
 	};
 
-	struct Paused
-	{
-
-	};
-
-	// This is defined based on the player's visible screen space.
-	// If you want to use this for operations outside the screen, you will need to define a margin.
-	struct Bounds
-	{
-		float left, right, bottom, top;
-	};
-
 	struct PUCarrier 
 	{
 	};
@@ -174,7 +208,43 @@ namespace GAME
 		ScreenWipe
 	};
 
+	struct Paused
+	{
 
+	};
+
+	// This is defined based on the player's visible screen space.
+	// If you want to use this for operations outside the screen, you will need to define a margin.
+	struct Bounds
+	{
+		float left, right, bottom, top;
+	};
+
+	enum class ExitSide { Left, Right, Top, Bottom };
+
+	struct EnemyExitSide
+	{
+		ExitSide side;
+	};
+
+	inline ExitSide GetExitSide(GAME::FormationStyle style)
+	{
+		switch (style)
+		{
+		case GAME::FormationStyle::WaveLeft:
+		case GAME::FormationStyle::ArrowHeadLeft:
+			return GAME::ExitSide::Right;  // enters left, exits right
+
+		case GAME::FormationStyle::WaveRight:
+		case GAME::FormationStyle::ArrowHeadRight:
+			return GAME::ExitSide::Left;   // enters right, exits left
+
+		case GAME::FormationStyle::ArrowHeadDown:
+		case GAME::FormationStyle::BigGuy:
+		case GAME::FormationStyle::TheFinal:
+		default:
+			return GAME::ExitSide::Bottom; // enters top, exits bottom
+		}
+	}
 
 }// namespace GAME
-#endif // !GAME_COMPONENTS_H_

@@ -15,6 +15,8 @@
 #include "GAME/Gameplay/ScoreSystem/HighscoreScreenController.h"
 #include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
+#include "GAME/LevelLoader.h"
+
 
 // Local routines for specific application behavior
 void GraphicsBehavior(entt::registry& registry);
@@ -220,8 +222,6 @@ void GameplayBehavior(entt::registry& registry)
 {
 	if (!registry.ctx().contains<DRAW::ModelManager>())
 		registry.ctx().emplace<DRAW::ModelManager>();
-	if (!registry.ctx().contains<GAME::LevelManager>())
-		registry.ctx().emplace<GAME::LevelManager>();
 
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 
@@ -241,12 +241,12 @@ void GameplayBehavior(entt::registry& registry)
 	// Create game manager
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);
+	registry.emplace<GAME::LevelManager>(gm);
 
-	// Create level manager
-
-	GAME::LevelManager LevelManager = registry.ctx().get<GAME::LevelManager>();
-	LevelManager.tokenBudget = 10;
-	LevelManager.tokensAvailable = 10;
+	// Load level data into the component
+	auto& lm = registry.get<GAME::LevelManager>(gm);
+	std::string waveFile = config->at("Level1").at("waveFile").as<std::string>();
+	lm.level = GAME::LoadLevelData(waveFile);
 
 	// Get model manager
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
@@ -295,6 +295,11 @@ void MainLoopBehavior(entt::registry& registry)
 		auto gmView = registry.view<GAME::GameManager>();
 		for (auto gm : gmView)
 			registry.patch<GAME::GameManager>(gm);
+
+		// Update LevelManager
+		auto lmView = registry.view<GAME::LevelManager>();
+		for (auto entity : lmView)
+			registry.patch<GAME::LevelManager>(entity);
 
 		//Update SideFighters
 		auto sfView = registry.view<GAME::SideFighter>();
