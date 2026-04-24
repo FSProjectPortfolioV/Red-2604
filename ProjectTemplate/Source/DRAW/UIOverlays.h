@@ -78,7 +78,7 @@ std::vector<std::string> EndGame{
 };
 
 std::vector<std::string> MenuOptions{
-	"RESET",
+	"RESET [Y]",
 	"SETTINGS [O]",
 	"CREDITS",
 	"MASTER VOLUME",
@@ -305,25 +305,36 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	{
 		GW::INPUT::GBufferedInput::Events inputEvent;
 		GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+		auto player = registry.view<GAME::Player>();
 
 		if (+event.Read(inputEvent, inputData))
 		{
-			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
-				&& OverlayIndex != 0 && OverlayIndex != 1 && OverlayIndex != 4
-				&& OverlayIndex != 5 && OverlayIndex != 6 && OverlayIndex != 7) {
+			//Press P to pause, press again to unpause
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P) {
 
 				if (OverlayIndex == 3) {
 					OverlayIndex = PrevOverlayIndex;
+					for (auto ent : player) {
+						registry.remove<GAME::Paused>(ent);
+					}
 				}
 				else {
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
+					for (auto ent : player) {
+						registry.emplace<GAME::Paused>(ent);
+					}
 				}
 			}
-
+			//When paused, press O to open settings, press again to close settings
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_O
 				&& OverlayIndex == 3) {
 				settingsOpen = !settingsOpen;
+			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_Y
+				&& OverlayIndex == 3) {
+				OverlayIndex = 0;
 			}
 
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
@@ -418,8 +429,8 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, W / 8, 25, UI[0]);
-	RenderOnScreen(font, (W / 2) - 100, 25, UI[1]);
-	RenderOnScreen(font, W - 75, H - 20, UI[2]);
+	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
+	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
 	//font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
 	std::string score = std::to_string(ScoreControl.GetPlayerScore());
 	RenderOnScreen(font, (W / 2), 60, score);

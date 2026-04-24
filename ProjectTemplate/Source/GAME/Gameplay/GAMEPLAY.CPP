@@ -127,22 +127,22 @@ void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& toke
 	}
 }
 
-void Gameplay::Pause(entt::registry& registry, entt::entity manager)
-{
-	auto PauseView = registry.view<GAME::Paused>();
-	if (PauseView.empty())
-	{
-		registry.emplace<GAME::GameOver>(manager);
-		std::cout << "Game paused\n";
-	}
-	else
-	{
-		registry.remove<GAME::GameOver>(manager);
-		std::cout << "Game unpaused\n";
-		for (auto p : PauseView)
-			registry.remove<GAME::Paused>(p);
-	}
-}
+//void Gameplay::Pause(entt::registry& registry, entt::entity manager)
+//{
+//	auto PauseView = registry.view<GAME::Paused>();
+//	if (!PauseView.empty())
+//	{
+//		registry.emplace<GAME::GameOver>(manager);
+//		std::cout << "Game paused\n";
+//	}
+//	else
+//	{
+//		registry.remove<GAME::GameOver>(manager);
+//		std::cout << "Game unpaused\n";
+//		for (auto p : PauseView)
+//			registry.remove<GAME::Paused>(p);
+//	}
+//}
 
 void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 {

@@ -293,8 +293,14 @@ void MainLoopBehavior(entt::registry& registry)
 
 		//Update Game
 		auto gmView = registry.view<GAME::GameManager>();
-		for (auto gm : gmView)
-			registry.patch<GAME::GameManager>(gm);
+		for (auto gm : gmView) {
+			if (registry.all_of<GAME::GameOver>(gm) || registry.any_of<GAME::Paused>(gm)) {
+				continue;
+			}
+			else {
+				registry.patch<GAME::GameManager>(gm);
+			}
+		}
 
 		// Update LevelManager
 		auto lmView = registry.view<GAME::LevelManager>();
