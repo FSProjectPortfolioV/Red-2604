@@ -1,6 +1,7 @@
 #pragma once
 #include "../GAME/GameComponents.h"
-#include "../GAME/GamePlay/ScoreSystem/ScoreSystem.h"
+#include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
+#include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "./Utility/FileIntoString.h"
 #include "shaderc/shaderc.h"
 #include "./Overlay.h"
@@ -8,7 +9,6 @@
 #include "./BLIT_Font.h"
 #include "../UTIL/Utilities.h"
 
-ScoreSystem Scorring;
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
 bool flashOn = true;
@@ -30,6 +30,8 @@ bool settingsOpen = false;
 bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
+HighscoreScreenController ScoreControl;
+LeaderboardSystem LeaderboardControl;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -296,8 +298,45 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	ovl.TransferOverlay();
 }
 
-void UpdateUIOverlays(entt::registry& registry, int state, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
-	switch (state) {
+void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
+	GW::GEvent event;
+	while (+pressEvents.Pop(event))
+	{
+		GW::INPUT::GBufferedInput::Events inputEvent;
+		GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+
+		if (+event.Read(inputEvent, inputData))
+		{
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
+				&& OverlayIndex != 0 && OverlayIndex != 1 && OverlayIndex != 4
+				&& OverlayIndex != 5 && OverlayIndex != 6 && OverlayIndex != 7) {
+
+				if (OverlayIndex == 3) {
+					OverlayIndex = PrevOverlayIndex;
+				}
+				else {
+					PrevOverlayIndex = OverlayIndex;
+					OverlayIndex = 3;
+				}
+			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_O
+				&& OverlayIndex == 3) {
+				settingsOpen = !settingsOpen;
+			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
+				&& OverlayIndex == 0) {
+				OverlayIndex = 1;
+			}
+			if (levelStart) {
+				OverlayIndex = 2;
+				levelStart = false;
+			}
+		}
+	}
+	switch (OverlayIndex) {
 	case 0:
 		StartMenu(registry, ovl, bltr, font, W, H);
 	break;
@@ -369,18 +408,22 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 		for (int i = 0; i < hitpoints; i++) {
 			hits += '^';
 		}
+		if(hitpoints == 0) {
+			hits = "Vessel Destroyed";
+			OverlayIndex = 5;
+		}
 	}
 	font.DrawTextImmediate(5, H - 20, hits.c_str(), hits.length());
 }
 
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
-	font.DrawTextImmediate(W / 8, 25, "1UP", 3);
-	font.DrawTextImmediate(W - (W / 6), 25, "2UP", 3);
-	font.DrawTextImmediate((W / 2) - 100, 25, "HIGH SCORE", 10);
-	font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
-	std::string score = std::to_string(Scorring.GetScore());
-	font.DrawTextImmediate((W / 2), 60, score.c_str(), score.length());
-	font.DrawTextImmediate((W / 8) + 15, 60, score.c_str(), score.length());
+	RenderOnScreen(font, W / 8, 25, UI[0]);
+	RenderOnScreen(font, (W / 2) - 100, 25, UI[1]);
+	RenderOnScreen(font, W - 75, H - 20, UI[2]);
+	//font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
+	std::string score = std::to_string(ScoreControl.GetPlayerScore());
+	RenderOnScreen(font, (W / 2), 60, score);
+	RenderOnScreen(font, (W / 8) + 15, 60, score);
 	countLives(registry, font, W, H);
 }
 
