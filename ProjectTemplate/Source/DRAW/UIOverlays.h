@@ -8,6 +8,7 @@
 #include "./Font.h"
 #include "./BLIT_Font.h"
 #include "../UTIL/Utilities.h"
+#include "../GAME/Gameplay/ScoreSystem/ScoreSystem.h"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -30,7 +31,6 @@ bool settingsOpen = false;
 bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
-HighscoreScreenController ScoreControl;
 LeaderboardSystem LeaderboardControl;
 
 std::vector<std::string> FinalStats{
@@ -432,7 +432,8 @@ void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
 	//font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
-	std::string score = std::to_string(ScoreControl.GetPlayerScore());
+	auto& scoreSystem = registry.ctx().get<ScoreSystem>();
+	std::string score = std::to_string(scoreSystem.GetScore());
 	RenderOnScreen(font, (W / 2), 60, score);
 	RenderOnScreen(font, (W / 8) + 15, 60, score);
 	countLives(registry, font, W, H);
