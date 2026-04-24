@@ -2,8 +2,6 @@
 #include "../GAME/GameComponents.h"
 #include "../DRAW/DrawComponents.h"
 #include "../UTIL/Utilities.h"
-#include "../GAME/EnemyManger.h"
-
 
 
 
@@ -94,6 +92,8 @@
         vel.direction.x *= cfg.speed * SpeedMult;
         vel.direction.z *= cfg.speed * SpeedMult;
 
+        registry.emplace<GAME::EnemyExitSide>(enemy, GAME::GetExitSide(cfg.Movement));
+
         // MeshCollection + Transform
         auto& collection = registry.emplace<DRAW::MeshCollection>(enemy);
         auto& enemyTransform = registry.emplace<GAME::Transform>(enemy);
@@ -150,7 +150,7 @@
         int spacing, // how far apart enmies are from each other
         float speed, //multipler to the enemies movement speed
         GAME::Transform StartLocation, //where to start the formation from
-        GAME::EnemyConfig& cfg, //enemy being used
+        const GAME::EnemyConfig& cfg, //enemy being used
         const DRAW::ModelManager& manager, //for knowing where to get the model from
         float SpawnDelay, // delay between enemy spawns for the formations
         std::vector<GAME::EnemyToken>& CurrentList, //Enemy queue
@@ -245,6 +245,41 @@
             time = 0;
             CurrentList.erase(CurrentList.begin());
         }
+    }
+
+    static GAME::Transform GetOffscreenSpawn(
+        const GAME::Bounds& bounds,
+        GAME::FormationStyle style,
+        float x, float z, // base position from JSON, used for the non-entry axis
+        float margin = 10.0f) // how far past the edge to spawn
+    {
+        GAME::Transform spawn;
+        GW::MATH::GMatrix::IdentityF(spawn.matrix);
+
+        GW::MATH::GVECTORF position = { x, -4.0f, z, 0.0f };
+
+        switch (style)
+        {
+        case GAME::FormationStyle::WaveLeft:
+        case GAME::FormationStyle::ArrowHeadLeft:
+            position.x = bounds.left - margin;  // off the left edge
+            break;
+
+        case GAME::FormationStyle::WaveRight:
+        case GAME::FormationStyle::ArrowHeadRight:
+            position.x = bounds.right + margin; // off the right edge
+            break;
+
+        case GAME::FormationStyle::ArrowHeadDown:
+        case GAME::FormationStyle::BigGuy:
+        case GAME::FormationStyle::TheFinal:
+        default:
+            position.z = bounds.top + margin;   // off the top edge
+            break;
+        }
+
+        GW::MATH::GMatrix::TranslateGlobalF(spawn.matrix, position, spawn.matrix);
+        return spawn;
     }
 
     
