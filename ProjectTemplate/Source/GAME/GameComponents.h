@@ -41,6 +41,7 @@ namespace GAME
 		FormationStyle Movement;
 		int Score;
 		float fireRate;
+		bool isPUCarrier;
 	};
 
 	struct FORMATIONS {

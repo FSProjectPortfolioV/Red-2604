@@ -149,7 +149,7 @@ const OBJ_MATERIAL BlueBullet_materials[1] =
 		{ 0.000000f, 0.000000f, 0.000000f },
 		2},
 		"Blue",
-		"Blue.png",
+		"Textures/Blue.png",
 		"",
 		"",
 		"",
