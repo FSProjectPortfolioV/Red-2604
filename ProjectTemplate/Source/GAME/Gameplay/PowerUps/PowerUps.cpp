@@ -2,7 +2,7 @@
 #include "../../../CCL.h"
 
 
-void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MATH::GMATRIXF& transform)
+void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform, GAME::PowerUpType type)
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
@@ -11,8 +11,19 @@ void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MA
     powerUpDir.z *= 5.0f;
     vel.direction = powerUpDir;
 
-	//Temporary, should be set based on the type of powerup
-    auto& powerUpComponent = registry.emplace<GAME::PowerUp>(powerUp, type);
+
+    GAME::PowerUp* powerUpComponent = nullptr;
+    if (type == GAME::PowerUpType::NONE) 
+    {
+		//Randomly select a power-up type if NONE is specified
+        powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, GetRandomPowerUpType(registry));
+
+    }
+    else
+    {
+        powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, type);
+    }
+    
     registry.emplace<GAME::Collidable>(powerUp);
 
     auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
@@ -21,7 +32,7 @@ void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MA
 
     CloneModelToEntity(
         registry,
-        manager.collections[powerUpComponent.modelName],
+        manager.collections[powerUpComponent->modelName],
         powerUpCollection,
         powerUpTransform
     );
@@ -176,5 +187,54 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
             sideFighterData.rightAlive = false;
         }
     }
+}
+
+struct DropChance
+{
+    GAME::PowerUpType type;
+    int weight;
+};
+
+GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry)
+{
+    GAME::PowerUpType result;
+
+    std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+    int SideFighter = config.get()->at("DropRate").at("SideFighter").as<int>();
+	int MultiShot = config.get()->at("DropRate").at("MultiShot").as<int>();
+	int ScreenWipe = config.get()->at("DropRate").at("ScreenWipe").as<int>();
+	int ExtraLife = config.get()->at("DropRate").at("ExtraLife").as<int>();
+	int BonusPoints = config.get()->at("DropRate").at("BonusPoints").as<int>();
+
+    DropChance dropChances[] = {
+        { GAME::PowerUpType::SideFighterPU, SideFighter },
+        { GAME::PowerUpType::MultiShotPU, MultiShot },
+        //{ GAME::PowerUpType::ScreenWipePU, ScreenWipe },
+        //{ GAME::PowerUpType::ExtraLifePU, ExtraLife },
+        //{ GAME::PowerUpType::BonusPointsPU, BonusPoints }
+	};
+
+	int dropSize = sizeof(dropChances) / sizeof(DropChance);
+
+    int totalWeight = 0;
+    for(int i = 0; i < dropSize; i++)
+    {
+        totalWeight += dropChances[i].weight;
+	}
+
+	int randomWeight = rand() % totalWeight;
+
+    for (int i = 0; i < dropSize; i++) 
+    {
+        if(randomWeight < dropChances[i].weight)
+        {
+            result = dropChances[i].type;
+            break;
+		}
+
+		randomWeight -= dropChances[i].weight;
+    }
+
+    return result;
 };
 

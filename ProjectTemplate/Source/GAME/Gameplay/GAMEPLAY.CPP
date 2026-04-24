@@ -3,7 +3,7 @@
 #include "../../DRAW/DrawComponents.h"
 #include "../Rendering/Rendering.h"
 
-void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg)
+void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg, GAME::DamageType damageSource)
 {
 	using namespace GAME;
 	auto view = registry.view<Enemy, Health, Transform, DRAW::MeshCollection>();
@@ -20,6 +20,15 @@ void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg
 		std::cout << "Current Score: " << registry.ctx().get<ScoreSystem>().GetScore() << std::endl;
 		// Dead enemy
 		// Destroy the original enemy
+
+		//PowerUp Drop
+		bool isPUCarrier = registry.any_of<GAME::PUCarrier>(entity);
+		if (isPUCarrier && damageSource == GAME::DamageType::PlayerBullet)
+		{
+			auto& spawnLoc = view.get<Transform>(entity);
+			SpawnPowerUp(registry, spawnLoc.matrix);
+		}
+
 		registry.emplace_or_replace<ToDestroy>(entity);
 	}
 }

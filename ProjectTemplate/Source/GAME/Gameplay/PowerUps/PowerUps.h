@@ -4,7 +4,7 @@
 #include "../../../DRAW/CloneEntity.h"
 #include "../../../CCL.h"
 
-void SpawnPowerUp(entt::registry& registry, GAME::PowerUpType type, const GW::MATH::GMATRIXF& transform);
+void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform, GAME::PowerUpType type = GAME::PowerUpType::NONE);
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type);
 
@@ -15,3 +15,5 @@ void MultiShotPU(entt::registry& registry, entt::entity player);
 
 void Update_SideFighter(entt::registry& registry, entt::entity self);
 void OnSideFighterDeath(entt::registry& registry, entt::entity self);
+
+GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry);

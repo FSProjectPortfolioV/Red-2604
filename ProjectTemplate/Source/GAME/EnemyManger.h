@@ -26,6 +26,9 @@ namespace GAME
 		GAME::FormationStyle Movement; //used for knowing how to move the enemy 
 		int Score;
 		float fireRate;
+
+		//For Power Up Carrier
+		bool isPUCarrier = false;
 	};
 
 	struct FORMATIONS { //main way level should try spawning enmies

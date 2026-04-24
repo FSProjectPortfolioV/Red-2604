@@ -6,7 +6,6 @@
 
 
 
-
     static void CloneModelToEntity(
         entt::registry& registry,
         const DRAW::MeshCollection& source,
@@ -120,6 +119,12 @@
         // Collidable tag
         registry.emplace<GAME::Collidable>(enemy);
 
+		//Tag enemy as a power up carrier if the config says so, this will be used to determine if the enemy should drop a power up on death
+        if(cfg.isPUCarrier)
+        {
+            registry.emplace<GAME::PUCarrier>(enemy);
+		}
+
         return enemy;
     }
     //Token made for enemy to be queued up next
@@ -212,6 +217,17 @@
                 GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
+
+        //Randomly select one of CurrentList's enemies to be a PowerUp Carrier
+        std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+		int carrierChance = config.get()->at("DropRate").at("Carrier").as<int>();
+
+        if (CurrentList.size() >= enemyCount && (rand() % 100) <= carrierChance) 
+        {
+			int randomIndex = rand() % CurrentList.size();
+			CurrentList[randomIndex].Enemy.isPUCarrier = true;
+        }
+
     }
     //keep all enemies using the same type of data with different stats, only the name changing. //Edit for real enemy stats
     static GAME::EnemyConfig EnemyCFGCreator(entt::registry& registry,std::string& dataname,GAME::FormationStyle style) {

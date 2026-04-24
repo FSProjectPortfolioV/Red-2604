@@ -176,55 +176,55 @@ void Update_Player(entt::registry& registry, entt::entity self)
     auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
     GW::GEvent event;
 
-    while (+pressEvents.Pop(event))
-    {
-        GW::INPUT::GBufferedInput::Events inputEvent;
-        GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+    //while (+pressEvents.Pop(event))
+    //{
+    //    GW::INPUT::GBufferedInput::Events inputEvent;
+    //    GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
-        if (+event.Read(inputEvent, inputData))
-        {
-            // Check if a key was specifically pressed down and if it's 'C'
-            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
-            {
-                GW::MATH::GMATRIXF tempLoc = transform.matrix;
-                tempLoc.row4.z += 25.0f;
+    //    if (+event.Read(inputEvent, inputData))
+    //    {
+    //        // Check if a key was specifically pressed down and if it's 'C'
+    //        if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
+    //        {
+    //            GW::MATH::GMATRIXF tempLoc = transform.matrix;
+    //            tempLoc.row4.z += 25.0f;
 
-                GAME::PowerUpType randomPU = static_cast<GAME::PowerUpType>(rand() % static_cast<int>(GAME::PowerUpType::COUNT));
+    //            GAME::PowerUpType randomPU = static_cast<GAME::PowerUpType>(rand() % static_cast<int>(GAME::PowerUpType::COUNT));
 
-				SpawnPowerUp(registry, randomPU, tempLoc);
-            }
+				//SpawnPowerUp(registry, randomPU, tempLoc);
+    //        }
 
-            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)
-            {
-                //Spawn Enemy Bullet to test SideFighter Collision
-				entt::entity enemyBullet = registry.create();
+    //        if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_X)
+    //        {
+    //            //Spawn Enemy Bullet to test SideFighter Collision
+				//entt::entity enemyBullet = registry.create();
 
-				registry.emplace<GAME::EnemyBullets>(enemyBullet);
-				registry.emplace<GAME::Velocity>(enemyBullet, GW::MATH::GVECTORF{ 0, 0, -10, 0 });
-				registry.emplace<GAME::Collidable>(enemyBullet);
+				//registry.emplace<GAME::EnemyBullets>(enemyBullet);
+				//registry.emplace<GAME::Velocity>(enemyBullet, GW::MATH::GVECTORF{ 0, 0, -10, 0 });
+				//registry.emplace<GAME::Collidable>(enemyBullet);
 
-				auto& bulletMesh = registry.emplace<DRAW::MeshCollection>(enemyBullet);
-				auto& bulletTrans = registry.emplace<GAME::Transform>(enemyBullet);
+				//auto& bulletMesh = registry.emplace<DRAW::MeshCollection>(enemyBullet);
+				//auto& bulletTrans = registry.emplace<GAME::Transform>(enemyBullet);
 
-				auto& manager = registry.ctx().get<DRAW::ModelManager>();
+				//auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
-                CloneModelToEntity(
-                    registry,
-                    manager.collections["Bullet"],
-					bulletMesh,
-                    bulletTrans
-				);
+    //            CloneModelToEntity(
+    //                registry,
+    //                manager.collections["Bullet"],
+				//	bulletMesh,
+    //                bulletTrans
+				//);
 
-				bulletTrans.matrix = transform.matrix;
+				//bulletTrans.matrix = transform.matrix;
 
-                GW::MATH::GMatrix::TranslateGlobalF(
-                    bulletTrans.matrix,
-                    GW::MATH::GVECTORF{ 0.0f, -1.0f, 25.0f, 0.0f },
-                    bulletTrans.matrix
-                );
-            }
-        }
-    }
+    //            GW::MATH::GMatrix::TranslateGlobalF(
+    //                bulletTrans.matrix,
+    //                GW::MATH::GVECTORF{ 0.0f, -1.0f, 25.0f, 0.0f },
+    //                bulletTrans.matrix
+    //            );
+    //        }
+    //    }
+    //}
 }
 
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir)

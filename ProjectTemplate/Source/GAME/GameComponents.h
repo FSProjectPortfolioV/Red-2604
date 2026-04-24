@@ -89,9 +89,12 @@ namespace GAME
 
 	enum PowerUpType
 	{
+		NONE,
 		SideFighterPU,
 		MultiShotPU,
-
+		ScreenWipePU,
+		ExtraLifePU,
+		BonusPointsPU,
 		COUNT	// Always keep this as the last entry to know how many power-ups there are
 	};
 
@@ -152,7 +155,21 @@ namespace GAME
 	struct Bounds
 	{
 		float left, right, bottom, top;
-	};;
+	};
+
+	struct PUCarrier 
+	{
+	};
+
+	enum DamageType
+	{
+		PlayerBullet,
+		EnemyBullet,
+		Collision,
+		ScreenWipe
+	};
+
+
 
 }// namespace GAME
 #endif // !GAME_COMPONENTS_H_

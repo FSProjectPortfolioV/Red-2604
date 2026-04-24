@@ -16,7 +16,6 @@
 #include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
 
-
 // Local routines for specific application behavior
 void GraphicsBehavior(entt::registry& registry);
 void GameplayBehavior(entt::registry& registry);
