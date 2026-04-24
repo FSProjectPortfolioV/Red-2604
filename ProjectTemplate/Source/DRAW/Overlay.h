@@ -409,7 +409,7 @@ void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _sci
 	_viewport.minDepth = 0.0f;
 	_viewport.maxDepth = 1.0f;
 	// use computed dimensions to limit the area rendered in Vulkan (boost performance)
-	_scissor.offset = {
+	_scissor.targetOffset = {
 		G_CLAMP(static_cast<int>(overlayConstants.offset[0]), 0, static_cast<int>(client_width)),
 		G_CLAMP(static_cast<int>(overlayConstants.offset[1]), 0, static_cast<int>(client_height)) };
 	_scissor.extent = {
@@ -544,7 +544,7 @@ Overlay::Overlay(unsigned int _width, unsigned int _height,
 		// setup push constants for the overlay
 		VkPushConstantRange pushConstantRange = {};
 		pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		pushConstantRange.offset = 0;
+		pushConstantRange.targetOffset = 0;
 		pushConstantRange.size = sizeof(OverlayConstants);
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
@@ -584,7 +584,7 @@ Overlay::Overlay(unsigned int _width, unsigned int _height,
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor = {};
-		scissor.offset = { 0, 0 };
+		scissor.targetOffset = { 0, 0 };
 		scissor.extent = { _width, _height };
 
 		VkPipelineViewportStateCreateInfo viewportState = {};

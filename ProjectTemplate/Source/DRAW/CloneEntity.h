@@ -222,12 +222,13 @@
         std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 		int carrierChance = config.get()->at("DropRate").at("Carrier").as<int>();
 
-        if (CurrentList.size() >= enemyCount && (rand() % 100) <= carrierChance) 
+		int randValue = rand() % 100;
+
+        if (CurrentList.size() >= enemyCount && randValue <= carrierChance) 
         {
 			int randomIndex = rand() % CurrentList.size();
 			CurrentList[randomIndex].Enemy.isPUCarrier = true;
         }
-
     }
     //keep all enemies using the same type of data with different stats, only the name changing. //Edit for real enemy stats
     static GAME::EnemyConfig EnemyCFGCreator(entt::registry& registry,std::string& dataname,GAME::FormationStyle style) {

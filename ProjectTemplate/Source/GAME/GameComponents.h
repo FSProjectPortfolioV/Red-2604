@@ -41,7 +41,7 @@ namespace GAME
 		FormationStyle Movement;
 		int Score;
 		float fireRate;
-		bool isPUCarrier;
+		bool isPUCarrier = false;
 	};
 
 	struct FORMATIONS {
@@ -165,6 +165,10 @@ namespace GAME
 
 			case PowerUpType::ScreenWipePU:
 				modelName = "ScreenWipePU";
+				break;
+
+			case PowerUpType::ExtraLifePU:
+				modelName = "ExtraLifePU";
 				break;
 			}
 		};

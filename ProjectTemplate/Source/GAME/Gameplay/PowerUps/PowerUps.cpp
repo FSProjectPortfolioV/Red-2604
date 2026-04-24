@@ -239,7 +239,7 @@ GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry)
         { GAME::PowerUpType::SideFighterPU, SideFighter },
         { GAME::PowerUpType::MultiShotPU, MultiShot },
         { GAME::PowerUpType::ScreenWipePU, ScreenWipe },
-        //{ GAME::PowerUpType::ExtraLifePU, ExtraLife },
+        { GAME::PowerUpType::ExtraLifePU, ExtraLife },
         //{ GAME::PowerUpType::BonusPointsPU, BonusPoints }
 	};
 
