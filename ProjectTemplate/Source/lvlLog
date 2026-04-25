@@ -106,3 +106,24 @@
 [Thu Mar 26 17:14:18 2026] ThreadID[5112]	[INFO]	H2B Imported: Wall.h2b
 [Thu Mar 26 17:14:18 2026] ThreadID[5112]	[MESSAGE]	Importing of .H2B File Data Complete.
 [Thu Mar 26 17:14:18 2026] ThreadID[5112]	[EVENT]	GAME LEVEL WAS LOADED TO CPU [DATA ORIENTED]
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[EVENT]	LOADING GAME LEVEL [DATA ORIENTED]
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Begin Reading Game Level Text File.
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	B2.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	Boundary: Left -2.618652 Right 2.618696 Bottom -0.184692 Top 0.169799 Near -0.374524 Far 1.774143
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Bullet.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	Boundary: Left -0.554330 Right 0.589906 Bottom 1.103265 Top 2.103265 Near -0.580944 Far 0.580943
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Cactus.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	Boundary: Left -4.622127 Right 4.622127 Bottom 0.000033 Top 10.657980 Near -1.911183 Far 1.915005
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	SideFighterPU.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	Boundary: Left -1.002228 Right 0.900763 Bottom -0.208278 Top 0.296493 Near -0.990473 Far 0.946880
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Turtle.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	Boundary: Left -0.967202 Right 0.989394 Bottom -0.048975 Top 1.761221 Near -1.741199 Far 2.351105
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Game Level File Reading Complete.
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Begin Importing .H2B File Data.
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	H2B Imported: B2.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	H2B Imported: Bullet.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	H2B Imported: Cactus.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	H2B Imported: SideFighterPU.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[INFO]	H2B Imported: Turtle.h2b
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[MESSAGE]	Importing of .H2B File Data Complete.
+[Sat Apr 18 01:26:20 2026] ThreadID[21488]	[EVENT]	GAME LEVEL WAS LOADED TO CPU [DATA ORIENTED]

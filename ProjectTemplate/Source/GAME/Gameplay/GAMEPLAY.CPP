@@ -3,53 +3,36 @@
 #include "../../DRAW/DrawComponents.h"
 #include "../Rendering/Rendering.h"
 
-void Gameplay::Shatter(entt::registry& registry, const EnemyConfig& cfg)
+void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg, GAME::DamageType damageSource)
 {
 	using namespace GAME;
 	auto view = registry.view<Enemy, Health, Transform, DRAW::MeshCollection>();
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+
 	for (auto entity : view)
 	{
 		auto& health = view.get<Health>(entity);
-
 		if (health.HP > 0)
-			continue; // still alive
+			continue;
 
+		registry.ctx().get<ScoreSystem>().AddPoints(cfg.Score);
+		lm.level.tokensAvailable++;
+		std::cout << "Current Score: " << registry.ctx().get<ScoreSystem>().GetScore() << std::endl;
 		// Dead enemy
-		bool hasShatter = registry.all_of<Shatters>(entity);
+		// Destroy the original enemy
 
-		if (hasShatter)
+		//PowerUp Drop
+		bool isPUCarrier = registry.any_of<GAME::PUCarrier>(entity);
+		if (isPUCarrier && damageSource == GAME::DamageType::PlayerBullet)
 		{
-			auto& shatter = registry.get<Shatters>(entity);
-			auto& transform = view.get<Transform>(entity);
-
-			if (shatter.remaining > 0)
-			{
-				for (int i = 0; i < shatter.clones; i++)
-				{
-					GAME::Transform newT = transform;
-
-					GW::MATH::GVECTORF scale = { shatter.scaleDown, shatter.scaleDown, shatter.scaleDown, 0 };
-					GW::MATH::GMatrix::ScaleLocalF(newT.matrix, scale, newT.matrix);
-
-					// Spawn child with inherited shatter values
-					SpawnEnemyShatterChild(
-						registry,
-						manager,
-						newT,
-						shatter.remaining - 1,   // remaining decreases
-						shatter.clones,          // same number of clones
-						shatter.scaleDown,       // same scale factor
-						cfg.speed,               // same speed
-						cfg.modelName            // same model
-					);
-				}
-			}
-
+			auto& spawnLoc = view.get<Transform>(entity);
+			SpawnPowerUp(registry, spawnLoc.matrix);
 		}
 
-		// Destroy the original enemy
 		registry.emplace_or_replace<ToDestroy>(entity);
 	}
 }
@@ -88,34 +71,80 @@ void Gameplay::GameOver(entt::registry& registry, entt::entity manager)
 
 void Gameplay::PlayerTimers(entt::registry& registry, float dt)
 {
-	auto invView = registry.view<GAME::Player, GAME::Invuln>();
-	for (auto p : invView)
-	{
-		auto& inv = invView.get<GAME::Invuln>(p);
-		inv.cooldown -= dt;
-
-		if (inv.cooldown <= 0)
-			registry.remove<GAME::Invuln>(p);
-	}
-
 	auto playerView = registry.view<GAME::Player>();
 	for (auto p : playerView)
 		registry.patch<GAME::Player>(p);
 }
 
-void Gameplay::Pause(entt::registry& registry, entt::entity manager)
+void Gameplay::EnemyTimers(entt::registry& registry, float dt)
 {
-	auto PauseView = registry.view<GAME::Paused>();
-	if (PauseView.empty())
+
+}
+
+void Gameplay::EnemySpawn(entt::registry& registry, float dt)
+{
+	auto& manager = registry.ctx().get<DRAW::ModelManager>();
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	for (auto entity : lmView)
 	{
-		registry.emplace<GAME::GameOver>(manager);
-		std::cout << "Game paused\n";
+		auto& lm = registry.get<GAME::LevelManager>(entity);
+		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
 	}
-	else
+}
+
+void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token)
+{
+	auto& manager = registry.ctx().get<DRAW::ModelManager>();
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	for (auto entity : lmView)
 	{
-		registry.remove<GAME::GameOver>(manager);
-		std::cout << "Game unpaused\n";
-		for (auto p : PauseView)
-			registry.remove<GAME::Paused>(p);
+		auto& lm = registry.get<GAME::LevelManager>(entity);
+
+		auto& bounds = registry.ctx().get<GAME::Bounds>();
+		GAME::Transform spawnTransform = GetOffscreenSpawn(
+			bounds,
+			token.Style,
+			token.SpawnLocation.matrix.row4.x,
+			token.SpawnLocation.matrix.row4.z,
+			10.0f
+		);
+
+		SpawnFormation(
+			registry,
+			token.Style,
+			5, 5, 1,
+			spawnTransform,
+			token.Enemy,
+			manager,
+			token.SpeedMult,
+			lm.level.spawnQueue,
+			token.UsageCost
+		);
+
+		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
 	}
+}
+
+//void Gameplay::Pause(entt::registry& registry, entt::entity manager)
+//{
+//	auto PauseView = registry.view<GAME::Paused>();
+//	if (!PauseView.empty())
+//	{
+//		registry.emplace<GAME::GameOver>(manager);
+//		std::cout << "Game paused\n";
+//	}
+//	else
+//	{
+//		registry.remove<GAME::GameOver>(manager);
+//		std::cout << "Game unpaused\n";
+//		for (auto p : PauseView)
+//			registry.remove<GAME::Paused>(p);
+//	}
+//}
+
+void Gameplay::EnemyMovementUpdates(entt::registry& registry)
+{
+ //WIP
 }

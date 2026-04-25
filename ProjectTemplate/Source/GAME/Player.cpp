@@ -5,10 +5,19 @@
 #include "../DRAW/CloneEntity.h"
 #include "Gameplay/PowerUps/PowerUps.h"
 
+
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir);
 
 void Update_Player(entt::registry& registry, entt::entity self)
 {
+    // Check if player dies
+    auto& health = registry.get<GAME::Health>(self);
+
+    if (health.HP <= 0)
+    {
+        return;
+    }
+
     auto& transform = registry.get<GAME::Transform>(self);
     auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
 
@@ -58,6 +67,13 @@ void Update_Player(entt::registry& registry, entt::entity self)
     );
     transform.matrix = newMat;
 
+    // Clamp player position to screen bounds
+    if (registry.ctx().contains<GAME::Bounds>()) {
+        auto& bounds = registry.ctx().get<GAME::Bounds>();
+        transform.matrix.row4.x = std::clamp(transform.matrix.row4.x, bounds.left, bounds.right);
+        transform.matrix.row4.z = std::clamp(transform.matrix.row4.z, bounds.bottom, bounds.top);
+    }
+
     // Firing cooldown
     float fireRate = config->at("Player").at("firerate").as<float>();
     if (registry.all_of<GAME::Firing>(self)) {
@@ -84,25 +100,6 @@ void Update_Player(entt::registry& registry, entt::entity self)
         dir.z += 1.0f;
         firePressed = true;
     }
-   
-
-    if (input.immediateInput.GetState(G_KEY_DOWN, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
-    {
-        dir.z -= 1.0f;
-        //firePressed = true;
-    }
-
-    if (input.immediateInput.GetState(G_KEY_RIGHT, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
-    {
-        dir.x += 1.0f;
-        //firePressed = true;
-    }
-
-    if (input.immediateInput.GetState(G_KEY_LEFT, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
-    {
-        dir.x -= 1.0f;
-        //firePressed = true;
-    }
 
     float pressed = 0.0f;
     if (input.immediateInput.GetState(G_KEY_P, pressed) == GW::GReturn::SUCCESS && pressed > 0.0f) {
@@ -121,25 +118,24 @@ void Update_Player(entt::registry& registry, entt::entity self)
     dir.x *= bulletSpeed;
     dir.z *= bulletSpeed;
 
-    if (firePressed) {
+    auto SpawnBullet = [&](GW::MATH::GVECTORF bulletVelocity)
+    {
         entt::entity bullet = registry.create();
 
         // Add components
-        auto& vel = registry.emplace<GAME::Velocity>(bullet);
-        vel.direction = dir;
-
+        registry.emplace<GAME::Velocity>(bullet, bulletVelocity);
         registry.emplace<GAME::Bullet>(bullet);
         registry.emplace<GAME::Collidable>(bullet);
-
         auto& bulletTransform = registry.emplace<GAME::Transform>(bullet);
 
+        // Clone meshes
         auto& manager = registry.ctx().get<DRAW::ModelManager>();
         auto& bulletCollection = registry.emplace<DRAW::MeshCollection>(bullet);
 
         // Clone meshes 
         CloneModelToEntity(
             registry,
-            manager.collections["Bullet"],
+            manager.collections["BlueBullet"],
             bulletCollection,
             bulletTransform
         );
@@ -147,11 +143,34 @@ void Update_Player(entt::registry& registry, entt::entity self)
         // Override the transform
         bulletTransform.matrix = transform.matrix;
 
-        for (auto mesh : bulletCollection.meshEntities)
-        {
+        for (auto mesh : bulletCollection.meshEntities) {
             auto& inst = registry.get<DRAW::GPUInstance>(mesh);
             inst.transform = bulletTransform.matrix;
         }
+    };
+
+    if (firePressed)
+    {
+        if (auto* multiShot = registry.try_get<GAME::MultiShot>(self))
+        {
+			// Multi-shot power-up logic: spawn bullets in multiple directions
+            for (auto& direction : multiShot->directions)
+            {
+                GW::MATH::GVECTORF finalVel = {
+                    direction.x * bulletSpeed,
+                    0.0f,
+                    direction.z * bulletSpeed,
+                    0.0f
+                };
+                SpawnBullet(finalVel);
+            }
+        }
+        else
+        {
+            // Standard single shot
+            SpawnBullet(dir);
+        }
+
 
         SideFighterFire(registry, self, transform, dir);
 
@@ -159,26 +178,6 @@ void Update_Player(entt::registry& registry, entt::entity self)
         registry.emplace<GAME::Firing>(self, fireRate);
     }
 
-    // Temporary key press logic to test power up spawning
-    // Gets the event cache to read buffered input events
-    auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
-    GW::GEvent event;
-
-    while (+pressEvents.Pop(event))
-    {
-        GW::INPUT::GBufferedInput::Events inputEvent;
-        GW::INPUT::GBufferedInput::EVENT_DATA inputData;
-
-        if (+event.Read(inputEvent, inputData))
-        {
-            // Check if a key was specifically pressed down and if it's 'C'
-            if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_C)
-            {
-				SpawnPowerUp(registry, transform.matrix);
-                
-            }
-        }
-    }
 }
 
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir)
@@ -188,6 +187,11 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
     for (auto wingmanEntity : wingmanView)
     {
         auto& fighterData = registry.get<GAME::SideFighter>(wingmanEntity);
+
+        if(fighterData.canShoot == false)
+        {
+            continue;
+        }
 
         if (fighterData.player == self)
         {
@@ -206,14 +210,14 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
 
             CloneModelToEntity(
                 registry,
-                manager.collections["Bullet"],
+                manager.collections["BlueBullet"],
                 bulletCollection,
                 bulletTransform
             );
 
             GW::MATH::GMatrix::TranslateGlobalF(
                 transform.matrix,
-                fighterData.offset,
+                fighterData.targetOffset,
                 bulletTransform.matrix
 			);
 

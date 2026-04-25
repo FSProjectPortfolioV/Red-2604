@@ -1,6 +1,9 @@
 #include "PowerUps.h"
+#include "../../../CCL.h"
+#include "../Gameplay.h"
 
-void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
+
+void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform, GAME::PowerUpType type)
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
@@ -9,8 +12,19 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
     powerUpDir.z *= 5.0f;
     vel.direction = powerUpDir;
 
-	//Temporary, should be set based on the type of powerup
-    registry.emplace<GAME::PowerUp>(powerUp, GAME::PowerUpType::SideFighterPU);
+
+    GAME::PowerUp* powerUpComponent = nullptr;
+    if (type == GAME::PowerUpType::NONE) 
+    {
+		//Randomly select a power-up type if NONE is specified
+        powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, GetRandomPowerUpType(registry));
+
+    }
+    else
+    {
+        powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, type);
+    }
+    
     registry.emplace<GAME::Collidable>(powerUp);
 
     auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
@@ -19,40 +33,44 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform)
 
     CloneModelToEntity(
         registry,
-        manager.collections["SideFighterPU"],
+        manager.collections[powerUpComponent->modelName],
         powerUpCollection,
         powerUpTransform
     );
 
-    // Spawn it in random position
-    float spawnRange = 100.0f;
-    float randX = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-    float randZ = ((float)rand() / RAND_MAX) * spawnRange - (spawnRange / 2.0f);
-
-    GW::MATH::GMatrix::TranslateLocalF(
+    GW::MATH::GMatrix::TranslateGlobalF(
         powerUpTransform.matrix,
-        GW::MATH::GVECTORF{ randX, 0.0f, randZ, 0.0f },
+        GW::MATH::GVECTORF{ transform.row4.x, 0.0f, transform.row4.z, 0.0f },
         powerUpTransform.matrix
     );
-
-    for (auto mesh : powerUpCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = powerUpTransform.matrix;
-    }
 }
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type)
 {
     switch (type)
     {
-    case GAME::PowerUpType::SideFighterPU:
+        case GAME::PowerUpType::SideFighterPU:
 
-		SideFighterPU(registry, player);
-        break;
+		    SideFighterPU(registry, player);
+            break;
 
-    default:
-        break;
+	    case GAME::PowerUpType::MultiShotPU:
+            MultiShotPU(registry, player);
+            break;
+
+        case GAME::PowerUpType::ScreenWipePU:
+            ScreenWipePU(registry);
+			break;
+
+        case GAME::PowerUpType::ExtraLifePU:
+			ExtraLifePU(registry, player);
+            break;
+
+        case GAME::PowerUpType::BonusPointsPU:
+             BonusPointsPU(registry);
+			 break;
+        default:
+            break;
 	}
 }
 
@@ -84,7 +102,8 @@ void SideFighterPU(entt::registry& registry, entt::entity player)
         }
         else
         {
-            //Player already has both! Give them bonus points instead?.
+			//Give points if both are alive and player picks another side fighter power-up
+			BonusPointsPU(registry);
         }
     }
 }
@@ -93,18 +112,21 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 {
     entt::entity sideFighter = registry.create();
 
-    GW::MATH::GVECTORF offset = { 0, 0, 0, 0 };
+    GW::MATH::GVECTORF targetOffset = { 0, 0, 0, 0 };
     if (side == "LEFT")
     {
-        offset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
+        targetOffset = { -4.5f, 0.0f, -2.0f, 0.0f }; // X is negative (left)
     }
     else if (side == "RIGHT")
     {
-        offset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
+        targetOffset = { 4.5f, 0.0f, -2.0f, 0.0f };  // X is positive (right)
     }
 
-    registry.emplace<GAME::SideFighter>(sideFighter, player, side, offset);
+    GW::MATH::GVECTORF currentOffset = targetOffset;
+    currentOffset.z = -50.0f;
 
+    registry.emplace<GAME::SideFighter>(sideFighter, player, side, targetOffset, currentOffset);
+    registry.emplace<GAME::Collidable>(sideFighter);
     auto& sideFighterTrans = registry.emplace<GAME::Transform>(sideFighter);
 
     //Temporary, model will change
@@ -113,6 +135,7 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
     std::string playerModelName = config->at("Player").at("model").as<std::string>();
 
     auto& wingmanCollection = registry.emplace<DRAW::MeshCollection>(sideFighter);
+
     CloneModelToEntity(
         registry,
         manager.collections[playerModelName],
@@ -120,26 +143,148 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
         sideFighterTrans
     );
 
-    for (auto mesh : wingmanCollection.meshEntities)
-    {
-        auto& inst = registry.get<DRAW::GPUInstance>(mesh);
-        inst.transform = sideFighterTrans.matrix;
-    }
+    //for (auto mesh : wingmanCollection.meshEntities)
+    //{
+    //    auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+    //    inst.transform = sideFighterTrans.matrix;
+    //}
 }
+
+void MultiShotPU(entt::registry& registry, entt::entity player)
+{
+	registry.emplace_or_replace<GAME::MultiShot>(player);
+}
+void ScreenWipePU(entt::registry& registry)
+{
+	auto& allEnemies = registry.view<GAME::Enemy>();
+
+    for (auto enemy : allEnemies)
+    {
+		auto& enemyTrans = registry.get<GAME::Transform>(enemy);
+
+        if (registry.ctx().contains<GAME::Bounds>()) {
+            auto& bounds = registry.ctx().get<GAME::Bounds>();
+            
+            if(enemyTrans.matrix.row4.x > bounds.left && enemyTrans.matrix.row4.x < bounds.right &&
+               enemyTrans.matrix.row4.z > bounds.bottom && enemyTrans.matrix.row4.z < bounds.top)
+            {
+				auto& enemyHealth = registry.get<GAME::Health>(enemy);
+                auto& cfg = registry.get<GAME::EnemyConfig>(enemy);
+				enemyHealth.HP = 0;
+                Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::ScreenWipe);
+			}
+        }
+	}
+}
+
+void ExtraLifePU(entt::registry& registry, entt::entity player, int livesAmount)
+{
+	auto& playerLives = registry.get<GAME::Lives>(player);
+
+	playerLives.count += livesAmount;
+}
+
+void BonusPointsPU(entt::registry& registry)
+{
+    registry.ctx().get<ScoreSystem>().AddPoints(1000);
+};
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
+
+    double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 
     if (registry.valid(sideFighter.player))
     {
         auto& playerTransform = registry.get<GAME::Transform>(sideFighter.player);
         auto& myTransform = registry.get<GAME::Transform>(self);
 
+        float t = 1.0f - std::exp(-sideFighter.lerpSpeed * deltaTime);
+
+        GW::MATH::GVector::LerpF(
+            sideFighter.currentOffset,
+            sideFighter.targetOffset,
+            t,
+            sideFighter.currentOffset
+        );
+
         GW::MATH::GMatrix::TranslateLocalF(
             playerTransform.matrix,
-            sideFighter.offset,
+            sideFighter.currentOffset,
             myTransform.matrix
         );
+
+        if (sideFighter.currentOffset.z >= sideFighter.targetOffset.z - 0.1f) 
+        {
+			sideFighter.canShoot = true;
+        }
+    }
+};
+
+void OnSideFighterDeath(entt::registry& registry, entt::entity self)
+{
+    auto& sideFighter = registry.get<GAME::SideFighter>(self);
+    if (registry.valid(sideFighter.player))
+    {
+        auto& sideFighterData = registry.get<GAME::HasSideFighters>(sideFighter.player);
+        if (sideFighter.side == "LEFT")
+        {
+            sideFighterData.leftAlive = false;
+        }
+        else if (sideFighter.side == "RIGHT")
+        {
+            sideFighterData.rightAlive = false;
+        }
     }
 }
+
+struct DropChance
+{
+    GAME::PowerUpType type;
+    int weight;
+};
+
+GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry)
+{
+    GAME::PowerUpType result;
+
+    std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+    int SideFighter = config.get()->at("DropRate").at("SideFighter").as<int>();
+	int MultiShot = config.get()->at("DropRate").at("MultiShot").as<int>();
+	int ScreenWipe = config.get()->at("DropRate").at("ScreenWipe").as<int>();
+	int ExtraLife = config.get()->at("DropRate").at("ExtraLife").as<int>();
+	int BonusPoints = config.get()->at("DropRate").at("BonusPoints").as<int>();
+
+    DropChance dropChances[] = {
+        { GAME::PowerUpType::SideFighterPU, SideFighter },
+        { GAME::PowerUpType::MultiShotPU, MultiShot },
+        { GAME::PowerUpType::ScreenWipePU, ScreenWipe },
+        { GAME::PowerUpType::ExtraLifePU, ExtraLife },
+        { GAME::PowerUpType::BonusPointsPU, BonusPoints }
+	};
+
+	int dropSize = sizeof(dropChances) / sizeof(DropChance);
+
+    int totalWeight = 0;
+    for(int i = 0; i < dropSize; i++)
+    {
+        totalWeight += dropChances[i].weight;
+	}
+
+	int randomWeight = rand() % totalWeight;
+
+    for (int i = 0; i < dropSize; i++) 
+    {
+        if(randomWeight < dropChances[i].weight)
+        {
+            result = dropChances[i].type;
+            break;
+		}
+
+		randomWeight -= dropChances[i].weight;
+    }
+
+    return result;
+};
+

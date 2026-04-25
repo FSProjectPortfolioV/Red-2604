@@ -1,0 +1,259 @@
+{
+  "duration": 90.0,
+  "tokensAvailable":  10,
+  "waves": [
+    {
+      "triggerTime": 3.0,
+      "token": {
+        "style": "WaveLeft",
+        "usageCost": 1,
+        "spawnRate": 1.0,
+        "speedMult": 0.5,
+        "spawnLocation": {
+          "x": -35.0,
+          "y": -4.0,
+          "z": 10.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 15.0,
+          "hitpoints": 1,
+          "scale": 1.0,
+          "score": 100,
+          "fireRate": 2.0,
+          "movement": "WaveLeft"
+        }
+      }
+    },
+    {
+      "triggerTime": 10.0,
+      "token": {
+        "style": "WaveRight",
+        "usageCost": 1,
+        "spawnRate": 1.0,
+        "speedMult": 0.5,
+        "spawnLocation": {
+          "x": 35.0,
+          "y": -4.0,
+          "z": 10.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 15.0,
+          "hitpoints": 1,
+          "scale": 1.0,
+          "score": 100,
+          "fireRate": 2.0,
+          "movement": "WaveRight"
+        }
+      }
+    },
+    {
+      "triggerTime": 18.0,
+      "token": {
+        "style": "WaveLeft",
+        "usageCost": 1,
+        "spawnRate": 1.0,
+        "speedMult": 0.6,
+        "spawnLocation": {
+          "x": -35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 15.0,
+          "hitpoints": 1,
+          "scale": 1.0,
+          "score": 100,
+          "fireRate": 2.0,
+          "movement": "WaveLeft"
+        }
+      }
+    },
+    {
+      "triggerTime": 25.0,
+      "token": {
+        "style": "ArrowHeadDown",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.6,
+        "spawnLocation": {
+          "x": 0.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 16.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.5,
+          "movement": "ArrowHeadDown"
+        }
+      }
+    },
+    {
+      "triggerTime": 33.0,
+      "token": {
+        "style": "WaveRight",
+        "usageCost": 1,
+        "spawnRate": 1.0,
+        "speedMult": 0.6,
+        "spawnLocation": {
+          "x": 35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 15.0,
+          "hitpoints": 1,
+          "scale": 1.0,
+          "score": 100,
+          "fireRate": 1.8,
+          "movement": "WaveRight"
+        }
+      }
+    },
+    {
+      "triggerTime": 40.0,
+      "token": {
+        "style": "ArrowHeadDown",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.7,
+        "spawnLocation": {
+          "x": 0.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 16.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.5,
+          "movement": "ArrowHeadDown"
+        }
+      }
+    },
+    {
+      "triggerTime": 48.0,
+      "token": {
+        "style": "ArrowHeadLeft",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.7,
+        "spawnLocation": {
+          "x": -35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 17.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.5,
+          "movement": "ArrowHeadLeft"
+        }
+      }
+    },
+    {
+      "triggerTime": 54.0,
+      "token": {
+        "style": "ArrowHeadRight",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.7,
+        "spawnLocation": {
+          "x": 35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 17.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.5,
+          "movement": "ArrowHeadRight"
+        }
+      }
+    },
+    {
+      "triggerTime": 61.0,
+      "token": {
+        "style": "ArrowHeadLeft",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.8,
+        "spawnLocation": {
+          "x": -35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 17.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.2,
+          "movement": "ArrowHeadLeft"
+        }
+      }
+    },
+    {
+      "triggerTime": 63.0,
+      "token": {
+        "style": "ArrowHeadRight",
+        "usageCost": 2,
+        "spawnRate": 1.0,
+        "speedMult": 0.8,
+        "spawnLocation": {
+          "x": 35.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 17.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 1.2,
+          "movement": "ArrowHeadRight"
+        }
+      }
+    },
+    {
+      "triggerTime": 75.0,
+      "token": {
+        "style": "BigGuy",
+        "usageCost": 3,
+        "spawnRate": 1.0,
+        "speedMult": 0.4,
+        "spawnLocation": {
+          "x": 0.0,
+          "y": -4.0,
+          "z": 30.0
+        },
+        "enemy": {
+          "modelName": "Cactus",
+          "speed": 13.0,
+          "hitpoints": 20,
+          "scale": 3.0,
+          "score": 1000,
+          "fireRate": 0.8,
+          "movement": "BigGuy"
+        }
+      }
+    }
+  ]
+}
