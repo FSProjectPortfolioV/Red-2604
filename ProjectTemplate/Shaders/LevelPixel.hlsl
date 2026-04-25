@@ -37,6 +37,11 @@ float4 main(float4 pos : SV_POSITION, float3 nrm : NORMAL,
     // 2. SAMPLE THE TEXTURE: Use the UV coordinates to get the exact pixel color from the image
     float4 texColor = mainTexture.Sample(mainSampler, uvw.xy);
     
+    if (texColor.a < 0.1f)
+    {
+        discard;
+    }
+    
     // 3. MULTIPLY: Combine the model's base color (Kd) with the texture color
     float4 diffuse = float4(SceneData[index].material.Kd, 1) * texColor;
     
@@ -54,5 +59,7 @@ float4 main(float4 pos : SV_POSITION, float3 nrm : NORMAL,
     float4 direct = lightRatio * sunColor;
     float4 indirect = sunAmbient * ambient;
     
-    return saturate(direct + indirect) * diffuse + reflected + emissive;
+    float4 finalColor = saturate(direct + indirect) * diffuse + reflected + emissive;
+    finalColor.a = texColor.a;
+    return finalColor;
 }

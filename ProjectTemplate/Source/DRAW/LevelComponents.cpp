@@ -88,6 +88,8 @@ namespace DRAW
 				wallTransform.matrix = levelData.levelTransforms[obj.transformIndex];
 			}
 
+			bool shouldStoreAsDynamic = model.isDynamic || obj.blendername == "ExplosionQuad";
+
 			for (int meshIdx = 0; meshIdx < model.meshCount; ++meshIdx)
 			{
 				auto& meshInfo = levelData.levelMeshes[model.meshStart + meshIdx];
@@ -155,31 +157,72 @@ namespace DRAW
 					geoData.textureDescriptor = manager.textures["DEFAULT_WHITE"].descriptorSet;
 				}
 
-				if (model.isDynamic)
+				if (shouldStoreAsDynamic)
 				{
 					registry.emplace<DoNotRender>(newMesh);
 					collection.meshEntities.push_back(newMesh);
 				}
 			}
 
-			if (model.isDynamic)
+			if (shouldStoreAsDynamic)
 			{
-				// This is a dynamic object (player/enemy)
-				// Create a parent entity for collision
-				entt::entity dyn = registry.create();
-				registry.emplace<GAME::Collidable>(dyn);
+				entt::entity dynamic = registry.create();
 
-				auto& dynCollection = registry.emplace<DRAW::MeshCollection>(dyn);
+				if (obj.blendername != "ExplosionQuad")
+				{
+					registry.emplace<GAME::Collidable>(dynamic);
+				}
+
+				auto& dynCollection = registry.emplace<DRAW::MeshCollection>(dynamic);
 				dynCollection.collider = levelData.levelColliders[model.colliderIndex];
+				dynCollection.parent = dynamic;
 
-				dynCollection.parent = dyn;
-
-				auto& dynTransform = registry.emplace<GAME::Transform>(dyn);
+				auto& dynTransform = registry.emplace<GAME::Transform>(dynamic);
 				dynTransform.matrix = levelData.levelTransforms[obj.transformIndex];
 
-				// Store mesh entities for rendering
-				collection.parent = dyn;
+				collection.parent = dynamic;
 				manager.collections[obj.blendername] = collection;
+
+				std::cout << "Stored collection: " << obj.blendername << "\n";
+			}
+		}
+
+		for (int i = 0; i < 16; ++i)
+		{
+			std::string texName = "Textures/PlayerDeath/Explosion_" + std::to_string(i) + ".png";
+
+			if (manager.textures.find(texName) == manager.textures.end())
+			{
+				TextureData newTex;
+				std::string fullPath = gpuLevel.modelFolder + "/" + texName;
+
+				UploadTextureToGPU(vulkanRenderer.vlkSurface, fullPath,
+					newTex.memory, newTex.image, newTex.view, false);
+
+				VkDescriptorSetAllocateInfo allocInfo{};
+				allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+				allocInfo.descriptorPool = vulkanRenderer.descriptorPool;
+				allocInfo.descriptorSetCount = 1;
+				allocInfo.pSetLayouts = &vulkanRenderer.textureLayout;
+
+				vkAllocateDescriptorSets(vulkanRenderer.device, &allocInfo, &newTex.descriptorSet);
+
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = newTex.view;
+				imageInfo.sampler = vulkanRenderer.textureSampler;
+
+				VkWriteDescriptorSet write{};
+				write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				write.dstSet = newTex.descriptorSet;
+				write.dstBinding = 0;
+				write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				write.descriptorCount = 1;
+				write.pImageInfo = &imageInfo;
+
+				vkUpdateDescriptorSets(vulkanRenderer.device, 1, &write, 0, nullptr);
+
+				manager.textures[texName] = newTex;
 			}
 		}
 	}
