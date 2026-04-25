@@ -29,8 +29,8 @@ namespace DRAW
 	VkRect2D CreateScissorFromWindowDimensions(unsigned int windowWidth, unsigned int windowHeight)
 	{
 		VkRect2D retval = {};
-		retval.targetOffset.x = 0;
-		retval.targetOffset.y = 0;
+		retval.offset.x = 0;
+		retval.offset.y = 0;
 		retval.extent.width = windowWidth;
 		retval.extent.height = windowHeight;
 		return retval;
