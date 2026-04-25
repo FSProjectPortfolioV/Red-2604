@@ -32,6 +32,7 @@ bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 bool scoreNamed = false;
+std::vector<int> ElimPercentage;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -195,6 +196,7 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		screenTimer += deltaTime;
 	}
 	else {
+		screenTimer = 0.0f;
 		levelStart = true;
 	}
 	bltr.ClearColor(0x00000000);
@@ -519,4 +521,27 @@ void RegularOptions(BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
 	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
 	RenderOnScreen(font, (W / 2) - 150, H - 200, MenuOptions[MenuOptions.size() - 1]);
+}
+
+std::string GetVolumeText(float volume) {
+	if (volume == 0) {
+		return "OFF";
+	}
+	else if (volume == 100) {
+		return "MAX";
+	}
+	else {
+		return std::to_string(volume * 10) + "%";
+	}
+}
+
+std::string ProficiencyPercentage(entt::registry& registry) {
+	
+}
+
+std::string CalculateTop(std::vector<int> percentages) {
+	std::sort(percentages.begin(), percentages.end(), [](int a, int b) {
+		return a > b;
+	});
+	return std::to_string(percentages[0]) + "%";
 }
