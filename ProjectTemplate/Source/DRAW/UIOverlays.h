@@ -80,13 +80,12 @@ std::vector<std::string> EndGame{
 std::vector<std::string> MenuOptions{
 	"RESET [Y]",
 	"SETTINGS [O]",
-	"CREDITS",
+	"CREDITS [K]",
 	"MASTER VOLUME",
 	"MUSIC VOLUME",
 	"SFX VOLUME",
-	"LEADERBOARD",
 	//Always last
-	"OPTIONS"
+	"LEADERBOARD [L]",
 };
 
 static std::vector<float> ScreenTimers((EndGame.size()) + FinalStats.size());
@@ -129,6 +128,10 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 }
 
 static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto gameManager = registry.view<GAME::GameManager>();
+	for (auto ent : gameManager) {
+		registry.emplace_or_replace<GAME::Paused>(ent);
+	}
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 	if (rightStart > rightScroll) {
 		rightStart -= deltaTime * 222;
@@ -153,6 +156,10 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 }
 
 static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto gameManager = registry.view<GAME::GameManager>();
+	for (auto ent : gameManager) {
+		registry.emplace_or_replace<GAME::Paused>(ent);
+	}
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 	if (screenTimer < screenTimerStart) {
 		screenTimer += deltaTime;
@@ -179,6 +186,10 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 }
 
 static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto gameManager = registry.view<GAME::GameManager>();
+	for (auto ent : gameManager) {
+		registry.remove<GAME::Paused>(ent);
+	}
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 	if (screenTimer < screenTimerStart) {
 		screenTimer += deltaTime;
@@ -277,8 +288,8 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	FlashingEffect(registry, font, (W / 2) - 100, (H / 4) - 50, MenuOptions[MenuOptions.size() - 1]);
 	RegularOptions(font, W, H);
 	if(settingsOpen)
-	for (int i = 6; i > 1; i--){
-		RenderOnScreen(font, (W / 3), 100 + (i * 75), MenuOptions[i]);
+	for (int i = 5; i > 1; i--){
+		RenderOnScreen(font, (W / 3), 125 + (i * 75), MenuOptions[i]);
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -288,6 +299,10 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 }
 
 static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto gameManager = registry.view<GAME::GameManager>();
+	for (auto ent : gameManager) {
+		registry.emplace_or_replace<GAME::Paused>(ent);
+	}
 	auto& leaderboard = registry.ctx().emplace<HighscoreScreenController>();
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
@@ -362,7 +377,7 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
 					for (auto ent : gameManager) {
-						registry.emplace<GAME::Paused>(ent);
+						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
 				}
 			}
@@ -373,8 +388,13 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 			}
 
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_Y
-				&& OverlayIndex == 3) {
+				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
 				OverlayIndex = 0;
+			}
+			
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_L
+				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
+				OverlayIndex = 7;
 			}
 
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
@@ -498,4 +518,5 @@ texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount) 
 void RegularOptions(BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
 	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
+	RenderOnScreen(font, (W / 2) - 150, H - 200, MenuOptions[MenuOptions.size() - 1]);
 }
