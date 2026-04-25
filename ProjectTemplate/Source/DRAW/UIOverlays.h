@@ -114,7 +114,7 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	auto& overlay = registry.emplace<Overlay>(entity, windowWidth, windowHeight, win, surface, 0);
 	auto& blitter = registry.emplace<GW::GRAPHICS::GBlitter>(entity);
 	blitter.Create(windowWidth, windowHeight);
-	auto& font = registry.emplace<BLIT_Font>(entity, blitter, "../Source/DRAW/font.tga", font_Arial);
+	auto& font = registry.emplace<BLIT_Font>(entity, blitter, "../Fonts/font.tga", font_Arial);
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {

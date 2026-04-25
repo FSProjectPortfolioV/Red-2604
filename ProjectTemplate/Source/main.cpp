@@ -95,7 +95,6 @@ void GraphicsBehavior(entt::registry& registry)
 	registry.emplace<APP::Window>(display,
 		APP::Window{ startX, startY, windowWidth, windowHeight, GW::SYSTEM::GWindowStyle::WINDOWEDBORDERED, "2851 by Crimson Millenia" });
 
-
 	// Create the input
 	auto& input = registry.ctx().emplace<UTIL::Input>();
 	auto& window = registry.get<GW::SYSTEM::GWindow>(display);
@@ -113,12 +112,13 @@ void GraphicsBehavior(entt::registry& registry)
 	std::string pixelShader = (*config).at("Shaders").at("pixel").as<std::string>();
 	std::string starsVertexShader = (*config).at("Shaders").at("starVertex").as<std::string>();
 	std::string starsFragmentShader = (*config).at("Shaders").at("starPixel").as<std::string>();
+
 	registry.emplace<DRAW::VulkanRendererInitialization>(display,
 		DRAW::VulkanRendererInitialization{
 			vertShader, pixelShader, starsVertexShader, starsFragmentShader,
 			{ {0.0f, 0.0f, 0.0f, 1} } , { 1.0f, 0u }, 75.f, 0.1f, 100.0f });
 	registry.emplace<DRAW::VulkanRenderer>(display);
-
+	
 	// Emplace GPULevel
 	registry.emplace<DRAW::GPULevel>(display);
 
