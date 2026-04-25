@@ -135,7 +135,7 @@ void Update_Player(entt::registry& registry, entt::entity self)
         // Clone meshes 
         CloneModelToEntity(
             registry,
-            manager.collections["Bullet"],
+            manager.collections["BlueBullet"],
             bulletCollection,
             bulletTransform
         );
