@@ -15,6 +15,10 @@ void MultiShotPU(entt::registry& registry, entt::entity player);
 
 void ScreenWipePU(entt::registry& registry);
 
+void ExtraLifePU(entt::registry& registry, entt::entity player, int livesAmount = 1);
+
+void BonusPointsPU(entt::registry& registry);
+
 void Update_SideFighter(entt::registry& registry, entt::entity self);
 void OnSideFighterDeath(entt::registry& registry, entt::entity self);
 

@@ -181,17 +181,17 @@ namespace DRAW
 		vertex_attribute_description[0].binding = 0;
 		vertex_attribute_description[0].location = 0;
 		vertex_attribute_description[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_attribute_description[0].offset = offsetof(H2B::VERTEX, pos);
+		vertex_attribute_description[0].targetOffset = offsetof(H2B::VERTEX, pos);
 
 		vertex_attribute_description[1].binding = 0;
 		vertex_attribute_description[1].location = 1;
 		vertex_attribute_description[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_attribute_description[1].offset = offsetof(H2B::VERTEX, uvw);
+		vertex_attribute_description[1].targetOffset = offsetof(H2B::VERTEX, uvw);
 
 		vertex_attribute_description[2].binding = 0;
 		vertex_attribute_description[2].location = 2;
 		vertex_attribute_description[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-		vertex_attribute_description[2].offset = offsetof(H2B::VERTEX, nrm);
+		vertex_attribute_description[2].targetOffset = offsetof(H2B::VERTEX, nrm);
 
 		VkPipelineVertexInputStateCreateInfo input_vertex_info = {};
 		input_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -345,17 +345,17 @@ namespace DRAW
 		vertex_attribute_description[0].binding = 0;
 		vertex_attribute_description[0].location = 0;
 		vertex_attribute_description[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		vertex_attribute_description[0].offset = offsetof(DRAW::StarVertex, pos);
+		vertex_attribute_description[0].targetOffset = offsetof(DRAW::StarVertex, pos);
 
 		vertex_attribute_description[1].binding = 0;
 		vertex_attribute_description[1].location = 1;
 		vertex_attribute_description[1].format = VK_FORMAT_R32_SFLOAT;
-		vertex_attribute_description[1].offset = offsetof(DRAW::StarVertex, brightness);
+		vertex_attribute_description[1].targetOffset = offsetof(DRAW::StarVertex, brightness);
 
 		vertex_attribute_description[2].binding = 0;
 		vertex_attribute_description[2].location = 2;
 		vertex_attribute_description[2].format = VK_FORMAT_R32_SINT;
-		vertex_attribute_description[2].offset = offsetof(DRAW::StarVertex, layer);
+		vertex_attribute_description[2].targetOffset = offsetof(DRAW::StarVertex, layer);
 
 		VkPipelineVertexInputStateCreateInfo input_vertex_info = {};
 		input_vertex_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

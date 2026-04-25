@@ -149,7 +149,7 @@ const OBJ_MATERIAL YellowBullet_materials[1] =
 		{ 0.000000f, 0.000000f, 0.000000f },
 		2},
 		"Red",
-		"Textures/Yellow.png”ê",
+		"Textures/Yellow.png_î>úžš<H",
 		"",
 		"",
 		"",

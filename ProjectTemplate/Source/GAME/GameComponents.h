@@ -170,6 +170,10 @@ namespace GAME
 			case PowerUpType::ExtraLifePU:
 				modelName = "ExtraLifePU";
 				break;
+
+			case PowerUpType::BonusPointsPU:
+				modelName = "BonusPointsPU";
+				break;
 			}
 		};
 	};
