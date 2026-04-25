@@ -1,7 +1,5 @@
 #pragma once
 #include "../GAME/GameComponents.h"
-#include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
-#include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "./Utility/FileIntoString.h"
 #include "shaderc/shaderc.h"
 #include "./Overlay.h"
@@ -9,6 +7,8 @@
 #include "./BLIT_Font.h"
 #include "../UTIL/Utilities.h"
 #include "../GAME/Gameplay/ScoreSystem/ScoreSystem.h"
+#include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
+#include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -31,7 +31,7 @@ bool settingsOpen = false;
 bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
-LeaderboardSystem LeaderboardControl;
+bool scoreNamed = false;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -288,9 +288,49 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 }
 
 static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+	auto& leaderboard = registry.ctx().emplace<HighscoreScreenController>();
+	auto score = registry.ctx().get<ScoreSystem>().GetScore();
+	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
+	GW::GEvent event;
+	if (leaderboard.Begin(registry) && !scoreNamed) {
+		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 50, "New Highscore!");
+		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, "Input Initials (Ex. \"ABC\")");
+		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, forTyping[forTyping.size() - 1]);
+		while (+pressEvents.Pop(event))
+		{
+			GW::INPUT::GBufferedInput::Events inputEvent;
+			GW::INPUT::GBufferedInput::EVENT_DATA inputData;
+			auto gameManager = registry.view<GAME::GameManager>();
+
+			if (+event.Read(inputEvent, inputData))
+			{
+				//Press P to pause, press again to unpause
+				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data != G_KEY_ENTER) {
+					forTyping[forTyping.size() - 1] += (char)inputData.data;
+				}
+				else if (forTyping[forTyping.size() - 1].size() >= 3 && inputData.data == G_KEY_ENTER) {
+					if (leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1])) {
+						for (int i = 0; i < leaderboard.GetEntries().size(); i++) {
+							RenderOnScreen(font, (W / 3), 100 + (i * 75), std::to_string(i + 1) + ". " + leaderboard.GetEntries()[i].initials +
+								" - " + std::to_string(leaderboard.GetEntries()[i].score));
+						}
+					}
+					else {
+						for (int i = 0; i < leaderboard.GetEntries().size(); i++) {
+							RenderOnScreen(font, (W / 3), 100 + (i * 75), std::to_string(i + 1) + ". " + leaderboard.GetEntries()[i].initials +
+								" - " + std::to_string(leaderboard.GetEntries()[i].score));
+						}
+					}
+				}
+			}
+		}
+	}
 	bltr.ClearColor(0x00000000);
-	SetRegularUI(registry, font, W, H);
-	RenderOnScreen(font, (W / 2) - 50, (H / 2) + 50, "HIGH SCORE");
+	RenderOnScreen(font, W / 8, 25, UI[0]);
+	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
+	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
+	RenderOnScreen(font, (W / 2), 60, std::to_string(score));
+	RenderOnScreen(font, (W / 8) + 15, 60, std::to_string(score));
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -305,7 +345,7 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	{
 		GW::INPUT::GBufferedInput::Events inputEvent;
 		GW::INPUT::GBufferedInput::EVENT_DATA inputData;
-		auto player = registry.view<GAME::Player>();
+		auto gameManager = registry.view<GAME::GameManager>();
 
 		if (+event.Read(inputEvent, inputData))
 		{
@@ -314,14 +354,14 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 
 				if (OverlayIndex == 3) {
 					OverlayIndex = PrevOverlayIndex;
-					for (auto ent : player) {
+					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
 				}
 				else {
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
-					for (auto ent : player) {
+					for (auto ent : gameManager) {
 						registry.emplace<GAME::Paused>(ent);
 					}
 				}
@@ -445,7 +485,7 @@ void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text) {
 
 void TypeLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>& 
 texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount) {
-	forTyping.resize(texts.size());
+	forTyping.resize(texts.size() + 1);
 	if (lineCount > texts.size()) {
 		lineCount = texts.size();
 	}
