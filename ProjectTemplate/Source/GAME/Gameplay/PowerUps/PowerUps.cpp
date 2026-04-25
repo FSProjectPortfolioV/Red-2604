@@ -58,9 +58,17 @@ void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpT
             MultiShotPU(registry, player);
             break;
 
-            case GAME::PowerUpType::ScreenWipePU:
-                ScreenWipePU(registry);
-				break;
+        case GAME::PowerUpType::ScreenWipePU:
+            ScreenWipePU(registry);
+			break;
+
+        case GAME::PowerUpType::ExtraLifePU:
+			ExtraLifePU(registry, player);
+            break;
+
+        case GAME::PowerUpType::BonusPointsPU:
+             BonusPointsPU(registry);
+			 break;
         default:
             break;
 	}
@@ -94,7 +102,8 @@ void SideFighterPU(entt::registry& registry, entt::entity player)
         }
         else
         {
-            //Player already has both! Give them bonus points instead?.
+			//Give points if both are alive and player picks another side fighter power-up
+			BonusPointsPU(registry);
         }
     }
 }
@@ -166,6 +175,18 @@ void ScreenWipePU(entt::registry& registry)
 			}
         }
 	}
+}
+
+void ExtraLifePU(entt::registry& registry, entt::entity player, int livesAmount)
+{
+	auto& playerLives = registry.get<GAME::Lives>(player);
+
+	playerLives.count += livesAmount;
+}
+
+void BonusPointsPU(entt::registry& registry)
+{
+    registry.ctx().get<ScoreSystem>().AddPoints(1000);
 };
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
@@ -239,8 +260,8 @@ GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry)
         { GAME::PowerUpType::SideFighterPU, SideFighter },
         { GAME::PowerUpType::MultiShotPU, MultiShot },
         { GAME::PowerUpType::ScreenWipePU, ScreenWipe },
-        //{ GAME::PowerUpType::ExtraLifePU, ExtraLife },
-        //{ GAME::PowerUpType::BonusPointsPU, BonusPoints }
+        { GAME::PowerUpType::ExtraLifePU, ExtraLife },
+        { GAME::PowerUpType::BonusPointsPU, BonusPoints }
 	};
 
 	int dropSize = sizeof(dropChances) / sizeof(DropChance);

@@ -163,11 +163,14 @@
         ) {
         double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
         GAME::Transform LocationUpdates = StartLocation; //Used for each styles way of updating where the enemy spawns
+        float SpawnTemp = SpawnDelay; //Used for certain styles so enemys spawn delay can be skipped sometimes.
+        bool OnAnOff = false; //used to flip between stuff on certain styles
+        float space = spacing; //used for custom spacing
         if (Style == GAME::FormationStyle::WaveLeft) {  //starts from bottom and makes a "wave" to the top of the screen
             for (int i = 0; i < enemyCount; i++) {
                 EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
                 GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced,LocationUpdates.matrix);
+                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
         else if (Style == GAME::FormationStyle::WaveRight) {
@@ -177,44 +180,90 @@
                 GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
-        else if (Style == GAME::FormationStyle::ArrowHeadDown) { //WIP
+        else if (Style == GAME::FormationStyle::ArrowHeadDown) {
             for (int i = 0; i < enemyCount; i++) {
-                if (i >= 2) {
-                    spacing = spacing * -i;
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed, UsageCost);
+                if (i != 0) {
+                    LocationUpdates = StartLocation;
+                    space *= -1;
+                    GW::MATH::GVECTORF Spaced = { space,0,0,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    if (OnAnOff == false) {
+                        SpawnTemp = SpawnDelay;
+                        OnAnOff = true;
+                        space -= spacing;
+                    }
+                    else {
+                        SpawnTemp = 0;
+                        OnAnOff = false;
+                    }
                 }
-                GW::MATH::GVECTORF Spaced = { 0,0,0,1 };
-                if (i > 0) {
-                    Spaced = { (float)spacing,0,0,1 };
+                else {
+                    GW::MATH::GVECTORF Spaced = { space,0,0,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    SpawnTemp = 0;
                 }
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
-        else if (Style == GAME::FormationStyle::ArrowHeadLeft) { //WIP
+        else if (Style == GAME::FormationStyle::ArrowHeadLeft) { 
             for (int i = 0; i < enemyCount; i++) {
                 EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
-                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
-            }
-        } 
-        else if (Style == GAME::FormationStyle::ArrowHeadRight) { //WIP
-            for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
-                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                if (i != 0) {
+                    LocationUpdates = StartLocation;
+                    space *= -1;
+                    GW::MATH::GVECTORF Spaced = { 0,0,space,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    if (OnAnOff == false) {
+                        SpawnTemp = SpawnDelay;
+                        OnAnOff = true;
+                        space -= spacing;
+                    }
+                    else {
+                        SpawnTemp = 0;
+                        OnAnOff = false;
+                    }
+                }
+                else {
+                    GW::MATH::GVECTORF Spaced = { 0,0,space,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    SpawnTemp = 0;
+                }
             }
         }
-        else if (Style == GAME::FormationStyle::BigGuy) { //WIP
+        else if (Style == GAME::FormationStyle::ArrowHeadRight) {
             for (int i = 0; i < enemyCount; i++) {
                 EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
-                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                if (i != 0) {
+                    LocationUpdates = StartLocation;
+                    space *= -1;
+                    GW::MATH::GVECTORF Spaced = { 0,0,space,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    if (OnAnOff == false) {
+                        SpawnTemp = SpawnDelay;
+                        OnAnOff = true;
+                        space -= spacing;
+                    }
+                    else {
+                        SpawnTemp = 0;
+                        OnAnOff = false;
+                    }
+                }
+                else {
+                    GW::MATH::GVECTORF Spaced = { 0,0,space,1 };
+                    GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+                    SpawnTemp = 0;
+                }
             }
         }
-        else if (Style == GAME::FormationStyle::TheFinal) { //WIP
+        else if (Style == GAME::FormationStyle::BigGuy) { //Movement based enemy, Just relies on Spawn Delay and speed!
             for (int i = 0; i < enemyCount; i++) {
                 EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
-                GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
-                GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
+
+            }
+        }
+        else if (Style == GAME::FormationStyle::TheFinal) {//Movement based enemy, Just relies on Spawn Delay!
+            for (int i = 0; i < enemyCount; i++) {
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
             }
         }
 
@@ -222,12 +271,13 @@
         std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 		int carrierChance = config.get()->at("DropRate").at("Carrier").as<int>();
 
-        if (CurrentList.size() >= enemyCount && (rand() % 100) <= carrierChance) 
+		int randValue = rand() % 100;
+
+        if (CurrentList.size() >= enemyCount && randValue <= carrierChance) 
         {
 			int randomIndex = rand() % CurrentList.size();
 			CurrentList[randomIndex].Enemy.isPUCarrier = true;
         }
-
     }
     //keep all enemies using the same type of data with different stats, only the name changing. //Edit for real enemy stats
     static GAME::EnemyConfig EnemyCFGCreator(entt::registry& registry,std::string& dataname,GAME::FormationStyle style) {
