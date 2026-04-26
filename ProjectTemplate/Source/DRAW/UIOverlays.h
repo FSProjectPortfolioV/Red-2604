@@ -495,8 +495,12 @@ void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
 	//font.DrawTextImmediate(W - 75, H - 20, "RRR", 3);
 	auto& scoreSystem = registry.ctx().get<ScoreSystem>();
-	std::string score = std::to_string(scoreSystem.GetScore());
-	RenderOnScreen(font, (W / 2), 60, score);
+	auto& highscore = registry.ctx().get<HighscoreScreenController>();
+	int liveScore = scoreSystem.GetScore();
+	highscore.UpdateLocalHighScore(liveScore);
+	std::string score = std::to_string(liveScore);
+	std::string localHighscore = std::to_string(highscore.GetLocalHighScore());
+	RenderOnScreen(font, (W / 2), 60, localHighscore);
 	RenderOnScreen(font, (W / 8) + 15, 60, score);
 	countLives(registry, font, W, H);
 }
@@ -535,9 +539,9 @@ std::string GetVolumeText(float volume) {
 	}
 }
 
-std::string ProficiencyPercentage(entt::registry& registry) {
-	
-}
+//std::string ProficiencyPercentage(entt::registry& registry) {
+//	
+//}
 
 std::string CalculateTop(std::vector<int> percentages) {
 	std::sort(percentages.begin(), percentages.end(), [](int a, int b) {

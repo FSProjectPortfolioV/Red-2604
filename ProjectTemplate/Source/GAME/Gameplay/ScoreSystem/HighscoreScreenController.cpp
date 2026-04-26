@@ -60,9 +60,9 @@ bool HighscoreScreenController::Begin(entt::registry& registry)
 
 	finalScore = scoreSystem.GetScore();
 
-	if (finalScore > localHightScore)
+	if (finalScore > localHighScore)
 	{
-		localHightScore = finalScore;
+		localHighScore = finalScore;
 	}
 
 	newHighscore = leaderboard.IsHighscore(finalScore);
@@ -119,7 +119,15 @@ int HighscoreScreenController::GetFinalScore() const
 
 int HighscoreScreenController::GetLocalHighScore() const
 {
-	return localHightScore;
+	return localHighScore;
+}
+
+void HighscoreScreenController::UpdateLocalHighScore(int liveScore)
+{
+	if (liveScore > localHighScore)
+	{
+		localHighScore = liveScore;
+	}
 }
 
 bool HighscoreScreenController::IsNewHighscore() const
