@@ -24,14 +24,14 @@ public:
 
 	int GetFinalScore() const;
 
-	int GetLocalBestScore() const;
+	int GetLocalHighScore() const;
 
 	void Reset();
 
 private:
 	std::vector<LeaderboardEntry> visibleEntries;
 	int finalScore = 0;
-	int localBestScore = 0;
+	int localHightScore = 0;
 	bool loaded = false;
 	bool newHighscore = false;
 	bool submitted = false;
