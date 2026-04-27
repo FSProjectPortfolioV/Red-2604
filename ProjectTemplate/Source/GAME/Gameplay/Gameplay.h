@@ -22,5 +22,12 @@ struct Gameplay
 	//MAIN WAY OF MODDIFYING ENEMY MOVEMENT MID GAMEPLAY, ONLY FOR CERTAIN ENEMIES
 	void Gameplay::EnemyMovementUpdates(entt::registry& registry); 
 
+	//If enemies have a firing tag. They'll shoot bullets. Will change for certain enmeies
+	void Gameplay::EnemyFiringUpdates(entt::registry& registry);
+	//handles enemy shooting, bullet count will only affect amount shot in one shot in a spread if there's more than one.
+	void Gameplay::EnemyShoot(entt::registry& registry, entt::entity TheEnemy, int bulletcount);
+	//makes bullets.
+	entt::entity Gameplay::EnemyBulletCreator(entt::registry& registry, const DRAW::ModelManager& manager, GAME::Transform StartLocation, GW::MATH::GVECTORF ShotAngle, float bulletspeed);
+
 	//static void Pause(entt::registry& registry, entt::entity manager);
 };
