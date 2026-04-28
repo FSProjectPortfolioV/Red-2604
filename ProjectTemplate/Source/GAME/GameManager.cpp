@@ -11,6 +11,7 @@
 #include "Gameplay/ScoreSystem/HighscoreScreenController.h"
 #include "Gameplay/ScoreSystem/InitialsEntrySystem.h"
 
+
 namespace GAME
 {
 	using namespace GW::MATH;
@@ -26,8 +27,8 @@ namespace GAME
 		Physics::WorldLimit(registry);
 		//Spawn enemy by pressing e, has a delay (for testing)!
 		Gameplay::EnemySpawn(registry,dt);
-
 		Gameplay::PlayerTimers(registry, dt);
+        Gameplay::EnemyTimers(registry, dt);
 		Rendering::SyncTransforms(registry);
 
 //		Gameplay::GameOver(registry, self); --- Keep this disabled until we have our new win condition set up.

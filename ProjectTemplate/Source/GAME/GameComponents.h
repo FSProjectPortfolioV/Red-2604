@@ -12,6 +12,7 @@ namespace GAME
 	struct Obstacle {};
 	struct ToDestroy {};
 	struct GameOver {};
+	struct ShootingEnemy {};
 
 	///*** Components ***///
 
@@ -42,6 +43,7 @@ namespace GAME
 		int Score;
 		float fireRate;
 		bool isPUCarrier = false;
+		float time = 0;
 	};
 
 	struct FORMATIONS {

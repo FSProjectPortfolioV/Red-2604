@@ -4,6 +4,7 @@
 #include "../CCL.h"
 #include "../DRAW/CloneEntity.h"
 #include "Gameplay/PowerUps/PowerUps.h"
+#include "Gameplay/Gameplay.h"
 
 
 void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Transform transform, GW::MATH::GVECTORF dir);
@@ -230,8 +231,13 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
     }
 }
 
+void EnemyUPDATES(entt::registry& registry) {
+    Gameplay::EnemyFiringUpdates(registry);
+    Gameplay::EnemyMovementUpdates(registry);
+}
 CONNECT_COMPONENT_LOGIC()
 {
     registry.on_update<GAME::Player>().connect<Update_Player>();
     registry.on_update<GAME::SideFighter>().connect<Update_SideFighter>();
+    registry.on_update<GAME::Enemy>().connect<EnemyUPDATES>();
 }

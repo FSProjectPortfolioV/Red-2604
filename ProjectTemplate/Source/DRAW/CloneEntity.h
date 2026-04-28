@@ -85,6 +85,18 @@
         // Velocity
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
 
+        //applying shooting enemytag
+        int chancetoshoot = 20; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
+        if (config.Movement == GAME::FormationStyle::BigGuy || config.Movement == GAME::FormationStyle::TheFinal) {
+            registry.emplace<GAME::ShootingEnemy>(enemy);
+        }
+        else {
+            srand(time(NULL));
+            int resultofroll = (rand() % 100);
+            if (resultofroll <= chancetoshoot) {
+                registry.emplace<GAME::ShootingEnemy>(enemy);
+            }
+        }
         //set the correct movement based on formation style
         vel.direction = SetMovement(config.Movement);
         //give the correct speed
@@ -348,4 +360,3 @@
         return spawn;
     }
 
-    

@@ -1,5 +1,4 @@
 #pragma once
-#include "EnemyManger.h"
 #include "GameComponents.h"
 
 namespace GAME 
