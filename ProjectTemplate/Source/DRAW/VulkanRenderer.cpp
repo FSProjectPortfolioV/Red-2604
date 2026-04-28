@@ -738,11 +738,13 @@ namespace DRAW
 			}
 		}
 		auto& overlay = registry.get<Overlay>(entity);
+		auto& ctxOvl = registry.ctx().get<Overlay>();
 		auto& blitter = registry.get<GW::GRAPHICS::GBlitter>(entity);
 		auto& font = registry.get<BLIT_Font>(entity);
 
-		UpdateUIOverlays(registry, overlay, blitter, font, windowWidth, windowHeight);
+		UpdateUIOverlays(registry, entity, overlay, blitter, font, windowWidth, windowHeight);
 		overlay.RenderOverlay();
+		ctxOvl.RenderOverlay();
 
 		vulkanRenderer.vlkSurface.EndFrame(true);
 	}

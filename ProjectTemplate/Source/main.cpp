@@ -36,6 +36,7 @@ int main()
 	registry.ctx().emplace<HighscoreScreenController>();
 	registry.ctx().emplace<InitialsEntrySystem>();
 
+
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
 
@@ -263,6 +264,7 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
+
 }
 
 // This function will be called by the main loop to update the main loop

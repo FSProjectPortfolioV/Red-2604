@@ -112,10 +112,19 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	auto& win = registry.get<GW::SYSTEM::GWindow>(entity);
 	auto& surface = registry.get<DRAW::VulkanRenderer>(entity).vlkSurface;
 
+
 	auto& overlay = registry.emplace<Overlay>(entity, windowWidth, windowHeight, win, surface, 0);
 	auto& blitter = registry.emplace<GW::GRAPHICS::GBlitter>(entity);
 	blitter.Create(windowWidth, windowHeight);
 	auto& font = registry.emplace<BLIT_Font>(entity, blitter, "../Fonts/font.tga", font_Arial);
+
+	//Extra emplacing for switching components
+	registry.ctx().emplace<Overlay>(windowWidth, windowHeight, win, surface, 64);
+
+	auto& audio = registry.ctx().get<GW::AUDIO::GAudio>();
+	const char* bgMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
+	auto& gMusic = registry.emplace<GW::AUDIO::GMusic>(entity);
+	gMusic.Create(bgMusic, audio, 0.1f);
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -128,7 +137,7 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 	ovl.TransferOverlay();
 }
 
-static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+static void StartMenu(entt::registry& registry, Overlay& ctxovl, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	auto gameManager = registry.view<GAME::GameManager>();
 	for (auto ent : gameManager) {
 		registry.emplace_or_replace<GAME::Paused>(ent);
@@ -147,13 +156,19 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	RenderOnScreen(font, (W / 2) - 150, H - 25, GameStart[0]);
 	RenderOnScreen(font, leftStart, H - 70, GameStart[1]);
 	RenderOnScreen(font, rightStart, H - 70, GameStart[2]);
-	RenderOnScreen(font, (W / 2), (H / 2), GameStart[3]);
 	FlashingEffect(registry, font, (W / 2) - 120, (H / 2) + 100, GameStart[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr); 
 	ovl.Unlock();
 	ovl.TransferOverlay();
+
+	bltr.ClearColor(0x00000000);
+	RenderOnScreen(font, (W / 2), (H / 2), GameStart[3]);
+	ctxovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+	ctxovl.Unlock();
+	ctxovl.TransferOverlay();
 }
 
 static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -355,9 +370,14 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	ovl.TransferOverlay();
 }
 
-void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
+	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+	auto& musicPlay = registry.ctx().get<GW::AUDIO::GMusic>();
+	auto& audio = registry.ctx().get<GW::AUDIO::GAudio>();
+	auto& displayMusic = registry.get<GW::AUDIO::GMusic>(entity);
+
 	while (+pressEvents.Pop(event))
 	{
 		GW::INPUT::GBufferedInput::Events inputEvent;
@@ -370,17 +390,24 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P) {
 
 				if (OverlayIndex == 3) {
+					displayMusic.Pause();
 					OverlayIndex = PrevOverlayIndex;
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
 				}
 				else {
+					if (displayMusic.Play(true) == GW::GReturn::REDUNDANT) {
+						displayMusic.Resume();
+					}else{
+						displayMusic.Play(true);
+					}
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
 					for (auto ent : gameManager) {
 						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
+					musicPlay.Pause();
 				}
 			}
 			//When paused, press O to open settings, press again to close settings
@@ -409,9 +436,10 @@ void UpdateUIOverlays(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 			}
 		}
 	}
+	auto& displayOvl = registry.ctx().get<Overlay>();
 	switch (OverlayIndex) {
 	case 0:
-		StartMenu(registry, ovl, bltr, font, W, H);
+		StartMenu(registry, displayOvl, ovl, bltr, font, W, H);
 	break;
 	case 1:
 		StartOfLevel(registry, ovl, bltr, font, W, H);
