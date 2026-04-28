@@ -34,7 +34,7 @@ bool HighscoreScreenController::IsValidInitials(const std::string& initials)
 void HighscoreScreenController::Reset()
 {
 	visibleEntries.clear();
-	playerScore = 0;
+	finalScore = 0;
 	loaded = false;
 	newHighscore = false;
 	submitted = false;
@@ -58,8 +58,14 @@ bool HighscoreScreenController::Begin(entt::registry& registry)
 
 	leaderboard.SetEntries(scores);
 
-	playerScore = scoreSystem.GetScore();
-	newHighscore = leaderboard.IsHighscore(playerScore);
+	finalScore = scoreSystem.GetScore();
+
+	if (finalScore > localHighScore)
+	{
+		localHighScore = finalScore;
+	}
+
+	newHighscore = leaderboard.IsHighscore(finalScore);
 
 	visibleEntries = leaderboard.GetEntries();
 	loaded = true;
@@ -87,7 +93,7 @@ bool HighscoreScreenController::SubmitInitials(entt::registry& registry, const s
 	auto& firebase = registry.ctx().get<FirebaseLeaderboardAPI>();
 	auto& leaderboard = registry.ctx().get<LeaderboardSystem>();
 
-	leaderboard.InsertScore(initials, playerScore);
+	leaderboard.InsertScore(initials, finalScore);
 
 	if (!firebase.SaveScores(leaderboard.GetEntries()))
 	{
@@ -106,9 +112,22 @@ const std::vector<LeaderboardEntry>& HighscoreScreenController::GetEntries() con
 	return visibleEntries;
 }
 
-int HighscoreScreenController::GetPlayerScore() const
+int HighscoreScreenController::GetFinalScore() const
 {
-	return playerScore;
+	return finalScore;
+}
+
+int HighscoreScreenController::GetLocalHighScore() const
+{
+	return localHighScore;
+}
+
+void HighscoreScreenController::UpdateLocalHighScore(int liveScore)
+{
+	if (liveScore > localHighScore)
+	{
+		localHighScore = liveScore;
+	}
 }
 
 bool HighscoreScreenController::IsNewHighscore() const

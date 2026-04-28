@@ -252,6 +252,7 @@ void GameplayBehavior(entt::registry& registry)
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
 	// Look up model names from config
+	std::string explosionModelName = config->at("Explosion").at("model").as<std::string>();
 	std::string playerModelName = config->at("Player").at("model").as<std::string>();
 	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
 
@@ -262,8 +263,6 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
-
-
 }
 
 // This function will be called by the main loop to update the main loop
@@ -289,6 +288,7 @@ void MainLoopBehavior(entt::registry& registry)
 		deltaTime = elapsed;
 
 		GAME::RespawnPlayer(registry, (float)deltaTime);
+		GAME::PlayerExplosion(registry, (float)deltaTime);
 		GAME::UpdateHighscoreEntry(registry);
 
 		//Update Game

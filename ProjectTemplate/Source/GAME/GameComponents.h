@@ -13,6 +13,7 @@ namespace GAME
 	struct ToDestroy {};
 	struct GameOver {};
 	struct ShootingEnemy {};
+	struct PlayerDeathExplosion {};
 
 	///*** Components ***///
 
@@ -122,6 +123,21 @@ namespace GAME
 	struct Invuln 
 	{
 		float cooldown;
+	};
+
+	struct SpriteAnimation
+	{
+		int currentFrame = 0;
+		int totalFrames = 16;
+		int columns = 4;
+		int rows = 4;
+		float frameTime = 0.05f;
+		float timer = 0.0f;
+	};
+
+	struct Lifetime
+	{
+		float timeRemaining = 1.0f;
 	};
 
 	struct BackgroundObject
