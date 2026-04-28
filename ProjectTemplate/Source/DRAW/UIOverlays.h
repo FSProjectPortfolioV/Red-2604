@@ -29,9 +29,10 @@ int FinaleIdx2 = 1;
 int FinaleIdx3 = 1;
 bool settingsOpen = false;
 bool levelStart = false;
-int OverlayIndex = 0;
+int OverlayIndex = 6;
 int PrevOverlayIndex = 0;
-bool scoreNamed = false;
+int finalScreenCounter = 1;
+bool pauseMusic = false;
 std::vector<int> ElimPercentage;
 
 std::vector<std::string> FinalStats{
@@ -69,7 +70,7 @@ std::vector<std::string> GameStart{
 };
 
 std::vector<std::string> EndGame{
-	"ENEMIES DESTROYED",
+	"ALL ENEMIES DESTROYED !!",
 	"SPECIAL BONUS",
 	"00, 000, 000 PTS",
 	"BY CRIMSON MILLENIA",
@@ -96,6 +97,7 @@ static std::vector<std::string> forTyping{};
 void FlashingEffect(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text);
 std::string TypewriterEffect(entt::registry& registry,std::string& dest, std::string& text, float& timer, int& keyIndex);
 void TypeLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>& texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount);
+void TypeVictoryLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>& texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount);
 void countLives(entt::registry& registry, BLIT_Font& font, int W, int H);
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H);
 void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text);
@@ -234,37 +236,46 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	SetRegularUI(registry, font, W, H);
 	if (screenTransitionStart < screenTransition) {
 		screenTransitionStart += deltaTime;
-		std::string statHeader;
-		std::string statHeader2;
-		std::string statHeader3;
-		if (FinaleIdx != FinalStats.size()) {
-			if (screenTimer < screenTimerStart) {
-				screenTimer += deltaTime;
-			}
-			else {
-				screenTimer = 0.0f;
-				FinaleIdx++;
-				ScreenTimers[FinaleIdx - 1] = 0.0f;
-			}
-		}
-		TypeLines(registry, font, (W / 3), (H / 2) - 200, FinalStats, ScreenTimers, KeyCounters, FinaleIdx);
-		if (FinaleIdx == FinalStats.size()) {
-			screenTimer = 0.0f;
-		}
 	}
 	else {
-		if (FinaleIdx2 != EndGame.size()) {
-			if (screenTimer < screenTimerStart) {
-				screenTimer += deltaTime;
-				ScreenTimers[FinaleIdx + FinaleIdx2 - 2] = 0.0f;
-				KeyCounters[FinaleIdx + FinaleIdx2 - 2] = 0;
+		screenTransitionStart = 0.0f;
+		finalScreenCounter++;
+	}
+	switch (finalScreenCounter) {
+		case 1:
+			if (FinaleIdx != FinalStats.size()) {
+				if (screenTimer < screenTimerStart) {
+					screenTimer += deltaTime;
+				}
+				else {
+					screenTimer = 0.0f;
+					FinaleIdx++;
+					ScreenTimers[FinaleIdx - 1] = 0.0f;
+				}
 			}
-			else {
+			TypeLines(registry, font, (W / 3) - 125, (H / 2) - 200, FinalStats, ScreenTimers, KeyCounters, FinaleIdx);
+			if (FinaleIdx == FinalStats.size()) {
 				screenTimer = 0.0f;
-				FinaleIdx2++;
 			}
-		}
-		TypeLines(registry, font, (W / 3), (H / 2) - 225, EndGame, ScreenTimers, KeyCounters, FinaleIdx2);
+		break;
+		case 2:
+			if (FinaleIdx2 != EndGame.size()) {
+				if (screenTimer < screenTimerStart) {
+					screenTimer += deltaTime;
+					ScreenTimers[FinaleIdx2 - 1] = 0.0f;
+					KeyCounters[FinaleIdx2 - 1] = 0;
+					forTyping[FinaleIdx2 - 1] = "";
+				}
+				else {
+					screenTimer = 0.0f;
+					FinaleIdx2++;
+				}
+			}
+			TypeVictoryLines(registry, font, W, (H / 2) - 225, EndGame, ScreenTimers, KeyCounters, FinaleIdx2);
+		break;
+		case 3:
+			OverlayIndex = 7;
+		break;
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -317,16 +328,19 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 
 static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	auto gameManager = registry.view<GAME::GameManager>();
-	for (auto ent : gameManager) {
-		registry.emplace_or_replace<GAME::Paused>(ent);
-	}
-	auto& leaderboard = registry.ctx().emplace<HighscoreScreenController>();
+	//for (auto ent : gameManager) {
+	//	registry.emplace_or_replace<GAME::Paused>(ent);
+	//}
+	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
-	if (leaderboard.Begin(registry) && !scoreNamed) {
+	if (leaderboard.Begin(registry)) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 50, "New Highscore!");
 		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, "Input Initials (Ex. \"ABC\")");
+		if (forTyping.size() == 0) {
+			forTyping.push_back("");
+		}
 		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, forTyping[forTyping.size() - 1]);
 		while (+pressEvents.Pop(event))
 		{
@@ -336,23 +350,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 
 			if (+event.Read(inputEvent, inputData))
 			{
-				//Press P to pause, press again to unpause
 				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data != G_KEY_ENTER) {
 					forTyping[forTyping.size() - 1] += (char)inputData.data;
-				}
-				else if (forTyping[forTyping.size() - 1].size() >= 3 && inputData.data == G_KEY_ENTER) {
-					if (leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1])) {
-						for (int i = 0; i < leaderboard.GetEntries().size(); i++) {
-							RenderOnScreen(font, (W / 3), 100 + (i * 75), std::to_string(i + 1) + ". " + leaderboard.GetEntries()[i].initials +
-								" - " + std::to_string(leaderboard.GetEntries()[i].score));
-						}
-					}
-					else {
-						for (int i = 0; i < leaderboard.GetEntries().size(); i++) {
-							RenderOnScreen(font, (W / 3), 100 + (i * 75), std::to_string(i + 1) + ". " + leaderboard.GetEntries()[i].initials +
-								" - " + std::to_string(leaderboard.GetEntries()[i].score));
-						}
-					}
 				}
 			}
 		}
@@ -374,7 +373,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
-	auto& musicPlay = registry.ctx().get<GW::AUDIO::GMusic>();
+	auto& gameMusic = registry.ctx().get<GW::AUDIO::GMusic>();
 	auto& audio = registry.ctx().get<GW::AUDIO::GAudio>();
 	auto& displayMusic = registry.get<GW::AUDIO::GMusic>(entity);
 
@@ -390,24 +389,23 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P) {
 
 				if (OverlayIndex == 3) {
-					displayMusic.Pause();
 					OverlayIndex = PrevOverlayIndex;
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
+					gameMusic.Resume();
+					displayMusic.Pause();
 				}
 				else {
-					if (displayMusic.Play(true) == GW::GReturn::REDUNDANT) {
-						displayMusic.Resume();
-					}else{
-						displayMusic.Play(true);
-					}
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
 					for (auto ent : gameManager) {
 						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
-					musicPlay.Pause();
+					if (displayMusic.Play(true) == GW::GReturn::REDUNDANT) {
+						displayMusic.Resume();
+					}
+					gameMusic.Pause();
 				}
 			}
 			//When paused, press O to open settings, press again to close settings
@@ -549,6 +547,44 @@ texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount) 
 	}
 }
 
+void TypeVictoryLines(entt::registry& registry, BLIT_Font& font, int W, int H, std::vector<std::string>&
+	texts, std::vector<float>& timers, std::vector<int>& keyIndices, int lineCount) {
+	forTyping.resize(texts.size() + 1);
+	if (lineCount > texts.size()) {
+		lineCount = texts.size();
+	}
+	int fullWidth = W;
+	for (int i = 0; i < lineCount - 1; i++) {
+		if(lineCount >= i)
+		forTyping[i] = (TypewriterEffect(registry, forTyping[i], texts[i], timers[i], keyIndices[i]));
+		if (i == 0) 
+		{
+			W = (fullWidth / 3) - 50;
+		}
+		if (i == 1)
+		{
+			W = (fullWidth / 3) + 45;
+		}
+		if (i == 2)
+		{
+			W = (fullWidth / 3) + 50;
+		}
+		if (i == 3)
+		{
+			W = (fullWidth / 3);
+		}
+		if (i == 4)
+		{
+			W = (fullWidth / 3) + 25;
+		}
+		if (i == 5)
+		{
+			W = (fullWidth / 3);
+		}
+		RenderOnScreen(font, W, H - (i * LineSpace), forTyping[i]);
+	}
+}
+
 void RegularOptions(BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
 	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
@@ -571,7 +607,7 @@ std::string GetVolumeText(float volume) {
 //	
 //}
 
-std::string CalculateTop(std::vector<int> percentages) {
+std::string CalculateTodaysTop(std::vector<int> percentages) {
 	std::sort(percentages.begin(), percentages.end(), [](int a, int b) {
 		return a > b;
 	});
