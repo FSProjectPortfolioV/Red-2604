@@ -85,8 +85,10 @@ namespace GAME
 	{
 		float time = 0.0f;
 		bool levelComplete = false;
+		bool readyForNextLevel = false;
 		LevelData level;
 		int nextWaveIndex = 0;
+		int levelIndex = 0; // 0 = level 1, 1 = level 2, 2 = level 3
 	};
 
 

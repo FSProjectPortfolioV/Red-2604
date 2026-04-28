@@ -307,6 +307,45 @@ void MainLoopBehavior(entt::registry& registry)
 		for (auto entity : lmView)
 			registry.patch<GAME::LevelManager>(entity);
 
+		// Check for level transition
+		auto lmTransView = registry.view<GAME::LevelManager>();
+		for (auto entity : lmTransView)
+		{
+			auto& lm = registry.get<GAME::LevelManager>(entity);
+			if (!lm.readyForNextLevel)
+				continue;
+
+			// Advance level index, loop back after level 3
+			lm.levelIndex = (lm.levelIndex + 1) % 3;
+
+			// Build config key e.g. "Level1", "Level2", "Level3"
+			std::string levelKey = "Level" + std::to_string(lm.levelIndex + 1);
+			std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+			std::string waveFile = config->at(levelKey).at("waveFile").as<std::string>();
+
+			// Reset level state
+			lm.level = GAME::LoadLevelData(waveFile);
+			lm.time = 0.0f;
+			lm.nextWaveIndex = 0;
+			lm.levelComplete = false;
+			lm.readyForNextLevel = false;
+
+			// Destroy all remaining enemies and bullets so they don't carry over
+			auto enemyView = registry.view<GAME::Enemy>();
+			for (auto enemy : enemyView)
+				registry.emplace_or_replace<GAME::ToDestroy>(enemy);
+
+			auto bulletView = registry.view<GAME::Bullet>();
+			for (auto bullet : bulletView)
+				registry.emplace_or_replace<GAME::ToDestroy>(bullet);
+
+			auto enemyBulletView = registry.view<GAME::EnemyBullets>();
+			for (auto bullet : enemyBulletView)
+				registry.emplace_or_replace<GAME::ToDestroy>(bullet);
+
+			std::cout << "[LevelManager] Transitioning to " << levelKey << "\n";
+		}
+
 		//Update SideFighters
 		auto sfView = registry.view<GAME::SideFighter>();
 		for (auto entity : sfView)

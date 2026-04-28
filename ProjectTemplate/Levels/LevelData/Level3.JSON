@@ -1,0 +1,272 @@
+{
+    "duration": 90.0,
+    "tokensAvailable": 10,
+    "waves": [
+        {
+            "triggerTime": 2.0,
+            "token": {
+                "style": "WaveLeft",
+                "usageCost": 1,
+                "spawnRate": 0.5,
+                "speedMult": 0.9,
+                "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 9.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 200,
+                    "fireRate": 1.2,
+                    "movement": "WaveLeft"
+                }
+            }
+        },
+        {
+            "triggerTime": 4.0,
+            "token": {
+                "style": "WaveRight",
+                "usageCost": 1,
+                "spawnRate": 0.5,
+                "speedMult": 0.9,
+                "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 9.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 200,
+                    "fireRate": 1.2,
+                    "movement": "WaveRight"
+                }
+            }
+        },
+        {
+            "triggerTime": 10.0,
+            "token": {
+                "style": "ArrowHeadDown",
+                "usageCost": 2,
+                "spawnRate": 0.5,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 1.0,
+                    "movement": "ArrowHeadDown"
+                }
+            }
+        },
+        {
+            "triggerTime": 12.0,
+            "token": {
+                "style": "WaveLeft",
+                "usageCost": 1,
+                "spawnRate": 0.5,
+                "speedMult": 0.9,
+                "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 9.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 200,
+                    "fireRate": 1.0,
+                    "movement": "WaveLeft"
+                }
+            }
+        },
+        {
+            "triggerTime": 20.0,
+            "token": {
+                "style": "ArrowHeadLeft",
+                "usageCost": 2,
+                "spawnRate": 0.5,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 1.0,
+                    "movement": "ArrowHeadLeft"
+                }
+            }
+        },
+        {
+            "triggerTime": 21.0,
+            "token": {
+                "style": "ArrowHeadRight",
+                "usageCost": 2,
+                "spawnRate": 0.5,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 1.0,
+                    "movement": "ArrowHeadRight"
+                }
+            }
+        },
+        {
+            "triggerTime": 22.0,
+            "token": {
+                "style": "ArrowHeadDown",
+                "usageCost": 2,
+                "spawnRate": 0.5,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 1.0,
+                    "movement": "ArrowHeadDown"
+                }
+            }
+        },
+        {
+            "triggerTime": 35.0,
+            "token": {
+                "style": "BigGuy",
+                "usageCost": 3,
+                "spawnRate": 1.0,
+                "speedMult": 0.5,
+                "spawnLocation": { "x": -15.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 5.0,
+                    "hitpoints": 30,
+                    "scale": 3.0,
+                    "score": 2000,
+                    "fireRate": 0.6,
+                    "movement": "BigGuy"
+                }
+            }
+        },
+        {
+            "triggerTime": 50.0,
+            "token": {
+                "style": "ArrowHeadLeft",
+                "usageCost": 2,
+                "spawnRate": 0.4,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 0.9,
+                    "movement": "ArrowHeadLeft"
+                }
+            }
+        },
+        {
+            "triggerTime": 51.0,
+            "token": {
+                "style": "ArrowHeadRight",
+                "usageCost": 2,
+                "spawnRate": 0.4,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 0.9,
+                    "movement": "ArrowHeadRight"
+                }
+            }
+        },
+        {
+            "triggerTime": 52.0,
+            "token": {
+                "style": "WaveLeft",
+                "usageCost": 1,
+                "spawnRate": 0.4,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 200,
+                    "fireRate": 0.9,
+                    "movement": "WaveLeft"
+                }
+            }
+        },
+        {
+            "triggerTime": 53.0,
+            "token": {
+                "style": "WaveRight",
+                "usageCost": 1,
+                "spawnRate": 0.4,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 200,
+                    "fireRate": 0.9,
+                    "movement": "WaveRight"
+                }
+            }
+        },
+        {
+            "triggerTime": 70.0,
+            "token": {
+                "style": "BigGuy",
+                "usageCost": 3,
+                "spawnRate": 1.0,
+                "speedMult": 0.6,
+                "spawnLocation": { "x": 15.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 5.0,
+                    "hitpoints": 40,
+                    "scale": 3.0,
+                    "score": 2000,
+                    "fireRate": 0.5,
+                    "movement": "BigGuy"
+                }
+            }
+        },
+        {
+            "triggerTime": 72.0,
+            "token": {
+                "style": "ArrowHeadDown",
+                "usageCost": 2,
+                "spawnRate": 0.4,
+                "speedMult": 1.0,
+                "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
+                "enemy": {
+                    "modelName": "Enemy1",
+                    "speed": 10.0,
+                    "hitpoints": 3,
+                    "scale": 1.0,
+                    "score": 350,
+                    "fireRate": 0.9,
+                    "movement": "ArrowHeadDown"
+                }
+            }
+        }
+    ]
+}
