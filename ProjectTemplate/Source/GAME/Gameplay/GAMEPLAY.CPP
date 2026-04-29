@@ -154,27 +154,38 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 	auto& EnView = registry.view<GAME::Enemy>();
 	for (auto& entity : EnView) {
 		auto& Ecfg = registry.get<GAME::EnemyConfig>(entity);
-		if (!(Ecfg.Movement == GAME::FormationStyle::BigGuy) || !(Ecfg.Movement == GAME::FormationStyle::TheFinal)) {
+		if (!((Ecfg.Movement == GAME::FormationStyle::BigGuy) || (Ecfg.Movement == GAME::FormationStyle::TheFinal))) {
 			return;
 		}
 		else {
 			auto& Ev = registry.get<GAME::Velocity>(entity);
 			auto& Etrans = registry.get<GAME::Transform>(entity);
 			if (Ecfg.Movement == GAME::FormationStyle::BigGuy) { 
-				if (Etrans.matrix.row4.x > 25 && Etrans.matrix.row4.x < 26 ) {
+				if (Etrans.matrix.row4.x > 9) {
+					if (-Ev.direction.x > 0) {
+						return;
+					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -25 && Etrans.matrix.row4.x > -26) {
-
+				else if (Etrans.matrix.row4.x < -9) {
+					if (-Ev.direction.x < 0) {
+						return;
+					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
 				}
 			}
 			else if (Ecfg.Movement == GAME::FormationStyle::TheFinal) {
 
-				if (Etrans.matrix.row4.x > 25 && Etrans.matrix.row4.x < 26) {
+				if (Etrans.matrix.row4.x > 9) {
+					if (-Ev.direction.x < 0) {
+						return;
+					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -25 && Etrans.matrix.row4.x > -26) {
+				else if (Etrans.matrix.row4.x < -9) {
+					if (-Ev.direction.x < 0) {
+						return;
+					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
 				}
 			}
@@ -232,8 +243,8 @@ void Gameplay::EnemyShoot(entt::registry& registry, entt::entity TheEnemy, int b
 		enemyBullet1 = EnemyBulletCreator(registry, ETrans,T1 , BulletSpeed);
 	}
 	else if (bulletcount == 2) {
-		GW::MATH::GVECTORF T1 = { 0.5,0,0.5f,1 }; //bullet angle!
-		GW::MATH::GVECTORF T2 = { -0.5,0,0.5f,1 }; //bullet angle!
+		GW::MATH::GVECTORF T1 = { 0.5,0,-0.5f,1 }; //bullet angle!
+		GW::MATH::GVECTORF T2 = { -0.5,0,-0.5f,1 }; //bullet angle!
 		entt::entity enemyBullet1 = registry.create();
 		entt::entity enemyBullet2 = registry.create();
 		enemyBullet1 = EnemyBulletCreator(registry, ETrans, T1, BulletSpeed);
@@ -257,6 +268,7 @@ entt::entity Gameplay::EnemyBulletCreator(entt::registry& registry, GAME::Transf
 	// Create entity
 	entt::entity enemyBullet = registry.create();
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
+	double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 	// Add components
 	registry.emplace<GAME::EnemyBullets>(enemyBullet);
 	// Velocity
@@ -264,22 +276,8 @@ entt::entity Gameplay::EnemyBulletCreator(entt::registry& registry, GAME::Transf
 
 	//set the bullet to have the correct angle
 	vel.direction = ShotAngle;
-	//setting up the correct rotation 
-	int rotation = 180;
-	rotation *= vel.direction.x;
-	//give the correct speed
-	if (vel.direction.x == 0) {
-		vel.direction.z *= bulletspeed;
-		rotation = 180;
-	}
-	else if (vel.direction.z == 0) {
-		vel.direction.x *= bulletspeed;
-		rotation = 180;
-	}
-	else {
-		vel.direction.x *= bulletspeed / sqrt(2);
-		vel.direction.z *= bulletspeed / sqrt(2);
-	}
+
+	
 	// MeshCollection + Transform
 
 
@@ -296,7 +294,33 @@ entt::entity Gameplay::EnemyBulletCreator(entt::registry& registry, GAME::Transf
 
 	// Override transform with the one passed in
 	enemyBulletTransform = StartLocation;
-	GW::MATH::GMatrix::RotateYLocalF(enemyBulletTransform.matrix,G2D_DEGREE_TO_RADIAN_F(rotation), enemyBulletTransform.matrix);
+	//setting up the correct rotation 
+	int rotation = 180;
+
+
+	//give the correct speed
+	if (vel.direction.x == 0) {
+		vel.direction.z *= bulletspeed;
+		rotation = 180;
+	}
+	else if (vel.direction.z == 0) {
+		vel.direction.x *= bulletspeed;
+		rotation = 180;
+	}
+	else {
+		if (vel.direction.x < 0) {
+			rotation = 495;
+			//vel.direction.x *= bulletspeed / sqrt(2);
+			vel.direction.z *= -bulletspeed;
+		}
+		else {
+			rotation = 225;
+			//vel.direction.x *= bulletspeed / sqrt(2);
+			vel.direction.z *= -bulletspeed;
+		}
+	}
+
+	GW::MATH::GMatrix::RotateYLocalF(enemyBulletTransform.matrix, G2D_DEGREE_TO_RADIAN_F(rotation), enemyBulletTransform.matrix);
 
 	for (auto mesh : collection.meshEntities)
 	{

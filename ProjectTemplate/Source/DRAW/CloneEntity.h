@@ -340,19 +340,19 @@
         {
         case GAME::FormationStyle::WaveLeft:
         case GAME::FormationStyle::ArrowHeadLeft:
-            position.x = bounds.left - margin;  // off the left edge
+        case GAME::FormationStyle::TheFinal:
+            position.x = position.x - margin;  // off the left edge
             break;
 
         case GAME::FormationStyle::WaveRight:
         case GAME::FormationStyle::ArrowHeadRight:
-            position.x = bounds.right + margin; // off the right edge
+        case GAME::FormationStyle::BigGuy:
+            position.x = position.x + margin; // off the right edge
             break;
 
         case GAME::FormationStyle::ArrowHeadDown:
-        case GAME::FormationStyle::BigGuy:
-        case GAME::FormationStyle::TheFinal:
         default:
-            position.z = bounds.top + margin;   // off the top edge
+            position.z = position.z + margin;   // off the top edge
             break;
         }
 
