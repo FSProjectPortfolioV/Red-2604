@@ -146,8 +146,7 @@
         std::vector<GAME::EnemyToken>& CurrentList,
         GAME::Transform spawnPos,
         float spawnRate,
-        float speedMult,
-        int UsageCost) {
+        float speedMult) {
         GAME::EnemyToken temp;
         std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
         temp.Enemy = cfg;
@@ -155,7 +154,6 @@
         temp.SpawnRate = spawnRate;
         temp.SpeedMult = speedMult;
         temp.Style = style;
-        temp.UsageCost = UsageCost;
         CurrentList.push_back(temp);
     }
 
@@ -170,8 +168,7 @@
         const GAME::EnemyConfig& cfg, //enemy being used
         const DRAW::ModelManager& manager, //for knowing where to get the model from
         float SpawnDelay, // delay between enemy spawns for the formations
-        std::vector<GAME::EnemyToken>& CurrentList, //Enemy queue
-        int UsageCost //PER ENEMY!!!
+        std::vector<GAME::EnemyToken>& CurrentList //Enemy queue
         ) {
         double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
         GAME::Transform LocationUpdates = StartLocation; //Used for each styles way of updating where the enemy spawns
@@ -180,21 +177,21 @@
         float space = spacing; //used for custom spacing
         if (Style == GAME::FormationStyle::WaveLeft) {  //starts from bottom and makes a "wave" to the top of the screen
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
                 GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
                 GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
         else if (Style == GAME::FormationStyle::WaveRight) {
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
                 GW::MATH::GVECTORF Spaced = { 0,0,spacing,1 };
                 GW::MATH::GMatrix::TranslateLocalF(LocationUpdates.matrix, Spaced, LocationUpdates.matrix);
             }
         }
         else if (Style == GAME::FormationStyle::ArrowHeadDown) {
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -219,7 +216,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadLeft) { 
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -244,7 +241,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadRight) {
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -269,13 +266,13 @@
         }
         else if (Style == GAME::FormationStyle::BigGuy) { //Movement based enemy, Just relies on Spawn Delay and speed!
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
 
             }
         }
         else if (Style == GAME::FormationStyle::TheFinal) {//Movement based enemy, Just relies on Spawn Delay!
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
             }
         }
 
@@ -306,7 +303,7 @@
 
 
     //Constantly called method that spawns enemies in the queue aka CurrentList
-    static void SpawnEnemies(entt::registry& registry, const DRAW::ModelManager& manager, std::vector<GAME::EnemyToken>& CurrentList, int& RemainingCost) {
+    static void SpawnEnemies(entt::registry& registry, const DRAW::ModelManager& manager, std::vector<GAME::EnemyToken>& CurrentList) {
         if (CurrentList.empty()) {
             return;
         }
@@ -314,9 +311,8 @@
         static float currentSpawnDelay = 0;
         double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
         time += dt;
-        if (time > currentSpawnDelay && RemainingCost - CurrentList[0].UsageCost > 0) {
+        if (time > currentSpawnDelay) {
 
-            RemainingCost = RemainingCost - CurrentList[0].UsageCost;
             entt::entity enemy = registry.create();
             enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
             currentSpawnDelay = CurrentList[0].SpawnRate;

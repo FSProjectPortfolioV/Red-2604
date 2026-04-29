@@ -56,7 +56,6 @@ namespace GAME
 		EnemyConfig Enemy;
 		float SpawnRate;
 		FormationStyle Style;
-		int UsageCost;
 		Transform SpawnLocation;
 		float SpeedMult;
 	};
