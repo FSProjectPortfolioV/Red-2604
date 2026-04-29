@@ -60,20 +60,7 @@ namespace GAME
             lm.nextWaveIndex >= (int)lm.level.waves.size())
         {
             lm.levelComplete = true;
-
-            auto& highscore = registry.ctx().get<HighscoreScreenController>();
-            if (highscore.Begin(registry))
-            {
-                if (highscore.IsNewHighscore())
-                {
-                    auto& initials = registry.ctx().get<InitialsEntrySystem>();
-                    initials.Reset();
-                }
-            }
-
-            // Don't advance yet - wait until initials are done
-            if (!highscore.NeedsInitialsEntry())
-                lm.readyForNextLevel = true;
+            lm.readyForNextLevel = true;
         }
     }
 

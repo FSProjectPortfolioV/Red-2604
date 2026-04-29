@@ -30,7 +30,6 @@
         file >> j;
 
         result.duration = j.at("duration").get<float>();
-        result.tokensAvailable = j.at("tokensAvailable").get<int>();
 
         for (auto& waveJson : j.at("waves"))
         {

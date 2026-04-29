@@ -71,7 +71,6 @@ namespace GAME
 		std::vector<Wave> waves;
 		float duration;
 		std::vector<EnemyToken> spawnQueue;
-		int tokensAvailable = 0;
 	};
 
 	struct LevelEvent
@@ -88,6 +87,8 @@ namespace GAME
 		LevelData level;
 		int nextWaveIndex = 0;
 		int levelIndex = 0; // 0 = level 1, 1 = level 2, 2 = level 3
+		int difMultiplier = 1;
+		int loops = 0;
 	};
 
 
