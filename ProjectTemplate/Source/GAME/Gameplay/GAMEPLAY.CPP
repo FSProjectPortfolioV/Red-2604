@@ -93,7 +93,7 @@ void Gameplay::EnemySpawn(entt::registry& registry, float dt)
 	for (auto entity : lmView)
 	{
 		auto& lm = registry.get<GAME::LevelManager>(entity);
-		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
+		SpawnEnemies(registry, manager, lm.level.spawnQueue);
 	}
 }
 
@@ -123,11 +123,10 @@ void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& toke
 			token.Enemy,
 			manager,
 			token.SpeedMult,
-			lm.level.spawnQueue,
-			token.UsageCost
+			lm.level.spawnQueue
 		);
 
-		SpawnEnemies(registry, manager, lm.level.spawnQueue, lm.level.tokensAvailable);
+		SpawnEnemies(registry, manager, lm.level.spawnQueue);
 	}
 }
 

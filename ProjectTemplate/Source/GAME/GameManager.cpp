@@ -60,27 +60,7 @@ namespace GAME
             lm.nextWaveIndex >= (int)lm.level.waves.size())
         {
             lm.levelComplete = true;
-            std::cout << "[LevelManager] Level Complete at t=" << lm.time << "\n";
-
-            // Trigger highscore screen
-            auto& highscore = registry.ctx().get<HighscoreScreenController>();
-            if (highscore.Begin(registry))
-            {
-                if (highscore.IsNewHighscore())
-                {
-                    std::cout << "New Highscore!\n";
-                    auto& initials = registry.ctx().get<InitialsEntrySystem>();
-                    initials.Reset();
-                }
-                else
-                {
-                    std::cout << "No new highscore\n";
-                }
-            }
-            else
-            {
-                std::cout << "Leaderboard failed to load\n";
-            }
+            lm.readyForNextLevel = true;
         }
     }
 

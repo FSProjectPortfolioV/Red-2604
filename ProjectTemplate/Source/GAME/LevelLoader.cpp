@@ -30,7 +30,6 @@
         file >> j;
 
         result.duration = j.at("duration").get<float>();
-        result.tokensAvailable = j.at("tokensAvailable").get<int>();
 
         for (auto& waveJson : j.at("waves"))
         {
@@ -41,7 +40,6 @@
             auto& enemyJson = tokenJson.at("enemy");
 
             wave.token.Style = GAME::FormationFromString(tokenJson.at("style").get<std::string>());
-            wave.token.UsageCost = tokenJson.at("usageCost").get<int>();
             wave.token.SpawnRate = tokenJson.at("spawnRate").get<float>();
             wave.token.SpeedMult = tokenJson.at("speedMult").get<float>();
 
