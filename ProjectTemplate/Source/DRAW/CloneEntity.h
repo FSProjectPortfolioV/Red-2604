@@ -219,7 +219,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadLeft) { 
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed, UsageCost);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -244,7 +244,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadRight) {
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed, UsageCost);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed, UsageCost);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
