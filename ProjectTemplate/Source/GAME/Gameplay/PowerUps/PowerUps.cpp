@@ -191,6 +191,11 @@ void BonusPointsPU(entt::registry& registry)
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
+    if(registry.any_of<GAME::ToDestroy>(self))
+    {
+        return;
+    }
+    
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
 
     double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
@@ -237,6 +242,100 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
             sideFighterData.rightAlive = false;
         }
     }
+
+    //Play Explosion Animation
+    auto& fighterTrans = registry.get<GAME::Transform>(self);
+    auto& modelManager = registry.ctx().get<DRAW::ModelManager>();
+
+    auto found = modelManager.collections.find("ExplosionQuad");
+
+    if (found != modelManager.collections.end())
+    {
+        entt::entity explosion = registry.create();
+		registry.emplace_or_replace<GAME::Transform>(explosion, fighterTrans);
+		registry.emplace_or_replace<GAME::Velocity>(explosion, GAME::Velocity{ GW::MATH::GVECTORF{0, 0, -15, 0} });
+
+        DRAW::MeshCollection explosionMeshes;
+        explosionMeshes.parent = explosion;
+
+        for (auto sourceMesh : found->second.meshEntities)
+        {
+            if (!registry.valid(sourceMesh))
+            {
+                continue;
+            }
+
+            entt::entity clonedMesh = registry.create();
+
+            if (registry.all_of<DRAW::GeometryData>(sourceMesh))
+            {
+                registry.emplace<DRAW::GeometryData>(clonedMesh, registry.get<DRAW::GeometryData>(sourceMesh));
+            }
+
+            if (registry.all_of<DRAW::GPUInstance>(sourceMesh))
+            {
+                auto gpu = registry.get<DRAW::GPUInstance>(sourceMesh);
+                gpu.transform = fighterTrans.matrix;
+
+                GW::MATH::GVECTORF scale = { 1.0f, 1.0f, 1.0f, 0.0f };
+                GW::MATH::GMatrix::ScaleGlobalF(gpu.transform, scale, gpu.transform);
+
+                registry.emplace<DRAW::GPUInstance>(clonedMesh, gpu);
+            }
+
+            registry.emplace_or_replace<GAME::Visible>(clonedMesh).show = true;
+            explosionMeshes.meshEntities.push_back(clonedMesh);
+        }
+
+        registry.emplace<DRAW::MeshCollection>(explosion, explosionMeshes);
+
+        auto& texture = modelManager.textures["Textures/PlayerDeath/Explosion_0.png"];
+        for (auto meshEntity : explosionMeshes.meshEntities)
+        {
+            if (registry.all_of<DRAW::GeometryData>(meshEntity))
+            {
+                auto& geo = registry.get<DRAW::GeometryData>(meshEntity);
+                geo.textureDescriptor = texture.descriptorSet;
+            }
+        }
+
+        auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+
+        registry.emplace<GAME::SpriteAnimation>(explosion);
+        auto& animate = registry.get<GAME::SpriteAnimation>(explosion);
+        animate.currentFrame = 0;
+        animate.totalFrames = config->at("Explosion").at("totalFrames").as<int>();
+        animate.frameTime = config->at("Explosion").at("frameTime").as<float>();
+
+        registry.emplace<GAME::Lifetime>(explosion).timeRemaining =
+            config->at("Explosion").at("lifeTime").as<float>();
+
+        registry.emplace<GAME::PlayerDeathExplosion>(explosion);
+    }
+
+}
+
+void ClearPowerUPs(entt::registry& registry, entt::entity player)
+{
+	//Removes SideFighters if player has them
+
+    if (registry.any_of<GAME::HasSideFighters>(player))
+    {
+        auto& SFView = registry.view<GAME::SideFighter>();
+
+        for (auto entity : SFView)
+        {
+            registry.destroy(entity);
+        }
+
+        registry.remove<GAME::HasSideFighters>(player);
+    }
+
+	//Removes MultiShot if player has it
+    if (registry.any_of<GAME::MultiShot>(player))
+    {
+        registry.remove<GAME::MultiShot>(player);
+	}
 }
 
 struct DropChance
