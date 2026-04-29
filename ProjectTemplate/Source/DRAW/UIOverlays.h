@@ -20,7 +20,7 @@ int leftScroll;
 float keyTimer = 0.0f;
 float keyPress = 0.08f;
 float screenTimer = 0.0f;
-float screenTimerStart = 2.35f;
+float screenTimerStart = 2.0f;
 float screenTransition = 4 * screenTimerStart;
 float screenTransitionStart = 0.0f;
 int LineSpace = -100;
@@ -29,7 +29,7 @@ int FinaleIdx2 = 1;
 int FinaleIdx3 = 1;
 bool settingsOpen = false;
 bool levelStart = false;
-int OverlayIndex = 6;
+int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
 bool pauseMusic = false;
@@ -121,7 +121,10 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	auto& font = registry.emplace<BLIT_Font>(entity, blitter, "../Fonts/font.tga", font_Arial);
 
 	//Extra emplacing for switching components
-	registry.ctx().emplace<Overlay>(windowWidth, windowHeight, win, surface, 64);
+	registry.ctx().emplace<Overlay>(windowWidth, windowHeight, win, surface, 512);
+	auto& ctxBlitter = registry.ctx().emplace< GW::GRAPHICS::GBlitter>();
+	ctxBlitter.Create(windowWidth, windowHeight);
+	auto& ctxFont = registry.ctx().emplace<BLIT_Font>(ctxBlitter, "../Fonts/font.tga", font_Arial);
 
 	auto& audio = registry.ctx().get<GW::AUDIO::GAudio>();
 	const char* bgMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
@@ -139,7 +142,26 @@ static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 	ovl.TransferOverlay();
 }
 
-static void StartMenu(entt::registry& registry, Overlay& ctxovl, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+void Title(Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& font, int W, int H, std::string text) {
+	ctxbltr.ClearColor(0xFFFF0000);
+	RenderOnScreen(font, (W / 2) - 30, (H / 2) + 10, text);
+	unsigned int* titlePixels;
+	ctxovl.LockForUpdate(W * H, &titlePixels);
+	ctxbltr.ExportResult(false, W, H, 0, 0, titlePixels, nullptr, nullptr);
+	ctxovl.Unlock();
+	ctxovl.TransferOverlay();
+}
+
+void ClearLargerText(Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& font, int W, int H) {
+	ctxbltr.ClearColor(0x00000000);
+	unsigned int* titlePixels;
+	ctxovl.LockForUpdate(W * H, &titlePixels);
+	ctxbltr.ExportResult(false, W, H, 0, 0, titlePixels, nullptr, nullptr);
+	ctxovl.Unlock();
+	ctxovl.TransferOverlay();
+}
+
+static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	auto gameManager = registry.view<GAME::GameManager>();
 	for (auto ent : gameManager) {
 		registry.emplace_or_replace<GAME::Paused>(ent);
@@ -158,19 +180,12 @@ static void StartMenu(entt::registry& registry, Overlay& ctxovl, Overlay& ovl, G
 	RenderOnScreen(font, (W / 2) - 150, H - 25, GameStart[0]);
 	RenderOnScreen(font, leftStart, H - 70, GameStart[1]);
 	RenderOnScreen(font, rightStart, H - 70, GameStart[2]);
-	FlashingEffect(registry, font, (W / 2) - 120, (H / 2) + 100, GameStart[4]);
+	FlashingEffect(registry, font, (W / 2) - 120, (H / 2) + 200, GameStart[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr); 
 	ovl.Unlock();
 	ovl.TransferOverlay();
-
-	bltr.ClearColor(0x00000000);
-	RenderOnScreen(font, (W / 2), (H / 2), GameStart[3]);
-	ctxovl.LockForUpdate(W * H, &pixels);
-	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
-	ctxovl.Unlock();
-	ctxovl.TransferOverlay();
 }
 
 static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -272,6 +287,12 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 				}
 			}
 			TypeVictoryLines(registry, font, W, (H / 2) - 225, EndGame, ScreenTimers, KeyCounters, FinaleIdx2);
+			if (FinaleIdx2 == EndGame.size()) {
+				screenTimer = 0.0f;
+			}
+			else {
+				screenTransitionStart -= deltaTime;
+			}
 		break;
 		case 3:
 			OverlayIndex = 7;
@@ -327,10 +348,6 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 }
 
 static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
-	auto gameManager = registry.view<GAME::GameManager>();
-	//for (auto ent : gameManager) {
-	//	registry.emplace_or_replace<GAME::Paused>(ent);
-	//}
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
@@ -435,11 +452,15 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		}
 	}
 	auto& displayOvl = registry.ctx().get<Overlay>();
+	auto& ctxBltr = registry.ctx().get<GW::GRAPHICS::GBlitter>();
+	auto& ctxFont = registry.ctx().get<BLIT_Font>();
 	switch (OverlayIndex) {
 	case 0:
-		StartMenu(registry, displayOvl, ovl, bltr, font, W, H);
+		Title(displayOvl, ctxBltr, ctxFont, W, H, GameStart[3]);
+		StartMenu(registry, ovl, bltr, font, W, H);
 	break;
 	case 1:
+		ClearLargerText(displayOvl, ctxBltr, ctxFont, W, H);
 		StartOfLevel(registry, ovl, bltr, font, W, H);
 	break;
 	case 2:
