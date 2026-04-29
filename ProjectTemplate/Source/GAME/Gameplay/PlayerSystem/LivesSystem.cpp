@@ -5,6 +5,7 @@
 #include "../../../UTIL/Utilities.h"
 #include "../ScoreSystem/HighscoreScreenController.h"
 #include "../ScoreSystem/InitialsEntrySystem.h"
+#include "../../Gameplay/PowerUps/PowerUps.h"
 
 namespace GAME
 {
@@ -132,6 +133,7 @@ namespace GAME
 		else // Final death
 		{
 			registry.emplace_or_replace<GameOver>(gameManager);
+			ClearPowerUPs(registry, player);
 
 			// Check localscore to highscore
 			auto& highscore = registry.ctx().get<HighscoreScreenController>();
