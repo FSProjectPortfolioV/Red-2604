@@ -142,32 +142,32 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 			auto& Ev = registry.get<GAME::Velocity>(entity);
 			auto& Etrans = registry.get<GAME::Transform>(entity);
 			if (Ecfg.Movement == GAME::FormationStyle::BigGuy) { 
-				if (Etrans.matrix.row4.x > 9) {
+				if (Etrans.matrix.row4.x > 20) {
 					if (-Ev.direction.x > 0) {
 						return;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -9) {
+				else if (Etrans.matrix.row4.x < -20) {
 					if (-Ev.direction.x < 0) {
 						return;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
 			}
 			else if (Ecfg.Movement == GAME::FormationStyle::TheFinal) {
 
-				if (Etrans.matrix.row4.x > 9) {
+				if (Etrans.matrix.row4.x > 33) {
 					if (-Ev.direction.x < 0) {
 						return;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -9) {
+				else if (Etrans.matrix.row4.x < -33) {
 					if (-Ev.direction.x < 0) {
 						return;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.w ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
 			}
 		}

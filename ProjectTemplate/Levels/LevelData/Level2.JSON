@@ -70,7 +70,7 @@
         "usageCost": 2,
         "spawnRate": 0.3,
         "speedMult": 1.5,
-        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 20.0 },
+        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 27.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 18.0,
@@ -288,16 +288,16 @@
       "token": {
         "style": "ArrowHeadDown",
         "usageCost": 2,
-        "spawnRate": 0.6,
+        "spawnRate": 0.2,
         "speedMult": 0.9,
-        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 20.0 },
+        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 27.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 19.0,
           "hitpoints": 3,
           "scale": 1.0,
           "score": 300,
-          "fireRate": 1.1,
+          "fireRate": 1.5,
           "movement": "ArrowHeadDown"
         }
       }
@@ -314,7 +314,7 @@
         "enemy": {
           "modelName": "UFO",
           "speed": 14.0,
-          "hitpoints": 30,
+          "hitpoints": 50,
           "scale": 3.0,
           "score": 1500,
           "fireRate": 0.7,
@@ -333,7 +333,7 @@
         "spawnLocation": { "x": -35.0, "y": -4.0, "z": -9.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 17.0,
+          "speed": 23.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 250,
@@ -353,7 +353,7 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": -10.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 17.0,
+          "speed": 23.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 250,
@@ -373,7 +373,7 @@
         "spawnLocation": { "x": -35.0, "y": -4.0, "z": -15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 17.0,
+          "speed": 23.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 250,
@@ -393,7 +393,7 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": -18.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 17.0,
+          "speed": 23.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 250,
