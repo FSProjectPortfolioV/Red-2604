@@ -193,7 +193,7 @@ void Update_Player(entt::registry& registry, entt::entity self)
         {
             entt::entity bullet = registry.create();
 
-            auto& soundCue = registry.ctx().emplace<GAME::SoundCue>();
+            auto& soundCue = registry.ctx().emplace<GAME::SoundStorage>();
             soundCue.sound2 = true;
 
             // Add components

@@ -11,6 +11,7 @@
 #include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 #include "../GAME/GameManager.h"
+#include "../GAME/LevelLoader.h"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -468,7 +469,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto& ctxSfx = registry.ctx().get<GSound>();
 	auto& sfx = registry.get<GSound>(entity);
 	auto& gameMusic = registry.get<GMusic>(entity);
-	auto& soundCues = registry.ctx().get<GAME::SoundCue>();
+	auto& soundCues = registry.ctx().get<GAME::SoundStorage>();
 	if (soundCues.sound1) {
 		const char* hitSound = config->at("Sounds").at("phit").as<const char*>();
 		ctxSfx.Create(hitSound, audio);
@@ -692,29 +693,29 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	case 0:
 		Title(displayOvl, ctxBltr, ctxFont, W, H, GameStart[3]);
 		StartMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 1:
 		ClearLargerText(displayOvl, ctxBltr, ctxFont, W, H);
 		StartOfLevel(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 2:
 		GameplayUI(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 3:
 		PauseMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 4:
 		EndOfLevel(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 5:
 		LoseMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 6:
 		WinScreen(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 7:
-		HighScoreMenu(registry, ovl, bltr, font, W, H);
-	break;
+		HighScoreMenu(registry, ovl, bltr, font, W, H, displayOvl, ctxBltr, ctxFont);
+		break;
 	}
 }
 

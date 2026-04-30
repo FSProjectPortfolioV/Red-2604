@@ -20,7 +20,7 @@ void HurtPlayer(entt::registry& registry, entt::entity player)
 	auto& health = registry.get<GAME::Health>(player);
 	health.HP -= 1;
 	using namespace GW::AUDIO;
-	auto& soundCue = registry.ctx().emplace<GAME::SoundCue>();
+	auto& soundCue = registry.ctx().emplace<GAME::SoundStorage>();
 	soundCue.sound1 = true;
 
 	std::cout << "Player HP: " << health.HP << "\n";
