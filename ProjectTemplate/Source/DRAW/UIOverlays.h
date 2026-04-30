@@ -10,6 +10,7 @@
 #include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
 #include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
+#include "../GAME/GameManager.h"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
