@@ -36,6 +36,7 @@ int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
 float sfxVol = 0.005f;
 float musicVol = 0.05f;
+float gameMusicModifier = 2.5f;
 float masterVol = 0.05f;
 float volChange = 0.05f;
 float sfxVolChange = 0.001f;
@@ -149,9 +150,9 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	auto& gMusic2 = registry.emplace<GMusic>(entity);
 	const char* psMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
-	gMusic2.Create(psMusic, gAudio, musicVol);
+	gMusic2.Create(psMusic, gAudio, musicVol * gameMusicModifier);
 	gMusic2.Play(true);
-	gMusic2.Pause();
+	gMusic2.Stop();
 
 	GSound& gSound = registry.ctx().emplace<GSound>();
 	registry.emplace<GSound>(entity);
@@ -462,12 +463,12 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 	using namespace GW::AUDIO;
-	auto& gameMusic = registry.ctx().get<GMusic>();
+	auto& menuMusic = registry.ctx().get<GMusic>();
 	auto& audio = registry.ctx().get<GAudio>();
 	auto& ctxSfx = registry.ctx().get<GSound>();
 	auto& sfx = registry.get<GSound>(entity);
-	auto& displayMusic = registry.get<GMusic>(entity);
-	auto& soundCues = registry.ctx().get<GAME::SoundStorage>();
+	auto& gameMusic = registry.get<GMusic>(entity);
+	auto& soundCues = registry.ctx().get<GAME::SoundCue>();
 	if (soundCues.sound1) {
 		const char* hitSound = config->at("Sounds").at("phit").as<const char*>();
 		ctxSfx.Create(hitSound, audio);
@@ -495,7 +496,6 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 						registry.remove<GAME::Paused>(ent);
 					}
 					gameMusic.Resume();
-					displayMusic.Pause();
 				}
 				else {
 					PrevOverlayIndex = OverlayIndex;
@@ -506,7 +506,6 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					for (auto ent : gameManager) {
 						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
-					displayMusic.Resume();
 					gameMusic.Pause();
 				}
 			}
@@ -516,8 +515,107 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				settingsOpen = !settingsOpen;
 			}
 
+			// Reset button. Completely reset game state.
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_Y
 				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
+
+				// Reset level manager back to level 1
+				auto lmView = registry.view<GAME::LevelManager>();
+				for (auto entity : lmView)
+				{
+					auto& lm = registry.get<GAME::LevelManager>(entity);
+					std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+					std::string waveFile = config->at("Level1").at("waveFile").as<std::string>();
+					lm.level = GAME::LoadLevelData(waveFile);
+					lm.time = 0.0f;
+					lm.nextWaveIndex = 0;
+					lm.levelComplete = false;
+					lm.readyForNextLevel = false;
+					lm.levelIndex = 0;
+				}
+
+				// Destroy all enemies, powerups, bullets and enemy bullets immediately
+				auto enemyView = registry.view<GAME::Enemy>();
+				for (auto enemy : enemyView)
+					registry.destroy(enemy);
+
+				auto bulletView = registry.view<GAME::Bullet>();
+				for (auto bullet : bulletView)
+					registry.destroy(bullet);
+
+				auto enemyBulletView = registry.view<GAME::EnemyBullets>();
+				for (auto bullet : enemyBulletView)
+					registry.destroy(bullet);
+
+				auto powerUpView = registry.view<GAME::PowerUp>();
+				for (auto PU : powerUpView)
+				{
+					registry.destroy(PU);
+				}
+
+				auto sideView = registry.view<GAME::SideFighter>();
+				for (auto side : sideView)
+				{
+					registry.destroy(side);
+				}
+				
+
+				// Reset player
+				auto playerView = registry.view<GAME::Player, GAME::Health, GAME::Lives, GAME::Transform>();
+				for (auto player : playerView)
+				{
+					auto& config = registry.ctx().get<UTIL::Config>().gameConfig;
+					auto& health = registry.get<GAME::Health>(player);
+					auto& lives = registry.get<GAME::Lives>(player);
+					health.HP = config->at("Player").at("hitpoints").as<int>();
+					lives.count = config->at("Player").at("lives").as<int>();
+
+					// Reset player position to center
+					auto& transform = registry.get<GAME::Transform>(player);
+					GW::MATH::GMatrix::IdentityF(transform.matrix);
+
+					// Restore player visibility
+					if (registry.all_of<DRAW::MeshCollection>(player))
+					{
+						auto& meshes = registry.get<DRAW::MeshCollection>(player);
+						for (auto mesh : meshes.meshEntities)
+							registry.emplace_or_replace<GAME::Visible>(mesh).show = true;
+					}
+
+					// Remove any leftover state components
+					if (registry.all_of<GAME::RespawnTimer>(player))
+						registry.remove<GAME::RespawnTimer>(player);
+					if (registry.all_of<GAME::Invuln>(player))
+						registry.remove<GAME::Invuln>(player);
+					if (registry.all_of<GAME::Roll>(player))
+						registry.remove<GAME::Roll>(player);
+					if (registry.all_of<GAME::HasSideFighters>(player))
+						registry.remove<GAME::HasSideFighters>(player);
+					if (registry.all_of<GAME::MultiShot>(player))
+						registry.remove<GAME::MultiShot>(player);
+
+					// Reset roll charges
+					if (registry.all_of<GAME::RollCharges>(player))
+						registry.get<GAME::RollCharges>(player).charges = 3;
+				}
+
+				// Reset score
+				registry.ctx().get<ScoreSystem>().Reset();
+
+				// Remove GameOver from game manager
+				auto gmView = registry.view<GAME::GameManager>();
+				for (auto gm : gmView)
+				{
+					if (registry.all_of<GAME::GameOver>(gm))
+						registry.remove<GAME::GameOver>(gm);
+					if (registry.all_of<GAME::Paused>(gm))
+						registry.remove<GAME::Paused>(gm);
+				}
+
+				// Restore menu music state
+				gameMusic.Stop();
+				menuMusic.Play(true);
+
 				OverlayIndex = 0;
 			}
 			
@@ -529,6 +627,9 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
 				&& OverlayIndex == 0) {
 				OverlayIndex = 1;
+				gameMusic.SetVolume(musicVol * gameMusicModifier);
+				menuMusic.Stop();
+				gameMusic.Play(true);
 			}
 			if (levelStart) {
 				OverlayIndex = 2;
@@ -563,8 +664,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				}
 			}
 			audio.SetMasterVolume(masterVol);
-			gameMusic.SetVolume(musicVol);
-			displayMusic.SetVolume(musicVol);
+			menuMusic.SetVolume(musicVol);
+			gameMusic.SetVolume(musicVol * gameMusicModifier);
 			ctxSfx.SetVolume(sfxVol);
 			sfx.SetVolume(sfxVol);
 		}
@@ -572,7 +673,6 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto& displayOvl = registry.ctx().get<Overlay>();
 	auto& ctxBltr = registry.ctx().get<GW::GRAPHICS::GBlitter>();
 	auto& ctxFont = registry.ctx().get<BLIT_Font>();
-
 
 	auto lmView = registry.view<GAME::LevelManager>();
 	auto lmEntity = lmView.front();
@@ -613,7 +713,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		WinScreen(registry, ovl, bltr, font, W, H);
 	break;
 	case 7:
-		HighScoreMenu(registry, ovl, bltr, font, W, H, displayOvl, ctxBltr, ctxFont);
+		HighScoreMenu(registry, ovl, bltr, font, W, H);
 	break;
 	}
 }
