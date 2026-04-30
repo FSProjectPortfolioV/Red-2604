@@ -14,8 +14,10 @@ void Update_Player(entt::registry& registry, entt::entity self)
     // Check if player dies
     auto& health = registry.get<GAME::Health>(self);
 
+    auto& soundCues = registry.ctx().get<GAME::SoundStorage>().soundCues;
     if (health.HP <= 0)
     {
+        soundCues[2] = true;
         return;
     }
 
@@ -193,8 +195,7 @@ void Update_Player(entt::registry& registry, entt::entity self)
         {
             entt::entity bullet = registry.create();
 
-            auto& soundCue = registry.ctx().emplace<GAME::SoundStorage>();
-            soundCue.sound2 = true;
+            soundCues[0] = true;
 
             // Add components
             registry.emplace<GAME::Velocity>(bullet, bulletVelocity);

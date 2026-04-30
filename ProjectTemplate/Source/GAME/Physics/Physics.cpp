@@ -19,9 +19,9 @@ void HurtPlayer(entt::registry& registry, entt::entity player)
 	// else decrement health
 	auto& health = registry.get<GAME::Health>(player);
 	health.HP -= 1;
-	using namespace GW::AUDIO;
-	auto& soundCue = registry.ctx().emplace<GAME::SoundStorage>();
-	soundCue.sound1 = true;
+
+	auto& soundCues = registry.ctx().get<GAME::SoundStorage>().soundCues;
+	soundCues[1] = true;
 
 	std::cout << "Player HP: " << health.HP << "\n";
 
@@ -141,12 +141,7 @@ void Physics::Collision(entt::registry& registry)
 					
 				}
 
-				std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
-				const char* hitSound = config->at("Sounds").at("ehit").as<const char*>();
-				const char* deathSound = config->at("Sounds").at("edeath").as<const char*>();
-				using namespace GW::AUDIO;
-				GAudio& gAudio = registry.ctx().emplace<GAudio>();
-				GSound& gSound = registry.ctx().get<GSound>();
+				auto& soundCues = registry.ctx().get<GAME::SoundStorage>().soundCues;
 
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Bullet>(*b))
@@ -157,13 +152,12 @@ void Physics::Collision(entt::registry& registry)
 
 						if (health.HP == 0)
 						{
-							gSound.Create(deathSound, gAudio);
+							soundCues[5] = true;
 						}
 						else
 						{
-							gSound.Create(hitSound, gAudio);
+							soundCues[4] = true;
 						}
-						gSound.Play();
 
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*b);
@@ -174,15 +168,15 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
-						if(health.HP == 0)
+
+						if (health.HP == 0)
 						{
-							gSound.Create(deathSound, gAudio);
+							soundCues[5] = true;
 						}
 						else
 						{
-							gSound.Create(hitSound, gAudio);
+							soundCues[4] = true;
 						}
-						gSound.Play();
 						
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*a);

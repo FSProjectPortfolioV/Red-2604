@@ -35,12 +35,10 @@ bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
-float sfxVol = 0.005f;
-float musicVol = 0.05f;
-float gameMusicModifier = 2.5f;
+float sfxVol = 0.03f;
+float musicVol = 0.08f;
 float masterVol = 0.05f;
-float volChange = 0.05f;
-float sfxVolChange = 0.001f;
+float volChange = 0.01f;
 int volIndex = 0;
 
 std::vector<std::string> FinalStats{
@@ -151,13 +149,33 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	auto& gMusic2 = registry.emplace<GMusic>(entity);
 	const char* psMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
-	gMusic2.Create(psMusic, gAudio, musicVol * gameMusicModifier);
+	gMusic2.Create(psMusic, gAudio);
 	gMusic2.Play(true);
 	gMusic2.Stop();
 
-	GSound& gSound = registry.ctx().emplace<GSound>();
-	registry.emplace<GSound>(entity);
-	registry.ctx().emplace<GAME::SoundStorage>();
+	auto& soundstorage = registry.ctx().emplace<GAME::SoundStorage>();
+	soundstorage.soundCues.resize(6);
+	soundstorage.sounds.resize(6);
+	for (int i = 0; i < soundstorage.soundCues.size(); i++) {
+		soundstorage.soundCues[i] = false;
+	}
+	const char* playerShoot = config->at("Sounds").at("pshoot").as<const char*>();
+	soundstorage.sounds[0].Create(playerShoot, gAudio);
+
+	const char* playerHit = config->at("Sounds").at("phit").as<const char*>();
+	soundstorage.sounds[1].Create(playerHit, gAudio);
+
+	const char* playerDead = config->at("Sounds").at("pdeath").as<const char*>();
+	soundstorage.sounds[2].Create(playerDead, gAudio);
+
+	const char* pauseSound = (*config).at("Sounds").at("menu").as<const char*>();
+	soundstorage.sounds[3].Create(pauseSound, gAudio);
+
+	const char* enemyHit = (*config).at("Sounds").at("ehit").as<const char*>();
+	soundstorage.sounds[4].Create(enemyHit, gAudio);
+
+	const char* enemyDead = (*config).at("Sounds").at("edeath").as<const char*>();
+	soundstorage.sounds[5].Create(enemyDead, gAudio);
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -466,22 +484,16 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	using namespace GW::AUDIO;
 	auto& menuMusic = registry.ctx().get<GMusic>();
 	auto& audio = registry.ctx().get<GAudio>();
-	auto& ctxSfx = registry.ctx().get<GSound>();
-	auto& sfx = registry.get<GSound>(entity);
 	auto& gameMusic = registry.get<GMusic>(entity);
-	auto& soundCues = registry.ctx().get<GAME::SoundStorage>();
-	if (soundCues.sound1) {
-		const char* hitSound = config->at("Sounds").at("phit").as<const char*>();
-		ctxSfx.Create(hitSound, audio);
-		ctxSfx.Play();
-		soundCues.sound1 = false;
+
+	auto& soundStorage = registry.ctx().get<GAME::SoundStorage>();
+	for (int i = 0; i < soundStorage.sounds.size(); i++) {
+		if (soundStorage.soundCues[i]) {
+			soundStorage.sounds[i].Play();
+			soundStorage.soundCues[i] = false;
+		}
 	}
-	if (soundCues.sound2) {
-		const char* shootSound = config->at("Sounds").at("pshoot").as<const char*>();
-		sfx.Create(shootSound, audio);
-		sfx.Play();
-		soundCues.sound2 = false;
-	}
+
 	while (+pressEvents.Pop(event))
 	{
 		auto gameManager = registry.view<GAME::GameManager>();
@@ -501,9 +513,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				else {
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
-					const char* pauseSound = (*config).at("Sounds").at("menu").as<const char*>();
-					sfx.Create(pauseSound, audio, sfxVol);
-					sfx.Play();
+					soundStorage.soundCues[3] = true;
 					for (auto ent : gameManager) {
 						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
@@ -628,7 +638,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
 				&& OverlayIndex == 0) {
 				OverlayIndex = 1;
-				gameMusic.SetVolume(musicVol * gameMusicModifier);
+				//gameMusic.SetVolume(musicVol * gameMusicModifier);
 				menuMusic.Stop();
 				gameMusic.Play(true);
 			}
@@ -636,7 +646,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				OverlayIndex = 2;
 				levelStart = false;
 			}
-			int check = inputData.data;
+
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT) && settingsOpen) {
 				switch (volIndex) {
 				case 3:
@@ -646,7 +656,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					musicVol += volChange;
 					break;
 				case 5:
-					sfxVol += sfxVolChange;
+					sfxVol += volChange;
 					break;
 				}
 			}
@@ -660,15 +670,16 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					musicVol -= volChange;
 					break;
 				case 5:
-					sfxVol -= sfxVolChange;
+					sfxVol -= volChange;
 					break;
 				}
 			}
 			audio.SetMasterVolume(masterVol);
 			menuMusic.SetVolume(musicVol);
-			gameMusic.SetVolume(musicVol * gameMusicModifier);
-			ctxSfx.SetVolume(sfxVol);
-			sfx.SetVolume(sfxVol);
+			gameMusic.SetVolume(musicVol);
+			for (int i = 0; i < soundStorage.sounds.size(); i++) {
+				soundStorage.sounds[i].SetVolume(sfxVol);
+			}
 		}
 	}
 	auto& displayOvl = registry.ctx().get<Overlay>();
@@ -871,19 +882,13 @@ void RegularOptions(BLIT_Font& font, int W, int H) {
 
 std::string ShowVolume(float volume) {
 	int range;
-	if(volume == sfxVol) {
-		volume = sfxVol;
-		range = static_cast<int>(volume / 0.001f);
-	}
-	else {
-		 range = static_cast<int>(volume / 0.05f);
-	}
+	range = static_cast<int>(volume / 0.01f);
 	if (range <= 0) {
 		volume = 0.00f;
 		return "OFF";
 	}
-	if (range >= 6) {
-		volume = 0.30f;
+	if (range >= 10) {
+		volume = 0.1f;
 		return "MAX";
 	}
 	return std::to_string(range);
