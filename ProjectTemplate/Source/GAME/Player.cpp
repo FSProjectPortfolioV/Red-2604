@@ -123,6 +123,42 @@ void Update_Player(entt::registry& registry, entt::entity self)
     dir.x *= bulletSpeed;
     dir.z *= bulletSpeed;
 
+    auto SpawnBullet = [&](GW::MATH::GVECTORF bulletVelocity)
+    {
+        entt::entity bullet = registry.create();
+
+		// Play shoot sound
+        using namespace GW::AUDIO;
+        auto& soundCue = registry.ctx().emplace<GAME::SoundCue>();
+        soundCue.sound2 = true;
+
+        // Add components
+        registry.emplace<GAME::Velocity>(bullet, bulletVelocity);
+        registry.emplace<GAME::Bullet>(bullet);
+        registry.emplace<GAME::Collidable>(bullet);
+        auto& bulletTransform = registry.emplace<GAME::Transform>(bullet);
+
+        // Clone meshes
+        auto& manager = registry.ctx().get<DRAW::ModelManager>();
+        auto& bulletCollection = registry.emplace<DRAW::MeshCollection>(bullet);
+
+        // Clone meshes 
+        CloneModelToEntity(
+            registry,
+            manager.collections["BlueBullet"],
+            bulletCollection,
+            bulletTransform
+        );
+
+        // Override the transform
+        bulletTransform.matrix = transform.matrix;
+
+        for (auto mesh : bulletCollection.meshEntities) {
+            auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+            inst.transform = bulletTransform.matrix;
+        }
+    };
+
     if (firePressed)
     {
         auto SpawnBullet = [&](GW::MATH::GVECTORF bulletVelocity)
