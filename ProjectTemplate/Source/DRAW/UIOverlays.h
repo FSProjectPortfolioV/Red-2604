@@ -33,11 +33,11 @@ bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
-float sfxVol = 0.05f;
+float sfxVol = 0.005f;
 float musicVol = 0.05f;
 float masterVol = 0.05f;
 float volChange = 0.05f;
-float sfxVolChange = 0.05f;
+float sfxVolChange = 0.001f;
 int volIndex = 0;
 
 std::vector<std::string> FinalStats{
