@@ -125,6 +125,7 @@ namespace GAME
 	struct Invuln 
 	{
 		float cooldown;
+		bool isRoll = false; // if true, skip blink logic
 	};
 
 	struct SpriteAnimation
@@ -241,6 +242,13 @@ namespace GAME
 
 	};
 
+	struct SoundCue
+	{
+		bool sound1 = false;
+		bool sound2 = false;
+		bool sound3 = false;
+	};
+
 	// This is defined based on the player's visible screen space.
 	// If you want to use this for operations outside the screen, you will need to define a margin.
 	struct Bounds
@@ -275,4 +283,16 @@ namespace GAME
 		}
 	}
 
+	struct Roll
+	{
+		float duration = 1.0f;      // how long the roll lasts
+		float timeRemaining = 1.0f; // countdown
+		float totalDuration = 1.0f; // stored for rotation calculation
+		GW::MATH::GMATRIXF startMatrix; // save pre-roll orientation
+	};
+
+	struct RollCharges
+	{
+		int charges = 3;            // how many times the player can roll
+	};
 }// namespace GAME

@@ -19,6 +19,9 @@ void HurtPlayer(entt::registry& registry, entt::entity player)
 	// else decrement health
 	auto& health = registry.get<GAME::Health>(player);
 	health.HP -= 1;
+	using namespace GW::AUDIO;
+	auto& soundCue = registry.ctx().emplace<GAME::SoundCue>();
+	soundCue.sound1 = true;
 
 	std::cout << "Player HP: " << health.HP << "\n";
 
@@ -138,12 +141,29 @@ void Physics::Collision(entt::registry& registry)
 					
 				}
 
+				std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
+				const char* hitSound = config->at("Sounds").at("ehit").as<const char*>();
+				const char* deathSound = config->at("Sounds").at("edeath").as<const char*>();
+				using namespace GW::AUDIO;
+				GAudio& gAudio = registry.ctx().emplace<GAudio>();
+				GSound& gSound = registry.ctx().get<GSound>();
+
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Bullet>(*b))
 				{
 						auto& health = registry.get<Health>(*a);
 						auto& cfg = registry.get<EnemyConfig>(*a);
 						health.HP -= 1;
+
+						if (health.HP == 0)
+						{
+							gSound.Create(deathSound, gAudio);
+						}
+						else
+						{
+							gSound.Create(hitSound, gAudio);
+						}
+						gSound.Play();
 
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*b);
@@ -154,6 +174,15 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
+						if(health.HP == 0)
+						{
+							gSound.Create(deathSound, gAudio);
+						}
+						else
+						{
+							gSound.Create(hitSound, gAudio);
+						}
+						gSound.Play();
 						
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*a);
@@ -168,18 +197,21 @@ void Physics::Collision(entt::registry& registry)
 					break;
 				}
 
+				// Case: Enemy to Player - Hurt the player
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Player>(*b))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*b))
 					{
-						GAME::KillPlayer(registry, *b, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
 					}
 				}
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*a))
 					{
-						GAME::KillPlayer(registry, *a, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
 					}
 				}
 
@@ -246,15 +278,19 @@ void Physics::Collision(entt::registry& registry)
 				//Case: Enemy Bullet to Player - Player gets hurt, bullet gets destroyed
 				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<Player>(*b))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *b);
-					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+					if (!registry.all_of<GAME::Invuln>(*b))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
+					}
 				}
 				if (registry.all_of<EnemyBullets>(*b) && registry.all_of<Player>(*a))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *a);
-					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+					if (!registry.all_of<GAME::Invuln>(*a))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
+					}
 				}
 			}
 		}

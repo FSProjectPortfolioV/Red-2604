@@ -16,6 +16,7 @@
 #include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
 #include "GAME/LevelLoader.h"
+#include "GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 
 
 // Local routines for specific application behavior
@@ -35,6 +36,8 @@ int main()
 	registry.ctx().emplace<FirebaseLeaderboardAPI>("leaderboard-2851-default-rtdb.firebaseio.com", "/Leaderboard/Entries.json");
 	registry.ctx().emplace<HighscoreScreenController>();
 	registry.ctx().emplace<InitialsEntrySystem>();
+	registry.ctx().emplace<LocalHighscoreSystem>();
+	registry.ctx().get<LocalHighscoreSystem>().Load();
 
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
@@ -68,18 +71,6 @@ void GraphicsBehavior(entt::registry& registry)
 	// Setup scroll speed
 	float scrollSpeed = (*config).at("Global").at("scrollSpeed").as<float>();
 	registry.ctx().emplace<GAME::ScrollingBackground>(scrollSpeed); // Make scroll speed available to anything with registry access
-
-	// Add Gateware Audio System, for music and sound effects
-
-	using namespace GW::AUDIO;
-	GAudio& gAudio = registry.ctx().emplace<GAudio>();
-	gAudio.Create();
-	gAudio.SetMasterVolume(0.1f);
-
-	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	const char* bgMusic = (*config).at("Sounds").at("gpmusic").as<const char*>();
-	gMusic.Create(bgMusic, gAudio, 0.1f);
-	gMusic.Play(true);
 
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
@@ -238,6 +229,8 @@ void GameplayBehavior(entt::registry& registry)
 	auto& lives = registry.emplace<GAME::Lives>(player);
 	lives.count = (*config).at("Player").at("lives").as<int>();
 
+	registry.emplace<GAME::RollCharges>(player);
+
 	// Create game manager
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);
@@ -254,7 +247,6 @@ void GameplayBehavior(entt::registry& registry)
 	// Look up model names from config
 	std::string explosionModelName = config->at("Explosion").at("model").as<std::string>();
 	std::string playerModelName = config->at("Player").at("model").as<std::string>();
-	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
 
 	// Clone meshes
 	CloneModelToEntity(
@@ -263,6 +255,10 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
+
+	// Player hitbox tuning
+	playerCollection.collider.extent.y *= 10.0f;
+	playerCollection.collider.extent.z -= 0.75f;
 }
 
 // This function will be called by the main loop to update the main loop
@@ -291,21 +287,50 @@ void MainLoopBehavior(entt::registry& registry)
 		GAME::PlayerExplosion(registry, (float)deltaTime);
 		GAME::UpdateHighscoreEntry(registry);
 
-		//Update Game
-		auto gmView = registry.view<GAME::GameManager>();
-		for (auto gm : gmView) {
-			if (registry.all_of<GAME::GameOver>(gm) || registry.any_of<GAME::Paused>(gm)) {
-				continue;
+		auto& input = registry.ctx().get<UTIL::Input>();
+
+		static bool tDown = false;
+		float state = 0.0f;
+
+		if (input.immediateInput.GetState(G_KEY_T, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!tDown)
+			{
+				auto& localHighscore = registry.ctx().get<LocalHighscoreSystem>();
+				localHighscore.Update(10000);
+
+				std::cout << "Test highscore update ran\n";
 			}
-			else {
+
+			tDown = true;
+		}
+		else
+		{
+			tDown = false;
+		}
+
+		// Update Game and Level
+		auto lmView = registry.view<GAME::LevelManager>();
+		auto gmView = registry.view<GAME::GameManager>();
+		bool gameIsPaused = false;
+		for (auto gm : gmView)
+		{
+			if (registry.all_of<GAME::Paused>(gm))
+			{
+				gameIsPaused = true;
+				break;
+			}
+			else 
+			{
 				registry.patch<GAME::GameManager>(gm);
 			}
 		}
 
-		// Update LevelManager
-		auto lmView = registry.view<GAME::LevelManager>();
-		for (auto entity : lmView)
-			registry.patch<GAME::LevelManager>(entity);
+		if (!gameIsPaused)
+		{
+			for (auto entity : lmView)
+				registry.patch<GAME::LevelManager>(entity);
+		}
 
 		// Check for level transition
 		auto lmTransView = registry.view<GAME::LevelManager>();
@@ -358,53 +383,59 @@ void MainLoopBehavior(entt::registry& registry)
 			registry.patch<GAME::SideFighter>(entity);
 
 		// Update Starfield
-		auto starView = registry.view<DRAW::Starfield>();
-		for (auto entity : starView)
+		auto& menuMusic = registry.ctx().get<GW::AUDIO::GMusic>();
+		bool inMainMenu;
+		menuMusic.isPlaying(inMainMenu);
+		if (!gameIsPaused || inMainMenu)
 		{
-			auto& sf = registry.get<DRAW::Starfield>(entity);
-
-			float dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
-
-			for (auto& s : sf.stars)
+			auto starView = registry.view<DRAW::Starfield>();
+			for (auto entity : starView)
 			{
-				// Move star down based on its speed and layer (parallax effect)
-				float layerSpeed = s.speed;
-				if (s.layer == 0) layerSpeed *= 0.5f; // background
-				if (s.layer == 1) layerSpeed *= 1.0f; // mid
-				if (s.layer == 2) layerSpeed *= 1.8f; // foreground
+				auto& sf = registry.get<DRAW::Starfield>(entity);
 
-				float baseScroll = registry.ctx().get<GAME::ScrollingBackground>().scrollSpeed;
-				s.position.y += baseScroll * s.speed * dt;
+				float dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 
-				// Horizontal sway using sine wave based on vertical position
-				s.position.x += sinf(s.position.y * 5.0f) * 0.00003f;
-
-				// Wrap when star goes below the screen
-				if (s.position.y > 1.0f)
+				for (auto& s : sf.stars)
 				{
-					s.position.y = -1.0f;
-					s.position.x = UTIL::RandomFloat(-1.0f, 1.0f);
-					s.position.z = UTIL::RandomFloat(0.0f, 1.0f);
+					// Move star down based on its speed and layer (parallax effect)
+					float layerSpeed = s.speed;
+					if (s.layer == 0) layerSpeed *= 0.5f; // background
+					if (s.layer == 1) layerSpeed *= 1.0f; // mid
+					if (s.layer == 2) layerSpeed *= 1.8f; // foreground
+
+					float baseScroll = registry.ctx().get<GAME::ScrollingBackground>().scrollSpeed;
+					s.position.y += baseScroll * s.speed * dt;
+
+					// Horizontal sway using sine wave based on vertical position
+					s.position.x += sinf(s.position.y * 5.0f) * 0.00003f;
+
+					// Wrap when star goes below the screen
+					if (s.position.y > 1.0f)
+					{
+						s.position.y = -1.0f;
+						s.position.x = UTIL::RandomFloat(-1.0f, 1.0f);
+						s.position.z = UTIL::RandomFloat(0.0f, 1.0f);
+					}
+
+
+
+					// Wrap horizontally as well, because why not?
+					if (s.position.x < -1) s.position.x = 1;
+					if (s.position.x > 1) s.position.x = -1;
+					if (s.position.z < 0)  s.position.z = 1;
+					if (s.position.z > 1)  s.position.z = 0;
 				}
 
+				std::vector<DRAW::StarVertex> gpuVerts;
+				gpuVerts.reserve(sf.stars.size());
 
+				for (auto& s : sf.stars)
+					gpuVerts.push_back({ s.position, s.brightness, s.layer });
+				registry.emplace_or_replace<std::vector<DRAW::StarVertex>>(entity, gpuVerts);
+				registry.patch<DRAW::VulkanVertexBuffer>(entity);
 
-				// Wrap horizontally as well, because why not?
-				if (s.position.x < -1) s.position.x = 1;
-				if (s.position.x > 1) s.position.x = -1;
-				if (s.position.z < 0)  s.position.z = 1;
-				if (s.position.z > 1)  s.position.z = 0;
+				registry.get<DRAW::StarfieldGPU>(entity).starCount = gpuVerts.size();
 			}
-
-			std::vector<DRAW::StarVertex> gpuVerts;
-			gpuVerts.reserve(sf.stars.size());
-
-			for (auto& s : sf.stars)
-				gpuVerts.push_back({ s.position, s.brightness, s.layer });
-			registry.emplace_or_replace<std::vector<DRAW::StarVertex>>(entity, gpuVerts);
-			registry.patch<DRAW::VulkanVertexBuffer>(entity);
-
-			registry.get<DRAW::StarfieldGPU>(entity).starCount = gpuVerts.size();
 		}
 
 

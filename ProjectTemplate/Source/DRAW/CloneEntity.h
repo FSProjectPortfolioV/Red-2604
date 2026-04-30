@@ -52,7 +52,7 @@
             Move = { -1.0f,0,0,1 };
         }
         else if (style == GAME::FormationStyle::ArrowHeadDown) {  //starts from the top and makes arrow facing down 
-            Move = { 0,0,1.0f,1 };
+            Move = { 0,0,-1.0f,1 };
         }
         else if (style == GAME::FormationStyle::ArrowHeadLeft) { //starts from the left and makes arrow facing right
             Move = { 1.0f,0,0,1 };
@@ -118,7 +118,11 @@
         );
 
         // Override transform with the one passed in
+        GW::MATH::GMatrix::IdentityF(enemyTransform.matrix);
         enemyTransform = transform;
+
+        // Scale up hitbox (for enemies too short for bullets to actually hit the model)
+        collection.collider.extent.y *= 10.0f;
 
         for (auto mesh : collection.meshEntities)
         {
