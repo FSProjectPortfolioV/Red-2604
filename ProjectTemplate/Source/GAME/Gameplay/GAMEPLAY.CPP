@@ -142,13 +142,13 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 			auto& Ev = registry.get<GAME::Velocity>(entity);
 			auto& Etrans = registry.get<GAME::Transform>(entity);
 			if (Ecfg.Movement == GAME::FormationStyle::BigGuy) { 
-				if (Etrans.matrix.row4.x > 20) {
+				if (Etrans.matrix.row4.x > 15) {
 					if (-Ev.direction.x > 0) {
 						return;
 					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -20) {
+				else if (Etrans.matrix.row4.x < -15) {
 					if (-Ev.direction.x < 0) {
 						return;
 					}
@@ -157,13 +157,13 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 			}
 			else if (Ecfg.Movement == GAME::FormationStyle::TheFinal) {
 
-				if (Etrans.matrix.row4.x > 33) {
+				if (Etrans.matrix.row4.x > 20 ){
 					if (-Ev.direction.x < 0) {
 						return;
 					}
 					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
 				}
-				else if (Etrans.matrix.row4.x < -33) {
+				else if (Etrans.matrix.row4.x < -20) {
 					if (-Ev.direction.x < 0) {
 						return;
 					}

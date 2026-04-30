@@ -230,14 +230,14 @@
         "usageCost": 1,
         "spawnRate": 1.0,
         "speedMult": 0.7,
-        "spawnLocation": { "x": 35.0, "y": -4.0, "z": -5.0 },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 3.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 16.0,
           "hitpoints": 6,
           "scale": 1.2,
           "score": 200,
-          "fireRate": 1.6,
+          "fireRate": 1.9,
           "movement": "BigGuy"
         }
       }

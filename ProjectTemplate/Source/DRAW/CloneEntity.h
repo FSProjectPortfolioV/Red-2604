@@ -86,7 +86,7 @@
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
 
         //applying shooting enemytag
-        int chancetoshoot = 75; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
+        int chancetoshoot = 90; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
         if (config.Movement == GAME::FormationStyle::BigGuy || config.Movement == GAME::FormationStyle::TheFinal) {
             registry.emplace<GAME::ShootingEnemy>(enemy);
         }
