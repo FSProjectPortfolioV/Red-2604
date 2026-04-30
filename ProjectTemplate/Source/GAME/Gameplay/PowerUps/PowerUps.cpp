@@ -7,6 +7,11 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
+    registry.emplace<GAME::Collidable>(powerUp);
+
+    auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
+    auto& manager = registry.ctx().get<DRAW::ModelManager>();
+    auto& powerUpCollection = registry.emplace<DRAW::MeshCollection>(powerUp);
 
     GW::MATH::GVECTORF powerUpDir = { 0, 0, -1, 0 };
     powerUpDir.z *= 5.0f;
@@ -24,12 +29,6 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
     {
         powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, type);
     }
-    
-    registry.emplace<GAME::Collidable>(powerUp);
-
-    auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
-    auto& manager = registry.ctx().get<DRAW::ModelManager>();
-    auto& powerUpCollection = registry.emplace<DRAW::MeshCollection>(powerUp);
 
     CloneModelToEntity(
         registry,
@@ -38,11 +37,21 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
         powerUpTransform
     );
 
-    GW::MATH::GMatrix::TranslateGlobalF(
+    auto player = registry.view<GAME::Player, GAME::Transform>().front();
+	auto& playerTrans = registry.get<GAME::Transform>(player);
+
+    GW::MATH::GMatrix::TranslateLocalF(
         powerUpTransform.matrix,
-        GW::MATH::GVECTORF{ transform.row4.x, 0.0f, transform.row4.z, 0.0f },
+        GW::MATH::GVECTORF{ transform.row4.x, playerTrans.matrix.row4.y, transform.row4.z, 0.0f },
         powerUpTransform.matrix
     );
+
+	std::cout << "Player position: (" << playerTrans.matrix.row4.x << ", " << playerTrans.matrix.row4.y << ", " << playerTrans.matrix.row4.z << ")" << std::endl;
+
+    std::cout << "Spawned Power-Up of type: " << powerUpComponent->modelName << " at position: (" 
+              << powerUpTransform.matrix.row4.x << ", " 
+              << powerUpTransform.matrix.row4.y << ", " 
+		<< powerUpTransform.matrix.row4.z << ")" << std::endl;
 }
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type)
@@ -317,8 +326,14 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
 
 void ClearPowerUPs(entt::registry& registry, entt::entity player)
 {
+	//Removes PowerUps on the field
+    auto powerUpView = registry.view<GAME::PowerUp>();
+    for (auto PU : powerUpView)
+    {
+        registry.destroy(PU);
+    }
+    
 	//Removes SideFighters if player has them
-
     if (registry.any_of<GAME::HasSideFighters>(player))
     {
         auto& SFView = registry.view<GAME::SideFighter>();

@@ -56,14 +56,6 @@ void Gameplay::GameOver(entt::registry& registry, entt::entity manager)
 	{
 		registry.emplace<GAME::GameOver>(manager);
 		std::cout << "You lose, game over\n";
-
-		std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
-		const char* deathSound = config->at("Sounds").at("pdeath").as<const char*>();
-		using namespace GW::AUDIO;
-		GAudio& gAudio = registry.ctx().emplace<GAudio>();
-		GSound& gSound = registry.ctx().get<GSound>();
-		gSound.Create(deathSound, gAudio);
-		gSound.Play();
 	}
 
 	// Dead enemy check system
