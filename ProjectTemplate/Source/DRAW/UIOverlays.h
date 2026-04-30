@@ -36,11 +36,12 @@ bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
-float sfxVol = 0.03f;
-float musicVol = 0.08f;
+float sfxVol = 0.07f;
+float musicVol = 0.05f;
 float masterVol = 0.05f;
 float volChange = 0.01f;
 int volIndex = 0;
+int levelIndex = 0;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -52,7 +53,7 @@ std::vector<std::string> LevelStats{
 	"TERMINATING CRAFTS",
 	"BONUS",
 	"0000 PTS",
-	"R X 1000 = 3000 PTS"
+	"R X 1000 = "
 };
 
 std::vector<std::string> LevelBegin{
@@ -102,6 +103,7 @@ std::vector<std::string> MenuOptions{
 static std::vector<float> ScreenTimers((EndGame.size()) + FinalStats.size());
 static std::vector<int> KeyCounters(EndGame.size() + FinalStats.size());
 static std::vector<std::string> forTyping{};
+static std::vector<int> ElimPercentages;
 
 void FlashingEffect(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text);
 std::string TypewriterEffect(entt::registry& registry,std::string& dest, std::string& text, float& timer, int& keyIndex);
@@ -236,27 +238,32 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 }
 
 static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
-	auto gameManager = registry.view<GAME::GameManager>();
-	for (auto ent : gameManager) {
-		registry.emplace_or_replace<GAME::Paused>(ent);
-	}
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
-	if (screenTimer < screenTimerStart) {
-		screenTimer += deltaTime;
-	}
-	else {
-		screenTimer = 0.0f;
-		levelStart = false;
-	}
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
-	std::string statHeader;
-	statHeader = TypewriterEffect(registry, statHeader, LevelStats[0], keyTimer, KeyCounters[0]);
-	RenderOnScreen(font, (W / 4) + 25, (H / 2) - 50, statHeader);
-	if (statHeader == LevelStats[0]) {
-		RenderOnScreen(font, (W / 2) - 50, (H / 2) + 50, LevelStats[1]);
-		RenderOnScreen(font, (W / 2) - 75, (H / 2) + 100, LevelStats[2]);
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) + 150, LevelStats[3]);
+	if (forTyping.empty()) {
+		forTyping.push_back("");
+	}
+	forTyping[0] = TypewriterEffect(registry, forTyping[0], LevelStats[0], keyTimer, KeyCounters[0]);
+	RenderOnScreen(font, (W / 4) + 25, 150, forTyping[0]);
+	if (forTyping[0] == LevelStats[0]) {
+		int rollsLeft = 0;
+		auto playerView = registry.view<GAME::Player, GAME::RollCharges>();
+		for (auto entity : playerView)
+		{
+			auto& charges = registry.get<GAME::RollCharges>(entity).charges;
+			RenderOnScreen(font, (W / 2) + 100, (H / 2), std::to_string(charges * 1000) + " PTS");
+		}
+		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 150, LevelStats[1]);
+		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, LevelStats[2]);
+		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[3]);
+		if (screenTimer < screenTransition) {
+			screenTimer += deltaTime;
+		}
+		else {
+			screenTimer = 0.0f;
+			OverlayIndex = 1;
+		}
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -283,7 +290,19 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
-	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[lm.levelIndex]);
+	int rankX = 0;
+	switch (lm.levelIndex) {
+		case 0:
+			rankX = (W / 2) - 35;
+		break;
+		case 1:
+			rankX = (W / 2) - 95;
+		break;
+		case 2:
+			rankX = (W / 2) - 50;
+		break;
+	}
+	RenderOnScreen(font, rankX, (H / 2) - 200, LevelBegin[lm.levelIndex]);
 	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, "LAST 0" + std::to_string(lm.levelIndex) + " STAGE");
 	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[3]);
 	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[4]);
@@ -637,7 +656,6 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
 				&& OverlayIndex == 0) {
 				OverlayIndex = 1;
-				//gameMusic.SetVolume(musicVol * gameMusicModifier);
 				menuMusic.Stop();
 				gameMusic.Play(true);
 			}
@@ -688,15 +706,22 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto lmView = registry.view<GAME::LevelManager>();
 	auto lmEntity = lmView.front();
 	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
-	if (lm.levelComplete) {
+	if (lm.levelIndex > levelIndex) {
+		levelIndex = lm.levelIndex;
+		auto gameManager = registry.view<GAME::GameManager>();
+		for (auto ent : gameManager) {
+			registry.emplace<GAME::Paused>(ent);
+		}
 		OverlayIndex = 4;
-		int enemiesleft = 0;
-		auto enemyView = registry.view<GAME::Enemy, GAME::ToDestroy>();
-		for (auto enemy : enemyView) 
-		enemiesleft++;
-	}
-	if (OverlayIndex == 4 && !levelStart) {
-		OverlayIndex = 1;
+		auto& RollsBonus = registry.ctx().get<ScoreSystem>();
+		auto playerView = registry.view<GAME::Player, GAME::RollCharges>();
+		for (auto entity : playerView)
+		{
+			auto& charges = registry.get<GAME::RollCharges>(entity).charges;
+			for (int i = 0; i < charges; i++) {
+				RollsBonus.AddPoints(1000);
+			}
+		}
 	}
 
 	switch (OverlayIndex) {
@@ -893,9 +918,9 @@ std::string ShowVolume(float volume) {
 	return std::to_string(range);
 }
 
-//std::string ProficiencyPercentage(entt::registry& registry) {
-//	
-//}
+//td::string ProficiencyPercentage(entt::registry& registry) {
+//	return;
+//
 
 std::string CalculateTodaysTop(std::vector<int> percentages) {
 	std::sort(percentages.begin(), percentages.end(), [](int a, int b) {
