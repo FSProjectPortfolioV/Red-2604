@@ -123,6 +123,11 @@ void Update_Player(entt::registry& registry, entt::entity self)
     {
         entt::entity bullet = registry.create();
 
+		// Play shoot sound
+        using namespace GW::AUDIO;
+        auto& soundCue = registry.ctx().emplace<GAME::SoundCue>();
+        soundCue.sound2 = true;
+
         // Add components
         registry.emplace<GAME::Velocity>(bullet, bulletVelocity);
         registry.emplace<GAME::Bullet>(bullet);

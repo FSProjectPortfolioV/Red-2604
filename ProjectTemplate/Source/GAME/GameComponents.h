@@ -241,6 +241,13 @@ namespace GAME
 
 	};
 
+	struct SoundCue
+	{
+		bool sound1 = false;
+		bool sound2 = false;
+		bool sound3 = false;
+	};
+
 	// This is defined based on the player's visible screen space.
 	// If you want to use this for operations outside the screen, you will need to define a margin.
 	struct Bounds

@@ -69,18 +69,6 @@ void GraphicsBehavior(entt::registry& registry)
 	float scrollSpeed = (*config).at("Global").at("scrollSpeed").as<float>();
 	registry.ctx().emplace<GAME::ScrollingBackground>(scrollSpeed); // Make scroll speed available to anything with registry access
 
-	// Add Gateware Audio System, for music and sound effects
-
-	using namespace GW::AUDIO;
-	GAudio& gAudio = registry.ctx().emplace<GAudio>();
-	gAudio.Create();
-	gAudio.SetMasterVolume(0.1f);
-
-	GMusic& gMusic = registry.ctx().emplace<GMusic>();
-	const char* bgMusic = (*config).at("Sounds").at("gpmusic").as<const char*>();
-	gMusic.Create(bgMusic, gAudio, 0.1f);
-	gMusic.Play(true);
-
 	// Add an entity to handle all the graphics data
 	auto display = registry.create();
 
