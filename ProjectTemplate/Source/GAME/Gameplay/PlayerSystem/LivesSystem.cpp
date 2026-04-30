@@ -5,7 +5,9 @@
 #include "../../../UTIL/Utilities.h"
 #include "../ScoreSystem/HighscoreScreenController.h"
 #include "../ScoreSystem/InitialsEntrySystem.h"
-#include "../../Gameplay/PowerUps/PowerUps.h"
+#include "../ScoreSystem/LocalHighscoreSystem.h"
+#include "../ScoreSystem/ScoreSystem.h"
+#include "../PowerUps/PowerUps.h"
 
 namespace GAME
 {
@@ -134,6 +136,11 @@ namespace GAME
 		{
 			registry.emplace_or_replace<GameOver>(gameManager);
 			ClearPowerUPs(registry, player);
+
+			auto& scoreSystem = registry.ctx().get<ScoreSystem>();
+			auto& localHighscore = registry.ctx().get<LocalHighscoreSystem>();
+
+			localHighscore.Update(scoreSystem.GetScore());
 
 			// Check localscore to highscore
 			auto& highscore = registry.ctx().get<HighscoreScreenController>();
