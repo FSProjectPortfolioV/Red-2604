@@ -258,10 +258,10 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 		auto lmView = registry.view<GAME::LevelManager>();
 		auto lmEntity = lmView.front();
 		auto& lm = registry.get<GAME::LevelManager>(lmEntity);
-		//RenderOnScreen(font, (W / 2) + 100, (H / 2), std::to_string(ElimPercentages[ElimPercentages.size() - 1] + '%'));
+		RenderOnScreen(font, (W / 2) + 100, (H / 2), std::to_string(ElimPercentages[ElimPercentages.size() - 1] + '%'));
 		RenderOnScreen(font, (W / 2) + 150, 150, std::to_string(1) + '%');
 		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 150, LevelStats[1]);
-		//RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(LevelProficiency(lm.enemyTotal, lm.enemyKilled)) + " PTS");
+		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(LevelProficiency(lm.enemyTotal, lm.enemyKilled)) + " PTS");
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(2));
 		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[2]);
 		if (screenTimer < screenTransition) {
