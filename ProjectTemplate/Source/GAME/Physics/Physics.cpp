@@ -197,18 +197,21 @@ void Physics::Collision(entt::registry& registry)
 					break;
 				}
 
+				// Case: Enemy to Player - Hurt the player
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Player>(*b))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*b))
 					{
-						GAME::KillPlayer(registry, *b, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
 					}
 				}
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*a))
 					{
-						GAME::KillPlayer(registry, *a, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
 					}
 				}
 
@@ -275,15 +278,19 @@ void Physics::Collision(entt::registry& registry)
 				//Case: Enemy Bullet to Player - Player gets hurt, bullet gets destroyed
 				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<Player>(*b))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *b);
-					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+					if (!registry.all_of<GAME::Invuln>(*b))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
+					}
 				}
 				if (registry.all_of<EnemyBullets>(*b) && registry.all_of<Player>(*a))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *a);
-					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+					if (!registry.all_of<GAME::Invuln>(*a))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
+					}
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 {
   "duration": 90.0,
-  "tokensAvailable":  10,
+  "tokensAvailable": 10,
   "waves": [
     {
       "triggerTime": 3.0,
@@ -9,11 +9,7 @@
         "usageCost": 1,
         "spawnRate": 1.0,
         "speedMult": 0.5,
-        "spawnLocation": {
-          "x": -35.0,
-          "y": -4.0,
-          "z": 10.0
-        },
+        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 15.0,
@@ -32,11 +28,7 @@
         "usageCost": 1,
         "spawnRate": 1.0,
         "speedMult": 0.5,
-        "spawnLocation": {
-          "x": 35.0,
-          "y": -4.0,
-          "z": 10.0
-        },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 15.0,
@@ -55,11 +47,7 @@
         "usageCost": 1,
         "spawnRate": 1.0,
         "speedMult": 0.6,
-        "spawnLocation": {
-          "x": -35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 15.0,
@@ -78,11 +66,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.6,
-        "spawnLocation": {
-          "x": 0.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 0.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 16.0,
@@ -101,11 +85,7 @@
         "usageCost": 1,
         "spawnRate": 1.0,
         "speedMult": 0.6,
-        "spawnLocation": {
-          "x": 35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 15.0,
@@ -124,11 +104,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.7,
-        "spawnLocation": {
-          "x": 0.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 0.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 16.0,
@@ -147,11 +123,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.7,
-        "spawnLocation": {
-          "x": -35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 17.0,
@@ -170,11 +142,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.7,
-        "spawnLocation": {
-          "x": 35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 17.0,
@@ -193,11 +161,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.8,
-        "spawnLocation": {
-          "x": -35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 17.0,
@@ -216,11 +180,7 @@
         "usageCost": 2,
         "spawnRate": 1.0,
         "speedMult": 0.8,
-        "spawnLocation": {
-          "x": 35.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 5.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 17.0,
@@ -239,11 +199,7 @@
         "usageCost": 3,
         "spawnRate": 1.0,
         "speedMult": 0.4,
-        "spawnLocation": {
-          "x": 0.0,
-          "y": -4.0,
-          "z": 30.0
-        },
+        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 0.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 13.0,
