@@ -10,6 +10,7 @@
 #include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
 #include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
+#include "../GAME/GameManager.cpp"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -449,7 +450,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	if (soundCues.sound2) {
 		const char* shootSound = config->at("Sounds").at("pshoot").as<const char*>();
 		sfx.Create(shootSound, audio);
-		sfx.Play();
+		//sfx.Play();
 		soundCues.sound2 = false;
 	}
 	while (+pressEvents.Pop(event))
@@ -630,6 +631,7 @@ void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, W / 8, 25, UI[0]);
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
+	//RenderOnScreen(font, W - 75, H - 20, "RRR");
 	auto& scoreSystem = registry.ctx().get<ScoreSystem>();
 	auto& highscore = registry.ctx().get<LocalHighscoreSystem>();
 	int liveScore = scoreSystem.GetScore();
