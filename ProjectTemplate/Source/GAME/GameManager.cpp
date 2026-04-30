@@ -50,7 +50,11 @@ void GAME::Update_LevelManager(entt::registry& registry, entt::entity self)
 	{
 		std::cout << "[LevelManager] Spawning wave " << lm.nextWaveIndex
 			<< " at t=" << lm.time << "\n";
-		Gameplay::EnemySpawn(registry, lm.level.waves[lm.nextWaveIndex].token);
+		GAME::EnemyToken temp = lm.level.waves[lm.nextWaveIndex].token;
+		temp.Enemy.hitpoints = temp.Enemy.hitpoints  + (lm.loops);
+		temp.Enemy.Score = temp.Enemy.Score + (lm.loops * 50);
+		temp.Enemy.speed = temp.Enemy.speed + (lm.loops * 0.01);
+		Gameplay::EnemySpawn(registry, lm.level.waves[lm.nextWaveIndex].token, lm.level.waves[lm.nextWaveIndex].EnemyNumber);
 		lm.nextWaveIndex++;
 	}
 

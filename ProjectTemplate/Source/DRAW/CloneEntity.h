@@ -70,8 +70,8 @@
     }
 
     static entt::entity SpawnEnemy(entt::registry& registry,
-        const DRAW::ModelManager& manager, 
-        const GAME::Transform& transform, 
+        const DRAW::ModelManager& manager,
+        const GAME::Transform& transform,
         const GAME::EnemyConfig& cfg, const float SpeedMult)
     {
         // Create entity
@@ -86,7 +86,7 @@
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
 
         //applying shooting enemytag
-        int chancetoshoot = 20; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
+        int chancetoshoot = 90; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
         if (config.Movement == GAME::FormationStyle::BigGuy || config.Movement == GAME::FormationStyle::TheFinal) {
             registry.emplace<GAME::ShootingEnemy>(enemy);
         }
@@ -120,6 +120,9 @@
         // Override transform with the one passed in
         GW::MATH::GMatrix::IdentityF(enemyTransform.matrix);
         enemyTransform = transform;
+        GW::MATH::GVECTORF scaler = {cfg.Scale, cfg.Scale, cfg.Scale, 1};
+        GW::MATH::GMatrix::ScaleGlobalF(enemyTransform.matrix,scaler, enemyTransform.matrix);
+        enemyTransform.matrix.row4.y = 0;
 
         // Scale up hitbox (for enemies too short for bullets to actually hit the model)
         collection.collider.extent.y *= 10.0f;
@@ -220,7 +223,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadLeft) { 
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -245,7 +248,7 @@
         }
         else if (Style == GAME::FormationStyle::ArrowHeadRight) {
             for (int i = 0; i < enemyCount; i++) {
-                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnDelay, speed);
+                EnemyTokenCreator(registry, cfg, Style, CurrentList, LocationUpdates, SpawnTemp, speed);
                 if (i != 0) {
                     LocationUpdates = StartLocation;
                     space *= -1;
@@ -319,6 +322,11 @@
 
             entt::entity enemy = registry.create();
             enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
+            auto& lmView = registry.view<GAME::LevelManager>();
+            for (auto& lm : lmView) {
+                auto& Lm = registry.get<GAME::LevelManager>(lm);
+                Lm.enemyTotal++;
+            }
             currentSpawnDelay = CurrentList[0].SpawnRate;
             time = 0;
             CurrentList.erase(CurrentList.begin());
@@ -340,19 +348,19 @@
         {
         case GAME::FormationStyle::WaveLeft:
         case GAME::FormationStyle::ArrowHeadLeft:
-            position.x = bounds.left - margin;  // off the left edge
+        case GAME::FormationStyle::TheFinal:
+            position.x = position.x - margin;  // off the left edge
             break;
 
         case GAME::FormationStyle::WaveRight:
         case GAME::FormationStyle::ArrowHeadRight:
-            position.x = bounds.right + margin; // off the right edge
+        case GAME::FormationStyle::BigGuy:
+            position.x = position.x + margin; // off the right edge
             break;
 
         case GAME::FormationStyle::ArrowHeadDown:
-        case GAME::FormationStyle::BigGuy:
-        case GAME::FormationStyle::TheFinal:
         default:
-            position.z = bounds.top + margin;   // off the top edge
+            position.z = position.z + margin;   // off the top edge
             break;
         }
 

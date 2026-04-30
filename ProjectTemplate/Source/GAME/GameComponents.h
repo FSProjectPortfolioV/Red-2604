@@ -64,6 +64,7 @@ namespace GAME
 	{
 		float triggerTime;
 		EnemyToken token;
+		int EnemyNumber;
 	};
 
 	struct LevelData
@@ -89,6 +90,8 @@ namespace GAME
 		int levelIndex = 0; // 0 = level 1, 1 = level 2, 2 = level 3
 		int difMultiplier = 1;
 		int loops = 0;
+		int enemyTotal = 0; //Total Spawned
+		int enemyKilled = 0;//killed by player
 	};
 
 
