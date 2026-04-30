@@ -12,6 +12,7 @@
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 #include "../GAME/GameManager.h"
 #include "../GAME/LevelLoader.h"
+#include "../GAME/Gameplay/PowerUps/PowerUps.h"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -520,20 +521,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 
 				auto enemyBulletView = registry.view<GAME::EnemyBullets>();
 				for (auto bullet : enemyBulletView)
-					registry.destroy(bullet);
-
-				auto powerUpView = registry.view<GAME::PowerUp>();
-				for (auto PU : powerUpView)
-				{
-					registry.destroy(PU);
-				}
-
-				auto sideView = registry.view<GAME::SideFighter>();
-				for (auto side : sideView)
-				{
-					registry.destroy(side);
-				}
-				
+					registry.destroy(bullet);				
 
 				// Reset player
 				auto playerView = registry.view<GAME::Player, GAME::Health, GAME::Lives, GAME::Transform>();
@@ -564,10 +552,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 						registry.remove<GAME::Invuln>(player);
 					if (registry.all_of<GAME::Roll>(player))
 						registry.remove<GAME::Roll>(player);
-					if (registry.all_of<GAME::HasSideFighters>(player))
-						registry.remove<GAME::HasSideFighters>(player);
-					if (registry.all_of<GAME::MultiShot>(player))
-						registry.remove<GAME::MultiShot>(player);
+					
+					ClearPowerUPs(registry, player);
 
 					// Reset roll charges
 					if (registry.all_of<GAME::RollCharges>(player))
