@@ -242,11 +242,10 @@ namespace GAME
 
 	};
 
-	struct SoundCue
+	struct SoundStorage
 	{
-		bool sound1 = false;
-		bool sound2 = false;
-		bool sound3 = false;
+		std::vector<bool> soundCues;
+		std::vector<GW::AUDIO::GSound> sounds;
 	};
 
 	// This is defined based on the player's visible screen space.

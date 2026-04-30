@@ -36,12 +36,10 @@ bool levelStart = false;
 int OverlayIndex = 0;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
-float sfxVol = 0.005f;
-float musicVol = 0.05f;
-float gameMusicModifier = 2.5f;
+float sfxVol = 0.03f;
+float musicVol = 0.08f;
 float masterVol = 0.05f;
-float volChange = 0.05f;
-float sfxVolChange = 0.001f;
+float volChange = 0.01f;
 int volIndex = 0;
 
 std::vector<std::string> FinalStats{
@@ -58,8 +56,9 @@ std::vector<std::string> LevelStats{
 };
 
 std::vector<std::string> LevelBegin{
-	"Rank",
-	"LAST ## STAGE",
+	"Cadet",
+	"Master Chief",
+	"Admiral",
 	"READY",
 	"PLAYER 1"
 };
@@ -151,13 +150,33 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	auto& gMusic2 = registry.emplace<GMusic>(entity);
 	const char* psMusic = (*config).at("Sounds").at("psmusic").as<const char*>();
-	gMusic2.Create(psMusic, gAudio, musicVol * gameMusicModifier);
+	gMusic2.Create(psMusic, gAudio);
 	gMusic2.Play(true);
 	gMusic2.Stop();
 
-	GSound& gSound = registry.ctx().emplace<GSound>();
-	registry.emplace<GSound>(entity);
-	registry.ctx().emplace<GAME::SoundCue>();
+	auto& soundstorage = registry.ctx().emplace<GAME::SoundStorage>();
+	soundstorage.soundCues.resize(6);
+	soundstorage.sounds.resize(6);
+	for (int i = 0; i < soundstorage.soundCues.size(); i++) {
+		soundstorage.soundCues[i] = false;
+	}
+	const char* playerShoot = config->at("Sounds").at("pshoot").as<const char*>();
+	soundstorage.sounds[0].Create(playerShoot, gAudio);
+
+	const char* playerHit = config->at("Sounds").at("phit").as<const char*>();
+	soundstorage.sounds[1].Create(playerHit, gAudio);
+
+	const char* playerDead = config->at("Sounds").at("pdeath").as<const char*>();
+	soundstorage.sounds[2].Create(playerDead, gAudio);
+
+	const char* pauseSound = (*config).at("Sounds").at("menu").as<const char*>();
+	soundstorage.sounds[3].Create(pauseSound, gAudio);
+
+	const char* enemyHit = (*config).at("Sounds").at("ehit").as<const char*>();
+	soundstorage.sounds[4].Create(enemyHit, gAudio);
+
+	const char* enemyDead = (*config).at("Sounds").at("edeath").as<const char*>();
+	soundstorage.sounds[5].Create(enemyDead, gAudio);
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -259,12 +278,15 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		screenTimer = 0.0f;
 		levelStart = true;
 	}
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
-	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[0]);
-	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, LevelBegin[1]);
-	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[2]);
-	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[3]);
+	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[lm.levelIndex]);
+	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, "LAST 0" + std::to_string(lm.levelIndex) + " STAGE");
+	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[3]);
+	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -392,7 +414,18 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	ovl.TransferOverlay();
 }
 
-static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+void NumberOnePlayer(Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& font, int W, int H, std::string text) {
+	ctxbltr.ClearColor(0x00000000);
+	RenderOnScreen(font, (W / 2) - 100, H + 100, text);
+	unsigned int* titlePixels;
+	ctxovl.LockForUpdate(W * H, &titlePixels);
+	ctxbltr.ExportResult(false, W, H, 0, 0, titlePixels, nullptr, nullptr);
+	ctxovl.Unlock();
+	ctxovl.TransferOverlay();
+}
+
+static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H,
+	Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& ctxfont) {
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
@@ -400,7 +433,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	GW::INPUT::GBufferedInput::Events inputEvent;
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
-	if (leaderboard.Begin(registry)) {
+	bltr.ClearColor(0x00000000);
+	if (leaderboard.IsNewHighscore()) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 50, "New Highscore!");
 		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, "Input Initials (Ex. \"ABC\")");
 		if (forTyping.size() == 0) {
@@ -416,10 +450,20 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data != G_KEY_ENTER) {
 					forTyping[forTyping.size() - 1] += (char)inputData.data;
 				}
+				else if (inputData.data == G_KEY_ENTER) {
+					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
+				}
 			}
 		}
 	}
-	bltr.ClearColor(0x00000000);
+	else {
+		NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
+		RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
+		for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
+			RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+			RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+		}
+	}
 	RenderOnScreen(font, W / 8, 25, UI[0]);
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
@@ -441,22 +485,16 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	using namespace GW::AUDIO;
 	auto& menuMusic = registry.ctx().get<GMusic>();
 	auto& audio = registry.ctx().get<GAudio>();
-	auto& ctxSfx = registry.ctx().get<GSound>();
-	auto& sfx = registry.get<GSound>(entity);
 	auto& gameMusic = registry.get<GMusic>(entity);
-	auto& soundCues = registry.ctx().get<GAME::SoundCue>();
-	if (soundCues.sound1) {
-		const char* hitSound = config->at("Sounds").at("phit").as<const char*>();
-		ctxSfx.Create(hitSound, audio);
-		ctxSfx.Play();
-		soundCues.sound1 = false;
+
+	auto& soundStorage = registry.ctx().get<GAME::SoundStorage>();
+	for (int i = 0; i < soundStorage.sounds.size(); i++) {
+		if (soundStorage.soundCues[i]) {
+			soundStorage.sounds[i].Play();
+			soundStorage.soundCues[i] = false;
+		}
 	}
-	if (soundCues.sound2) {
-		const char* shootSound = config->at("Sounds").at("pshoot").as<const char*>();
-		sfx.Create(shootSound, audio);
-		//sfx.Play();
-		soundCues.sound2 = false;
-	}
+
 	while (+pressEvents.Pop(event))
 	{
 		auto gameManager = registry.view<GAME::GameManager>();
@@ -476,9 +514,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				else {
 					PrevOverlayIndex = OverlayIndex;
 					OverlayIndex = 3;
-					const char* pauseSound = (*config).at("Sounds").at("menu").as<const char*>();
-					sfx.Create(pauseSound, audio, sfxVol);
-					sfx.Play();
+					soundStorage.soundCues[3] = true;
 					for (auto ent : gameManager) {
 						registry.emplace_or_replace<GAME::Paused>(ent);
 					}
@@ -601,7 +637,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_SPACE
 				&& OverlayIndex == 0) {
 				OverlayIndex = 1;
-				gameMusic.SetVolume(musicVol);
+				//gameMusic.SetVolume(musicVol * gameMusicModifier);
 				menuMusic.Stop();
 				gameMusic.Play(true);
 			}
@@ -609,7 +645,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				OverlayIndex = 2;
 				levelStart = false;
 			}
-			int check = inputData.data;
+
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT) && settingsOpen) {
 				switch (volIndex) {
 				case 3:
@@ -619,7 +655,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					musicVol += volChange;
 					break;
 				case 5:
-					sfxVol += sfxVolChange;
+					sfxVol += volChange;
 					break;
 				}
 			}
@@ -633,47 +669,63 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					musicVol -= volChange;
 					break;
 				case 5:
-					sfxVol -= sfxVolChange;
+					sfxVol -= volChange;
 					break;
 				}
 			}
 			audio.SetMasterVolume(masterVol);
 			menuMusic.SetVolume(musicVol);
-			gameMusic.SetVolume(musicVol * gameMusicModifier);
-			ctxSfx.SetVolume(sfxVol);
-			sfx.SetVolume(sfxVol);
+			gameMusic.SetVolume(musicVol);
+			for (int i = 0; i < soundStorage.sounds.size(); i++) {
+				soundStorage.sounds[i].SetVolume(sfxVol);
+			}
 		}
 	}
 	auto& displayOvl = registry.ctx().get<Overlay>();
 	auto& ctxBltr = registry.ctx().get<GW::GRAPHICS::GBlitter>();
 	auto& ctxFont = registry.ctx().get<BLIT_Font>();
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+	if (lm.levelComplete) {
+		OverlayIndex = 4;
+		int enemiesleft = 0;
+		auto enemyView = registry.view<GAME::Enemy, GAME::ToDestroy>();
+		for (auto enemy : enemyView) 
+		enemiesleft++;
+	}
+	if (OverlayIndex == 4 && !levelStart) {
+		OverlayIndex = 1;
+	}
+
 	switch (OverlayIndex) {
 	case 0:
 		Title(displayOvl, ctxBltr, ctxFont, W, H, GameStart[3]);
 		StartMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 1:
 		ClearLargerText(displayOvl, ctxBltr, ctxFont, W, H);
 		StartOfLevel(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 2:
 		GameplayUI(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 3:
 		PauseMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 4:
 		EndOfLevel(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 5:
 		LoseMenu(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 6:
 		WinScreen(registry, ovl, bltr, font, W, H);
-	break;
+		break;
 	case 7:
-		HighScoreMenu(registry, ovl, bltr, font, W, H);
-	break;
+		HighScoreMenu(registry, ovl, bltr, font, W, H, displayOvl, ctxBltr, ctxFont);
+		break;
 	}
 }
 
@@ -715,6 +767,7 @@ std::string TypewriterEffect(entt::registry& registry, std::string& dest, std::s
 
 void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	std::string hits;
+	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 	auto player = registry.view<GAME::Player>();
 	for (auto entity : player) {
 		auto hitpoints = registry.get<GAME::Lives>(entity).count;
@@ -723,7 +776,12 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 		}
 		if(hitpoints == 0) {
 			hits = "Vessel Destroyed";
-			OverlayIndex = 5;
+			if (!leaderboard.IsNewHighscore()) {
+				OverlayIndex = 5;
+			}
+			else {
+				OverlayIndex = 7;
+			}
 		}
 	}
 	RenderOnScreen(font, 5, H - 20, hits);
@@ -823,19 +881,13 @@ void RegularOptions(BLIT_Font& font, int W, int H) {
 
 std::string ShowVolume(float volume) {
 	int range;
-	if(volume == sfxVol) {
-		volume = sfxVol;
-		range = static_cast<int>(volume / 0.001f);
-	}
-	else {
-		 range = static_cast<int>(volume / 0.05f);
-	}
+	range = static_cast<int>(volume / 0.01f);
 	if (range <= 0) {
 		volume = 0.00f;
 		return "OFF";
 	}
-	if (range >= 6) {
-		volume = 0.30f;
+	if (range >= 10) {
+		volume = 0.1f;
 		return "MAX";
 	}
 	return std::to_string(range);
