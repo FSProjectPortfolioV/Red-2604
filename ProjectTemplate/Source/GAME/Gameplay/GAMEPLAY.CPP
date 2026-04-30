@@ -21,6 +21,11 @@ void Gameplay::EnemyDeath(entt::registry& registry, const GAME::EnemyConfig& cfg
 
 		registry.ctx().get<ScoreSystem>().AddPoints(cfg.Score);
 		std::cout << "Current Score: " << registry.ctx().get<ScoreSystem>().GetScore() << std::endl;
+		auto& lmView = registry.view<GAME::LevelManager>();
+		for (auto& lm : lmView) {
+			auto& Lm = registry.get<GAME::LevelManager>(lm);
+			Lm.enemyKilled++;
+		}
 		// Dead enemy
 		// Destroy the original enemy
 

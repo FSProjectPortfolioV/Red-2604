@@ -328,6 +328,13 @@
             if (registry.all_of<GAME::ShootingEnemy>(enemy))
                 shooterCount++;
 
+            entt::entity enemy = registry.create();
+            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
+            auto& lmView = registry.view<GAME::LevelManager>();
+            for (auto& lm : lmView) {
+                auto& Lm = registry.get<GAME::LevelManager>(lm);
+                Lm.enemyTotal++;
+            }
             currentSpawnDelay = CurrentList[0].SpawnRate;
             time = 0;
             CurrentList.erase(CurrentList.begin());
