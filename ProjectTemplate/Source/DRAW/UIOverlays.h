@@ -52,7 +52,7 @@ std::vector<std::string> FinalStats{
 std::vector<std::string> LevelStats{
 	"TERMINATING CRAFTS",
 	"BONUS",
-	"R X 1000 = "
+	"R X 1000   ="
 };
 
 std::vector<std::string> LevelBegin{
@@ -246,21 +246,23 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 		forTyping.push_back("");
 	}
 	forTyping[0] = TypewriterEffect(registry, forTyping[0], LevelStats[0], keyTimer, KeyCounters[0]);
-	RenderOnScreen(font, (W / 4) + 25, 150, forTyping[0]);
+	RenderOnScreen(font, (W / 4) - 25, 150, forTyping[0]);
 	if (forTyping[0] == LevelStats[0]) {
 		int rollsLeft = 0;
 		auto playerView = registry.view<GAME::Player, GAME::RollCharges>();
 		for (auto entity : playerView)
 		{
 			auto& charges = registry.get<GAME::RollCharges>(entity).charges;
-			RenderOnScreen(font, (W / 3) + 125, (H / 2), std::to_string(charges * 1000) + " PTS");
+			RenderOnScreen(font, (W / 2) + 50, (H / 2), std::to_string(charges * 1000) + " PTS");
 		}
 		auto lmView = registry.view<GAME::LevelManager>();
 		auto lmEntity = lmView.front();
 		auto& lm = registry.get<GAME::LevelManager>(lmEntity);
-		RenderOnScreen(font, (W / 2) + 100, (H / 2) - 150, std::to_string(ElimPercentages[ElimPercentages.size() - 1] + '%'));
+		//RenderOnScreen(font, (W / 2) + 100, (H / 2), std::to_string(ElimPercentages[ElimPercentages.size() - 1] + '%'));
+		RenderOnScreen(font, (W / 2) + 150, 150, std::to_string(1) + '%');
 		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 150, LevelStats[1]);
-		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, static_cast<const char*>(LevelProficiency(lm.enemyTotal, lm.enemyKilled) + " PTS"));
+		//RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(LevelProficiency(lm.enemyTotal, lm.enemyKilled)) + " PTS");
+		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(2));
 		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[2]);
 		if (screenTimer < screenTransition) {
 			screenTimer += deltaTime;
@@ -961,7 +963,7 @@ std::string CalculateTodaysTop() {
 	std::sort(ElimPercentages.begin(), ElimPercentages.end(), [](int a, int b) {
 		return a > b;
 	});
-	return std::to_string(ElimPercentages[0]) + "%";
+	return std::to_string(ElimPercentages[0]) + '%';
 }
 
 void FlashingUnderLine(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text) {
