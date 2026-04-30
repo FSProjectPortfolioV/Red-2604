@@ -17,7 +17,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.2,
+          "fireRate": 3.0,
           "movement": "WaveLeft"
         }
       }
@@ -37,7 +37,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.2,
+          "fireRate": 3.0,
           "movement": "WaveRight"
         }
       }
@@ -77,7 +77,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.0,
+          "fireRate": 3.0,
           "movement": "WaveLeft"
         }
       }
@@ -97,7 +97,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 1.0,
+          "fireRate": 3.0,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -117,7 +117,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 1.0,
+          "fireRate": 3.0,
           "movement": "ArrowHeadRight"
         }
       }
@@ -137,7 +137,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 1.0,
+          "fireRate": 3.0,
           "movement": "ArrowHeadDown"
         }
       }
@@ -157,7 +157,7 @@
           "hitpoints": 50,
           "scale": 1.5,
           "score": 1500,
-          "fireRate": 0.7,
+          "fireRate": 2.7,
           "movement": "BigGuy"
         }
       }
@@ -176,7 +176,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -195,7 +195,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -214,7 +214,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -233,7 +233,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -253,7 +253,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -273,7 +273,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "ArrowHeadRight"
         }
       }
@@ -293,7 +293,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "WaveLeft"
         }
       }
@@ -313,7 +313,7 @@
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 0.9,
+          "fireRate": 2.9,
           "movement": "WaveRight"
         }
       }
@@ -450,7 +450,7 @@
           "hitpoints": 70,
           "scale": 3.0,
           "score": 3500,
-          "fireRate": 1.4,
+          "fireRate": 2.4,
           "movement": "TheFinal"
         }
       }

@@ -72,7 +72,7 @@
     static entt::entity SpawnEnemy(entt::registry& registry,
         const DRAW::ModelManager& manager,
         const GAME::Transform& transform,
-        const GAME::EnemyConfig& cfg, const float SpeedMult)
+        const GAME::EnemyConfig& cfg, const float SpeedMult, int currentShooterCount = 0)
     {
         // Create entity
         entt::entity enemy = registry.create();
@@ -86,12 +86,12 @@
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
 
         //applying shooting enemytag
-        int chancetoshoot = 90; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
         if (config.Movement == GAME::FormationStyle::BigGuy || config.Movement == GAME::FormationStyle::TheFinal) {
             registry.emplace<GAME::ShootingEnemy>(enemy);
         }
         else {
-            srand(time(NULL));
+            // Start high, drop sharply as shooters accumulate
+            int chancetoshoot = (std::max)(5, 80 - (currentShooterCount * 30));
             int resultofroll = (rand() % 100);
             if (resultofroll <= chancetoshoot) {
                 registry.emplace<GAME::ShootingEnemy>(enemy);
@@ -316,15 +316,25 @@
         }
         static float time = 0;
         static float currentSpawnDelay = 0;
+        static int shooterCount = 0;
         double dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
         time += dt;
         if (time > currentSpawnDelay) {
+            entt::entity enemy = SpawnEnemy(registry, manager, CurrentList[0].SpawnLocation,
+                CurrentList[0].Enemy, CurrentList[0].SpeedMult,
+                shooterCount);
 
-            entt::entity enemy = registry.create();
-            enemy = SpawnEnemy(registry,manager, CurrentList[0].SpawnLocation, CurrentList[0].Enemy,CurrentList[0].SpeedMult);
+            // Check if this enemy became a shooter and increment count
+            if (registry.all_of<GAME::ShootingEnemy>(enemy))
+                shooterCount++;
+
             currentSpawnDelay = CurrentList[0].SpawnRate;
             time = 0;
             CurrentList.erase(CurrentList.begin());
+
+            // Reset shooter count when queue is emptied
+            if (CurrentList.empty())
+                shooterCount = 0;
         }
     }
 

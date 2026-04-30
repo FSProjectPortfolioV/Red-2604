@@ -17,7 +17,7 @@
           "hitpoints": 1,
           "scale": 1.0,
           "score": 100,
-          "fireRate": 2.0,
+          "fireRate": 4.0,
           "movement": "WaveLeft"
         }
       }
@@ -37,7 +37,7 @@
           "hitpoints": 1,
           "scale": 1.0,
           "score": 100,
-          "fireRate": 2.0,
+          "fireRate": 4.0,
           "movement": "WaveRight"
         }
       }
@@ -57,7 +57,7 @@
           "hitpoints": 1,
           "scale": 1.0,
           "score": 100,
-          "fireRate": 2.0,
+          "fireRate": 3.5,
           "movement": "WaveLeft"
         }
       }
@@ -77,7 +77,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.5,
+          "fireRate": 5.0,
           "movement": "ArrowHeadDown"
         }
       }
@@ -97,7 +97,7 @@
           "hitpoints": 1,
           "scale": 1.0,
           "score": 100,
-          "fireRate": 1.8,
+          "fireRate": 3.6,
           "movement": "WaveRight"
         }
       }
@@ -117,7 +117,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.5,
+          "fireRate": 3.0,
           "movement": "ArrowHeadDown"
         }
       }
@@ -137,7 +137,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.5,
+          "fireRate": 3.0,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -157,7 +157,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.5,
+          "fireRate": 3.0,
           "movement": "ArrowHeadRight"
         }
       }
@@ -177,7 +177,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.2,
+          "fireRate": 3.0,
           "movement": "ArrowHeadLeft"
         }
       }
@@ -197,7 +197,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 1.2,
+          "fireRate": 3.0,
           "movement": "ArrowHeadRight"
         }
       }
@@ -217,7 +217,7 @@
           "hitpoints": 4,
           "scale": 1.2,
           "score": 200,
-          "fireRate": 1.6,
+          "fireRate": 3.0,
           "movement": "ArrowHeadDown"
         }
       }
@@ -237,7 +237,7 @@
           "hitpoints": 12,
           "scale": 1.2,
           "score": 200,
-          "fireRate": 1.9,
+          "fireRate": 3.8,
           "movement": "BigGuy"
         }
       }
