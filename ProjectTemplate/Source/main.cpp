@@ -254,7 +254,6 @@ void GameplayBehavior(entt::registry& registry)
 	// Look up model names from config
 	std::string explosionModelName = config->at("Explosion").at("model").as<std::string>();
 	std::string playerModelName = config->at("Player").at("model").as<std::string>();
-	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
 
 	// Clone meshes
 	CloneModelToEntity(
@@ -263,6 +262,10 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
+
+	// Player hitbox tuning
+	playerCollection.collider.extent.y *= 10.0f;
+	playerCollection.collider.extent.z -= 0.75f;
 }
 
 // This function will be called by the main loop to update the main loop

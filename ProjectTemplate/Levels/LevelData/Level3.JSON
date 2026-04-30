@@ -11,7 +11,7 @@
                 "speedMult": 0.9,
                 "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 9.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -30,7 +30,7 @@
                 "speedMult": 0.9,
                 "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 19.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -49,7 +49,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -68,7 +68,7 @@
                 "speedMult": 0.9,
                 "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 19.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -87,7 +87,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -106,7 +106,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -125,7 +125,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -144,7 +144,7 @@
                 "speedMult": 0.5,
                 "spawnLocation": { "x": -15.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 15.0,
                     "hitpoints": 30,
                     "scale": 3.0,
@@ -163,7 +163,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -182,7 +182,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -201,7 +201,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": -35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -220,7 +220,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 35.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,
@@ -239,7 +239,7 @@
                 "speedMult": 0.6,
                 "spawnLocation": { "x": 15.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 15.0,
                     "hitpoints": 40,
                     "scale": 3.0,
@@ -258,7 +258,7 @@
                 "speedMult": 1.0,
                 "spawnLocation": { "x": 0.0, "y": -4.0, "z": 30.0 },
                 "enemy": {
-                    "modelName": "Cactus",
+                    "modelName": "UFO",
                     "speed": 20.0,
                     "hitpoints": 3,
                     "scale": 1.0,

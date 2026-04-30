@@ -118,7 +118,11 @@
         );
 
         // Override transform with the one passed in
+        GW::MATH::GMatrix::IdentityF(enemyTransform.matrix);
         enemyTransform = transform;
+
+        // Scale up hitbox (for enemies too short for bullets to actually hit the model)
+        collection.collider.extent.y *= 10.0f;
 
         for (auto mesh : collection.meshEntities)
         {
