@@ -566,6 +566,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 						registry.remove<GAME::Roll>(player);
 					if (registry.all_of<GAME::HasSideFighters>(player))
 						registry.remove<GAME::HasSideFighters>(player);
+					if (registry.all_of<GAME::MultiShot>(player))
+						registry.remove<GAME::MultiShot>(player);
 
 					// Reset roll charges
 					if (registry.all_of<GAME::RollCharges>(player))
