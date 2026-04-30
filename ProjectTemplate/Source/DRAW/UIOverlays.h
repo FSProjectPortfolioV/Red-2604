@@ -52,7 +52,6 @@ std::vector<std::string> FinalStats{
 std::vector<std::string> LevelStats{
 	"TERMINATING CRAFTS",
 	"BONUS",
-	"0000 PTS",
 	"R X 1000 = "
 };
 
@@ -116,6 +115,8 @@ void RegularOptions(BLIT_Font& font, int W, int H);
 void FlashingUnderLine(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text);
 std::string ShowVolume(float volume);
 std::string BuildRollCharges(int charges);
+int LevelProficiency(int spawned, int killed);
+std::string CalculateTodaysTop();
 
 void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
@@ -252,11 +253,15 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 		for (auto entity : playerView)
 		{
 			auto& charges = registry.get<GAME::RollCharges>(entity).charges;
-			RenderOnScreen(font, (W / 2) + 100, (H / 2), std::to_string(charges * 1000) + " PTS");
+			RenderOnScreen(font, (W / 3) + 125, (H / 2), std::to_string(charges * 1000) + " PTS");
 		}
+		auto lmView = registry.view<GAME::LevelManager>();
+		auto lmEntity = lmView.front();
+		auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+		RenderOnScreen(font, (W / 2) + 100, (H / 2) - 150, std::to_string(ElimPercentages[ElimPercentages.size() - 1] + '%'));
 		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 150, LevelStats[1]);
-		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, LevelStats[2]);
-		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[3]);
+		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, static_cast<const char*>(LevelProficiency(lm.enemyTotal, lm.enemyKilled) + " PTS"));
+		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[2]);
 		if (screenTimer < screenTransition) {
 			screenTimer += deltaTime;
 		}
@@ -389,6 +394,7 @@ static void LoseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlit
 	}
 	TypeLines(registry, font, W/3 - 100, H/4, FinalStats, ScreenTimers, KeyCounters, FinaleIdx3);
 	if(KeyCounters[2] >= FinalStats[2].length()) {
+		RenderOnScreen(font, W / 3 - 100, (H/4) + 200, CalculateTodaysTop());
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) + 100, EndGame[5]);
 		RegularOptions(font, W, H);
 	}
@@ -713,15 +719,16 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			registry.emplace<GAME::Paused>(ent);
 		}
 		OverlayIndex = 4;
-		auto& RollsBonus = registry.ctx().get<ScoreSystem>();
+		auto& Bonus = registry.ctx().get<ScoreSystem>();
 		auto playerView = registry.view<GAME::Player, GAME::RollCharges>();
 		for (auto entity : playerView)
 		{
 			auto& charges = registry.get<GAME::RollCharges>(entity).charges;
 			for (int i = 0; i < charges; i++) {
-				RollsBonus.AddPoints(1000);
+				Bonus.AddPoints(1000);
 			}
 		}
+		Bonus.AddPoints(LevelProficiency(lm.enemyTotal, lm.enemyKilled));
 	}
 
 	switch (OverlayIndex) {
@@ -918,15 +925,43 @@ std::string ShowVolume(float volume) {
 	return std::to_string(range);
 }
 
-//td::string ProficiencyPercentage(entt::registry& registry) {
-//	return;
-//
+int LevelProficiency (int spawned, int killed) {
+	ElimPercentages.push_back((killed / spawned) * 100);
+	int latest = ElimPercentages[ElimPercentages.size() - 1];
+	if ( latest >= 100) {
+		return 50000;
+	}
+	else if (latest > 95) {
+		return 20000;
+	}
+	else if (latest > 90) {
+		return 10000;
+	}
+	else if (latest > 85) {
+		return 5000;
+	}
+	else if (latest > 80) {
+		return 4000;
+	}
+	else if (latest > 70) {
+		return 3000;
+	}
+	else if (latest > 60) {
+		return 2000;
+	}
+	else if (latest > 50) {
+		return 1000;
+	}
+	else if (latest < 50) {
+		return 0;
+	}
+}
 
-std::string CalculateTodaysTop(std::vector<int> percentages) {
-	std::sort(percentages.begin(), percentages.end(), [](int a, int b) {
+std::string CalculateTodaysTop() {
+	std::sort(ElimPercentages.begin(), ElimPercentages.end(), [](int a, int b) {
 		return a > b;
 	});
-	return std::to_string(percentages[0]) + "%";
+	return std::to_string(ElimPercentages[0]) + "%";
 }
 
 void FlashingUnderLine(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text) {
