@@ -52,7 +52,7 @@
             Move = { -1.0f,0,0,1 };
         }
         else if (style == GAME::FormationStyle::ArrowHeadDown) {  //starts from the top and makes arrow facing down 
-            Move = { 0,0,1.0f,1 };
+            Move = { 0,0,-1.0f,1 };
         }
         else if (style == GAME::FormationStyle::ArrowHeadLeft) { //starts from the left and makes arrow facing right
             Move = { 1.0f,0,0,1 };
