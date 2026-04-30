@@ -309,21 +309,27 @@ void MainLoopBehavior(entt::registry& registry)
 			tDown = false;
 		}
 
-		//Update Game
+		// Update Game and Level
+		auto lmView = registry.view<GAME::LevelManager>();
 		auto gmView = registry.view<GAME::GameManager>();
-		for (auto gm : gmView) {
-			if (registry.all_of<GAME::GameOver>(gm) || registry.any_of<GAME::Paused>(gm)) {
-				continue;
+		bool gameIsPaused = false;
+		for (auto gm : gmView)
+		{
+			if (registry.all_of<GAME::Paused>(gm))
+			{
+				gameIsPaused = true;
+				break;
 			}
 			else {
 				registry.patch<GAME::GameManager>(gm);
 			}
 		}
 
-		// Update LevelManager
-		auto lmView = registry.view<GAME::LevelManager>();
-		for (auto entity : lmView)
-			registry.patch<GAME::LevelManager>(entity);
+		if (!gameIsPaused)
+		{
+			for (auto entity : lmView)
+				registry.patch<GAME::LevelManager>(entity);
+		}
 
 		// Check for level transition
 		auto lmTransView = registry.view<GAME::LevelManager>();
