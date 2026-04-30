@@ -61,11 +61,27 @@ void Update_Player(entt::registry& registry, entt::entity self)
 
     // Apply movement to the transform matrix
     GW::MATH::GMATRIXF newMat;
-    GW::MATH::GMatrix::TranslateLocalF(
-        transform.matrix,
-        GW::MATH::GVECTORF{ x, 0.0f, z, 0.0f },
-        newMat
-    );
+    if (registry.all_of<GAME::Roll>(self))
+    {
+        // During roll use global translation so rotation doesn't affect movement direction
+        GW::MATH::GMatrix::TranslateGlobalF(
+            transform.matrix,
+            GW::MATH::GVECTORF{ x, 0.0f, z, 0.0f },
+            newMat
+        );
+        // Also update the roll's start matrix position so the rotation stays centered
+        auto& roll = registry.get<GAME::Roll>(self);
+        roll.startMatrix.row4.x += x;
+        roll.startMatrix.row4.z += z;
+    }
+    else
+    {
+        GW::MATH::GMatrix::TranslateLocalF(
+            transform.matrix,
+            GW::MATH::GVECTORF{ x, 0.0f, z, 0.0f },
+            newMat
+        );
+    }
     transform.matrix = newMat;
 
     // Clamp player position to screen bounds
@@ -73,6 +89,54 @@ void Update_Player(entt::registry& registry, entt::entity self)
         auto& bounds = registry.ctx().get<GAME::Bounds>();
         transform.matrix.row4.x = std::clamp(transform.matrix.row4.x, bounds.left, bounds.right);
         transform.matrix.row4.z = std::clamp(transform.matrix.row4.z, bounds.bottom, bounds.top);
+    }
+
+    // Roll input
+    float rollState = 0.0f;
+    if (input.immediateInput.GetState(G_KEY_LEFTSHIFT, rollState) == GW::GReturn::SUCCESS && rollState > 0.0f)
+    {
+        if (!registry.all_of<GAME::Roll>(self) && !registry.all_of<GAME::Invuln>(self))
+        {
+            auto& charges = registry.get<GAME::RollCharges>(self);
+            if (charges.charges > 0)
+            {
+                charges.charges--;
+                auto& newRoll = registry.emplace<GAME::Roll>(self);
+                newRoll.startMatrix = transform.matrix;
+                // Invuln lasts the full roll duration
+                auto& inv = registry.emplace_or_replace<GAME::Invuln>(self);
+                inv.cooldown = newRoll.duration;
+                inv.isRoll = true;
+                std::cout << "Roll! Charges remaining: " << charges.charges << "\n";
+            }
+        }
+    }
+
+    // Update roll visual tilt
+    if (registry.all_of<GAME::Roll>(self))
+    {
+        auto& roll = registry.get<GAME::Roll>(self);
+        roll.timeRemaining -= (float)dt;
+
+        float progress = 1.0f - (roll.timeRemaining / roll.totalDuration);
+        float angle = progress * G_PI_F * 2.0f;
+
+        // Save current position before overwriting transform
+        GW::MATH::GVECTORF currentPos = transform.matrix.row4;
+
+        // Rotate from saved pre-roll orientation
+        GW::MATH::GMatrix::RotateZLocalF(roll.startMatrix, angle, transform.matrix);
+
+        // Restore current position so movement still applies correctly
+        transform.matrix.row4 = currentPos;
+
+        if (roll.timeRemaining <= 0.0f)
+        {
+            GW::MATH::GVECTORF finalPos = transform.matrix.row4;
+            transform.matrix = roll.startMatrix;
+            transform.matrix.row4 = finalPos;
+            registry.remove<GAME::Roll>(self);
+        }
     }
 
     // Firing cooldown

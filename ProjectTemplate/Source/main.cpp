@@ -229,6 +229,8 @@ void GameplayBehavior(entt::registry& registry)
 	auto& lives = registry.emplace<GAME::Lives>(player);
 	lives.count = (*config).at("Player").at("lives").as<int>();
 
+	registry.emplace<GAME::RollCharges>(player);
+
 	// Create game manager
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);
@@ -307,21 +309,27 @@ void MainLoopBehavior(entt::registry& registry)
 			tDown = false;
 		}
 
-		//Update Game
+		// Update Game and Level
+		auto lmView = registry.view<GAME::LevelManager>();
 		auto gmView = registry.view<GAME::GameManager>();
-		for (auto gm : gmView) {
-			if (registry.all_of<GAME::GameOver>(gm) || registry.any_of<GAME::Paused>(gm)) {
-				continue;
+		bool gameIsPaused = false;
+		for (auto gm : gmView)
+		{
+			if (registry.all_of<GAME::Paused>(gm))
+			{
+				gameIsPaused = true;
+				break;
 			}
 			else {
 				registry.patch<GAME::GameManager>(gm);
 			}
 		}
 
-		// Update LevelManager
-		auto lmView = registry.view<GAME::LevelManager>();
-		for (auto entity : lmView)
-			registry.patch<GAME::LevelManager>(entity);
+		if (!gameIsPaused)
+		{
+			for (auto entity : lmView)
+				registry.patch<GAME::LevelManager>(entity);
+		}
 
 		// Check for level transition
 		auto lmTransView = registry.view<GAME::LevelManager>();

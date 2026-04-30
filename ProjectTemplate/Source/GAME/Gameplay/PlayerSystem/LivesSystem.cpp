@@ -211,29 +211,28 @@ namespace GAME
 				auto& invuln = registry.get<Invuln>(player);
 				invuln.cooldown -= deltaTime;
 
-				int blinkStep = (int)(invuln.cooldown * 10.0f);
-				bool visible = (blinkStep % 2 == 0);
-
-				if (registry.all_of<DRAW::MeshCollection>(player))
+				if (!invuln.isRoll) // only blink during respawn invuln (not during a roll)
 				{
-					auto& meshes = registry.get<DRAW::MeshCollection>(player);
-					for (auto mesh : meshes.meshEntities)
+					int blinkStep = (int)(invuln.cooldown * 10.0f);
+					bool visible = (blinkStep % 2 == 0);
+
+					if (registry.all_of<DRAW::MeshCollection>(player))
 					{
-						registry.emplace_or_replace<Visible>(mesh).show = visible;
+						auto& meshes = registry.get<DRAW::MeshCollection>(player);
+						for (auto mesh : meshes.meshEntities)
+							registry.emplace_or_replace<Visible>(mesh).show = visible;
 					}
 				}
 
 				if (invuln.cooldown <= 0.0f)
 				{
 					registry.remove<Invuln>(player);
-					
+
 					if (registry.all_of<DRAW::MeshCollection>(player))
 					{
 						auto& meshes = registry.get<DRAW::MeshCollection>(player);
 						for (auto mesh : meshes.meshEntities)
-						{
 							registry.emplace_or_replace<Visible>(mesh).show = true;
-						}
 					}
 				}
 			}
