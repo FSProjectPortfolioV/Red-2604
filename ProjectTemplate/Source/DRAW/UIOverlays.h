@@ -10,7 +10,6 @@
 #include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
 #include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
-#include "../GAME/GameManager.cpp"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -55,8 +54,9 @@ std::vector<std::string> LevelStats{
 };
 
 std::vector<std::string> LevelBegin{
-	"Rank",
-	"LAST ## STAGE",
+	"Cadet",
+	"Master Chief",
+	"Admiral",
 	"READY",
 	"PLAYER 1"
 };
@@ -255,12 +255,15 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		screenTimer = 0.0f;
 		levelStart = true;
 	}
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
-	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[0]);
-	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, LevelBegin[1]);
-	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[2]);
-	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[3]);
+	RenderOnScreen(font, (W / 2) - 35, (H / 2) - 200, LevelBegin[lm.levelIndex]);
+	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, "LAST 0" + std::to_string(lm.levelIndex) + " STAGE");
+	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[3]);
+	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
@@ -388,7 +391,18 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	ovl.TransferOverlay();
 }
 
-static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
+void NumberOnePlayer(Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& font, int W, int H, std::string text) {
+	ctxbltr.ClearColor(0x00000000);
+	RenderOnScreen(font, (W / 2) - 100, H + 100, text);
+	unsigned int* titlePixels;
+	ctxovl.LockForUpdate(W * H, &titlePixels);
+	ctxbltr.ExportResult(false, W, H, 0, 0, titlePixels, nullptr, nullptr);
+	ctxovl.Unlock();
+	ctxovl.TransferOverlay();
+}
+
+static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H,
+	Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& ctxfont) {
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
@@ -396,7 +410,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	GW::INPUT::GBufferedInput::Events inputEvent;
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
-	if (leaderboard.Begin(registry)) {
+	bltr.ClearColor(0x00000000);
+	if (leaderboard.IsNewHighscore()) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 50, "New Highscore!");
 		RenderOnScreen(font, (W / 2) - 100, (H / 2) - 150, "Input Initials (Ex. \"ABC\")");
 		if (forTyping.size() == 0) {
@@ -412,10 +427,20 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data != G_KEY_ENTER) {
 					forTyping[forTyping.size() - 1] += (char)inputData.data;
 				}
+				else if (inputData.data == G_KEY_ENTER) {
+					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
+				}
 			}
 		}
 	}
-	bltr.ClearColor(0x00000000);
+	else {
+		NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
+		RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
+		for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
+			RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+			RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+		}
+	}
 	RenderOnScreen(font, W / 8, 25, UI[0]);
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
 	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
@@ -545,6 +570,22 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto& displayOvl = registry.ctx().get<Overlay>();
 	auto& ctxBltr = registry.ctx().get<GW::GRAPHICS::GBlitter>();
 	auto& ctxFont = registry.ctx().get<BLIT_Font>();
+
+
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+	if (lm.levelComplete) {
+		OverlayIndex = 4;
+		int enemiesleft = 0;
+		auto enemyView = registry.view<GAME::Enemy, GAME::ToDestroy>();
+		for (auto enemy : enemyView) 
+		enemiesleft++;
+	}
+	if (OverlayIndex == 4 && !levelStart) {
+		OverlayIndex = 1;
+	}
+
 	switch (OverlayIndex) {
 	case 0:
 		Title(displayOvl, ctxBltr, ctxFont, W, H, GameStart[3]);
@@ -570,7 +611,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		WinScreen(registry, ovl, bltr, font, W, H);
 	break;
 	case 7:
-		HighScoreMenu(registry, ovl, bltr, font, W, H);
+		HighScoreMenu(registry, ovl, bltr, font, W, H, displayOvl, ctxBltr, ctxFont);
 	break;
 	}
 }
@@ -613,6 +654,7 @@ std::string TypewriterEffect(entt::registry& registry, std::string& dest, std::s
 
 void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	std::string hits;
+	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 	auto player = registry.view<GAME::Player>();
 	for (auto entity : player) {
 		auto hitpoints = registry.get<GAME::Lives>(entity).count;
@@ -621,7 +663,12 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 		}
 		if(hitpoints == 0) {
 			hits = "Vessel Destroyed";
-			OverlayIndex = 5;
+			if (!leaderboard.IsNewHighscore()) {
+				OverlayIndex = 5;
+			}
+			else {
+				OverlayIndex = 7;
+			}
 		}
 	}
 	RenderOnScreen(font, 5, H - 20, hits);
