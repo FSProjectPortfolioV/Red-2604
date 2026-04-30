@@ -229,6 +229,8 @@ void GameplayBehavior(entt::registry& registry)
 	auto& lives = registry.emplace<GAME::Lives>(player);
 	lives.count = (*config).at("Player").at("lives").as<int>();
 
+	registry.emplace<GAME::RollCharges>(player);
+
 	// Create game manager
 	entt::entity gm = registry.create();
 	registry.emplace<GAME::GameManager>(gm);

@@ -125,6 +125,7 @@ namespace GAME
 	struct Invuln 
 	{
 		float cooldown;
+		bool isRoll = false; // if true, skip blink logic
 	};
 
 	struct SpriteAnimation
@@ -282,4 +283,16 @@ namespace GAME
 		}
 	}
 
+	struct Roll
+	{
+		float duration = 1.0f;      // how long the roll lasts
+		float timeRemaining = 1.0f; // countdown
+		float totalDuration = 1.0f; // stored for rotation calculation
+		GW::MATH::GMATRIXF startMatrix; // save pre-roll orientation
+	};
+
+	struct RollCharges
+	{
+		int charges = 3;            // how many times the player can roll
+	};
 }// namespace GAME
