@@ -70,8 +70,8 @@
     }
 
     static entt::entity SpawnEnemy(entt::registry& registry,
-        const DRAW::ModelManager& manager, 
-        const GAME::Transform& transform, 
+        const DRAW::ModelManager& manager,
+        const GAME::Transform& transform,
         const GAME::EnemyConfig& cfg, const float SpeedMult)
     {
         // Create entity
@@ -86,7 +86,7 @@
         auto& vel = registry.emplace<GAME::Velocity>(enemy);
 
         //applying shooting enemytag
-        int chancetoshoot = 20; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
+        int chancetoshoot = 75; // chance to become an enemy that fires bullets! example: 10 = 10% chance!
         if (config.Movement == GAME::FormationStyle::BigGuy || config.Movement == GAME::FormationStyle::TheFinal) {
             registry.emplace<GAME::ShootingEnemy>(enemy);
         }
@@ -120,6 +120,9 @@
         // Override transform with the one passed in
         GW::MATH::GMatrix::IdentityF(enemyTransform.matrix);
         enemyTransform = transform;
+        GW::MATH::GVECTORF scaler = {cfg.Scale, cfg.Scale, cfg.Scale, 1};
+        GW::MATH::GMatrix::ScaleGlobalF(enemyTransform.matrix,scaler, enemyTransform.matrix);
+        enemyTransform.matrix.row4.y = 0;
 
         // Scale up hitbox (for enemies too short for bullets to actually hit the model)
         collection.collider.extent.y *= 10.0f;

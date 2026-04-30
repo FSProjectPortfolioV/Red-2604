@@ -35,13 +35,14 @@
         {
             GAME::Wave wave;
             wave.triggerTime = waveJson.at("triggerTime").get<float>();
-
+            wave.EnemyNumber = waveJson.at("enemyCount").get<int>();
             auto& tokenJson = waveJson.at("token");
             auto& enemyJson = tokenJson.at("enemy");
 
             wave.token.Style = GAME::FormationFromString(tokenJson.at("style").get<std::string>());
             wave.token.SpawnRate = tokenJson.at("spawnRate").get<float>();
             wave.token.SpeedMult = tokenJson.at("speedMult").get<float>();
+           
 
             // Build spawn location matrix from JSON position
             auto& loc = tokenJson.at("spawnLocation");

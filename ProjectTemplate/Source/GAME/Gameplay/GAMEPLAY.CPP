@@ -104,7 +104,7 @@ void Gameplay::EnemySpawn(entt::registry& registry, float dt)
 	}
 }
 
-void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token)
+void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token, const int enemyCount)
 {
 	auto& manager = registry.ctx().get<DRAW::ModelManager>();
 
@@ -125,7 +125,7 @@ void Gameplay::EnemySpawn(entt::registry& registry, const GAME::EnemyToken& toke
 		SpawnFormation(
 			registry,
 			token.Style,
-			5, 5, 1,
+			enemyCount, 5, 1,
 			spawnTransform,
 			token.Enemy,
 			manager,
@@ -241,8 +241,8 @@ void Gameplay::EnemyShoot(entt::registry& registry, entt::entity TheEnemy, int b
 	}
 	else if (bulletcount == 3) {
 		GW::MATH::GVECTORF T1 = { 0,0,1.0f,1 }; //bullet angle!
-		GW::MATH::GVECTORF T2 = { 0.5,0,0.5f,1 }; //bullet angle!
-		GW::MATH::GVECTORF T3 = { -0.5,0,0.5f,1 }; //bullet angle!
+		GW::MATH::GVECTORF T2 = { 0.5,0,-0.5f,1 }; //bullet angle!
+		GW::MATH::GVECTORF T3 = { -0.5,0,-0.5f,1 }; //bullet angle!
 		entt::entity enemyBullet1 = registry.create();
 		entt::entity enemyBullet2 = registry.create();
 		entt::entity enemyBullet3 = registry.create();
@@ -283,6 +283,11 @@ entt::entity Gameplay::EnemyBulletCreator(entt::registry& registry, GAME::Transf
 
 	// Override transform with the one passed in
 	enemyBulletTransform = StartLocation;
+
+	GW::MATH::GVECTORF scale;
+	GW::MATH::GMatrix::GetScaleF(StartLocation.matrix, scale);
+	scale = { 1 / scale.x, 1 / scale.y, 1 / scale.z, 1};
+	GW::MATH::GMatrix::ScaleGlobalF(enemyBulletTransform.matrix, scale, enemyBulletTransform.matrix);
 	//setting up the correct rotation 
 	int rotation = 180;
 

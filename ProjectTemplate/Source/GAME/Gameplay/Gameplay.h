@@ -18,7 +18,7 @@ struct Gameplay
 	static void EnemySpawn(entt::registry& registry, float dt);
 
 	//MAIN WAY OF SPAWNING ENEMIES
-	static void EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token);
+	static void EnemySpawn(entt::registry& registry, const GAME::EnemyToken& token, const int enemyCount);
 
 	//MAIN WAY OF MODDIFYING ENEMY MOVEMENT MID GAMEPLAY, ONLY FOR CERTAIN ENEMIES
 	static void EnemyMovementUpdates(entt::registry& registry); 

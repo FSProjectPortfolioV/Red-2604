@@ -64,6 +64,7 @@ namespace GAME
 	{
 		float triggerTime;
 		EnemyToken token;
+		int EnemyNumber;
 	};
 
 	struct LevelData
