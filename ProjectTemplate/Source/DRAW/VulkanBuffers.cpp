@@ -6,7 +6,7 @@ namespace DRAW
 	void AddSceneData(entt::registry& registry, entt::entity entity)
 	{
 		auto& sceneData = registry.emplace<SceneData>(entity,
-			SceneData{ { 1.0f, -1.0f, 2.0f }, { 0.9f, 0.9f, 0.9f }, { 0.75f, 0.75f, 0.75f }, { 0.0f,  45.0f, -5.0f } });
+			SceneData{ { 1.0f, -1.0f, 2.0f }, { 0.9f, 0.9f, 0.9f }, { 0.65f, 0.65f, 0.65f }, { 0.0f,  45.0f, -5.0f } });
 		
 
 		GW::MATH::GVector::NormalizeF(sceneData.sunDirection, sceneData.sunDirection);
