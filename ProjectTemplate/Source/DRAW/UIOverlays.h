@@ -558,6 +558,19 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					// Reset roll charges
 					if (registry.all_of<GAME::RollCharges>(player))
 						registry.get<GAME::RollCharges>(player).charges = 3;
+
+					//Check if player has collider
+					if (registry.all_of<GAME::Collidable>(player))
+					{
+						std::cout << "Player has collider" << std::endl;
+					}
+					else
+					{
+						std::cout << "Player has NO collider" << std::endl;
+						// If not, add it back
+						registry.emplace_or_replace<GAME::Collidable>(player);
+					}
+
 				}
 
 				// Reset score

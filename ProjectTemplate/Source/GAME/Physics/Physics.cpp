@@ -346,5 +346,17 @@ void Physics::WorldLimit(entt::registry& registry) {
 				registry.emplace_or_replace<GAME::ToDestroy>(entity);
 			}
 		}
+
+		//PowerUp bounds check
+		auto& PowerUpTrans = registry.view<GAME::PowerUp, GAME::Transform>();
+		for (auto& entity : PowerUpTrans) {
+			auto& entTrans = registry.get<GAME::Transform>(entity);
+			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+		}
 	}
 }
