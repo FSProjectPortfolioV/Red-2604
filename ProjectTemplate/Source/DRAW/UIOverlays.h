@@ -110,6 +110,7 @@ void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text);
 void RegularOptions(BLIT_Font& font, int W, int H);
 void FlashingUnderLine(entt::registry& registry, BLIT_Font& font, int W, int H, std::string text);
 std::string ShowVolume(float volume);
+std::string BuildRollCharges(int charges);
 
 void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
@@ -626,6 +627,14 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, 5, H - 20, hits);
 }
 
+std::string BuildRollCharges(int charges)
+{
+	std::string result;
+	for (int i = 0; i < charges; i++)
+		result += "R ";
+	return result;
+}
+
 void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, W / 8, 25, UI[0]);
 	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
@@ -638,6 +647,16 @@ void SetRegularUI(entt::registry& registry, BLIT_Font& font, int W, int H) {
 	RenderOnScreen(font, (W / 2), 60, localHighscore);
 	RenderOnScreen(font, (W / 8) + 15, 60, score);
 	countLives(registry, font, W, H);
+
+	// Roll charges display
+	auto playerView = registry.view<GAME::Player, GAME::RollCharges>();
+	for (auto entity : playerView)
+	{
+		auto& charges = registry.get<GAME::RollCharges>(entity);
+		std::string rollStr = BuildRollCharges(charges.charges);
+		int xPos = W - 15 - (charges.charges * 25); // Subtract 25 per charge
+		RenderOnScreen(font, xPos, H - 20, rollStr);
+	}
 }
 
 void RenderOnScreen(BLIT_Font& font, int W, int H, std::string text) {
