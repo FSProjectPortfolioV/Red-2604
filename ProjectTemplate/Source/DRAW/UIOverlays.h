@@ -155,7 +155,7 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	GSound& gSound = registry.ctx().emplace<GSound>();
 	registry.emplace<GSound>(entity);
-	registry.ctx().emplace<GAME::SoundCue>();
+	registry.ctx().emplace<GAME::SoundStorage>();
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -467,7 +467,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto& ctxSfx = registry.ctx().get<GSound>();
 	auto& sfx = registry.get<GSound>(entity);
 	auto& displayMusic = registry.get<GMusic>(entity);
-	auto& soundCues = registry.ctx().get<GAME::SoundCue>();
+	auto& soundCues = registry.ctx().get<GAME::SoundStorage>();
 	if (soundCues.sound1) {
 		const char* hitSound = config->at("Sounds").at("phit").as<const char*>();
 		ctxSfx.Create(hitSound, audio);
@@ -477,7 +477,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	if (soundCues.sound2) {
 		const char* shootSound = config->at("Sounds").at("pshoot").as<const char*>();
 		sfx.Create(shootSound, audio);
-		//sfx.Play();
+		sfx.Play();
 		soundCues.sound2 = false;
 	}
 	while (+pressEvents.Pop(event))
