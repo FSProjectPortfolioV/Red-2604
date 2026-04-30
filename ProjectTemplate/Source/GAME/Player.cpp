@@ -149,6 +149,9 @@ void Update_Player(entt::registry& registry, entt::entity self)
 
             // Override the transform
             bulletTransform.matrix = transform.matrix;
+            bulletTransform.matrix.row1.x *= 0.75f;
+            bulletTransform.matrix.row2.y *= 0.75f;
+            bulletTransform.matrix.row3.z *= 0.75f;
 
             for (auto mesh : bulletCollection.meshEntities) {
                 auto& inst = registry.get<DRAW::GPUInstance>(mesh);
@@ -225,6 +228,9 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
                 fighterData.targetOffset,
                 bulletTransform.matrix
 			);
+            bulletTransform.matrix.row1.x *= 0.75f;
+            bulletTransform.matrix.row2.y *= 0.75f;
+            bulletTransform.matrix.row3.z *= 0.75f;
 
             for (auto mesh : bulletCollection.meshEntities)
             {
