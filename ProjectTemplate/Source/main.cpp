@@ -16,6 +16,7 @@
 #include "GAME/Gameplay/PlayerSystem/LivesSystem.h"
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
 #include "GAME/LevelLoader.h"
+#include "GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 
 
 // Local routines for specific application behavior
@@ -35,6 +36,8 @@ int main()
 	registry.ctx().emplace<FirebaseLeaderboardAPI>("leaderboard-2851-default-rtdb.firebaseio.com", "/Leaderboard/Entries.json");
 	registry.ctx().emplace<HighscoreScreenController>();
 	registry.ctx().emplace<InitialsEntrySystem>();
+	registry.ctx().emplace<LocalHighscoreSystem>();
+	registry.ctx().get<LocalHighscoreSystem>().Load();
 
 	// initialize the ECS Component Logic
 	CCL::InitializeComponentLogic(registry);
@@ -242,7 +245,6 @@ void GameplayBehavior(entt::registry& registry)
 	// Look up model names from config
 	std::string explosionModelName = config->at("Explosion").at("model").as<std::string>();
 	std::string playerModelName = config->at("Player").at("model").as<std::string>();
-	std::string enemyModelName = config->at("Enemy1").at("model").as<std::string>();
 
 	// Clone meshes
 	CloneModelToEntity(
@@ -251,6 +253,10 @@ void GameplayBehavior(entt::registry& registry)
 		playerCollection,
 		playerTransform
 	);
+
+	// Player hitbox tuning
+	playerCollection.collider.extent.y *= 10.0f;
+	playerCollection.collider.extent.z -= 0.75f;
 }
 
 // This function will be called by the main loop to update the main loop
@@ -278,6 +284,28 @@ void MainLoopBehavior(entt::registry& registry)
 		GAME::RespawnPlayer(registry, (float)deltaTime);
 		GAME::PlayerExplosion(registry, (float)deltaTime);
 		GAME::UpdateHighscoreEntry(registry);
+
+		auto& input = registry.ctx().get<UTIL::Input>();
+
+		static bool tDown = false;
+		float state = 0.0f;
+
+		if (input.immediateInput.GetState(G_KEY_T, state) == GW::GReturn::SUCCESS && state > 0.0f)
+		{
+			if (!tDown)
+			{
+				auto& localHighscore = registry.ctx().get<LocalHighscoreSystem>();
+				localHighscore.Update(10000);
+
+				std::cout << "Test highscore update ran\n";
+			}
+
+			tDown = true;
+		}
+		else
+		{
+			tDown = false;
+		}
 
 		//Update Game
 		auto gmView = registry.view<GAME::GameManager>();

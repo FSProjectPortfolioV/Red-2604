@@ -110,6 +110,13 @@ namespace DRAW
 				{
 					std::string texName = material.map_Kd;
 
+					// Convert full file path to a relative path
+					size_t pos = texName.find("Textures/");
+					if (pos != std::string::npos)
+					{
+						texName = texName.substr(pos);
+					}
+
 					if (manager.textures.find(texName) == manager.textures.end())
 					{
 						TextureData newTex;

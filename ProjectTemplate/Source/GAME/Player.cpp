@@ -107,6 +107,10 @@ void Update_Player(entt::registry& registry, entt::entity self)
         //registry.emplace<GAME::Paused>(self);
     }
 
+    if (input.immediateInput.GetState(G_KEY_0, pressed) == GW::GReturn::SUCCESS && pressed > 0.0f) {
+		ClearPowerUPs(registry, self);
+    }
+
     // Normalize
     float bulletMag = sqrtf(dir.x * dir.x + dir.z * dir.z);
     if (bulletMag > 0.001f) {
@@ -157,6 +161,40 @@ void Update_Player(entt::registry& registry, entt::entity self)
 
     if (firePressed)
     {
+        auto SpawnBullet = [&](GW::MATH::GVECTORF bulletVelocity)
+        {
+            entt::entity bullet = registry.create();
+
+            // Add components
+            registry.emplace<GAME::Velocity>(bullet, bulletVelocity);
+            registry.emplace<GAME::Bullet>(bullet);
+            registry.emplace<GAME::Collidable>(bullet);
+            auto& bulletTransform = registry.emplace<GAME::Transform>(bullet);
+
+            // Clone meshes
+            auto& manager = registry.ctx().get<DRAW::ModelManager>();
+            auto& bulletCollection = registry.emplace<DRAW::MeshCollection>(bullet);
+
+            // Clone meshes 
+            CloneModelToEntity(
+                registry,
+                manager.collections["BlueBullet"],
+                bulletCollection,
+                bulletTransform
+            );
+
+            // Override the transform
+            bulletTransform.matrix = transform.matrix;
+            bulletTransform.matrix.row1.x *= 0.75f;
+            bulletTransform.matrix.row2.y *= 0.75f;
+            bulletTransform.matrix.row3.z *= 0.75f;
+
+            for (auto mesh : bulletCollection.meshEntities) {
+                auto& inst = registry.get<DRAW::GPUInstance>(mesh);
+                inst.transform = bulletTransform.matrix;
+            }
+        };
+
         if (auto* multiShot = registry.try_get<GAME::MultiShot>(self))
         {
 			// Multi-shot power-up logic: spawn bullets in multiple directions
@@ -226,6 +264,9 @@ void SideFighterFire(entt::registry& registry, entt::entity self, const GAME::Tr
                 fighterData.targetOffset,
                 bulletTransform.matrix
 			);
+            bulletTransform.matrix.row1.x *= 0.75f;
+            bulletTransform.matrix.row2.y *= 0.75f;
+            bulletTransform.matrix.row3.z *= 0.75f;
 
             for (auto mesh : bulletCollection.meshEntities)
             {
