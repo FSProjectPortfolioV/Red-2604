@@ -737,7 +737,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto lmView = registry.view<GAME::LevelManager>();
 	auto lmEntity = lmView.front();
 	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
-	if (lm.levelIndex > levelIndex) {
+	if (lm.levelIndex > levelIndex || (lm.levelIndex == 0 && levelIndex == 2)) {
 		levelIndex = lm.levelIndex;
 		auto gameManager = registry.view<GAME::GameManager>();
 		for (auto ent : gameManager) {

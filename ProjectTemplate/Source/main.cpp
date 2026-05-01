@@ -366,14 +366,14 @@ void MainLoopBehavior(entt::registry& registry)
 			if (!lm.readyForNextLevel)
 				continue;
 
-			if (lm.levelIndex == 2)
-				lm.loops++;
-
-			// Advance level index, loop back after level 3
+			int prevIndex = lm.levelIndex;
 			lm.levelIndex = (lm.levelIndex + 1) % 3;
-
-			if (lm.levelIndex == 0 && lm.loops > 0)
+			if (lm.levelIndex == 0)
+			{
+				lm.loops++;
 				lm.difMultiplier++;
+			}
+				
 
 			// Build config key e.g. "Level1", "Level2", "Level3"
 			std::string levelKey = "Level" + std::to_string(lm.levelIndex + 1);
