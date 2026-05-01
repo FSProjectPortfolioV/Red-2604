@@ -393,6 +393,8 @@ static void WinScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 			}
 		break;
 		case 3:
+			auto& Bonus = registry.ctx().get<ScoreSystem>();
+			Bonus.AddPoints(stoi(EndGame[2]));
 			OverlayIndex = 7;
 		break;
 	}
