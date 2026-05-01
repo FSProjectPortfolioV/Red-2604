@@ -1,5 +1,7 @@
 // Gateware Research file. Will be used to test adding an asynchronous overlay to GVulkanSurface
 #pragma once
+#include "shaderc/shaderc.h"
+#include "./Utility/FileIntoString.h"
 // Author: Lari Norri 12/31/2024
 // This is protype class for an overlay that can be updated asynchronously
 // and rendered using Vulkan. The overlay is intended to be used for HUDs,
@@ -167,7 +169,7 @@ public:
 };
 
 // private implementation
-void Overlay::CompileShaders()
+inline void Overlay::CompileShaders()
 {
 	// Initialize runtime shader compiler HLSL -> SPIRV
 	shaderc_compiler_t compiler = shaderc_compiler_initialize();
@@ -181,7 +183,7 @@ void Overlay::CompileShaders()
 	shaderc_compiler_release(compiler);
 }
 
-shaderc_compile_options_t Overlay::CreateCompileOptions()
+inline shaderc_compile_options_t Overlay::CreateCompileOptions()
 {
 	shaderc_compile_options_t retval = shaderc_compile_options_initialize();
 	shaderc_compile_options_set_source_language(retval, shaderc_source_language_hlsl);
@@ -192,7 +194,7 @@ shaderc_compile_options_t Overlay::CreateCompileOptions()
 	return retval;
 }
 
-void Overlay::CompileVertexShader(const shaderc_compiler_t& compiler, const shaderc_compile_options_t& options)
+inline void Overlay::CompileVertexShader(const shaderc_compiler_t& compiler, const shaderc_compile_options_t& options)
 {
 	std::string vertexShaderSource = ReadFileIntoString("../Shaders/OverlayVertex.hlsl");
 
@@ -213,7 +215,7 @@ void Overlay::CompileVertexShader(const shaderc_compiler_t& compiler, const shad
 	shaderc_result_release(result); // done
 }
 
-void Overlay::CompileFragmentShader(const shaderc_compiler_t& compiler, const shaderc_compile_options_t& options)
+inline void Overlay::CompileFragmentShader(const shaderc_compiler_t& compiler, const shaderc_compile_options_t& options)
 {
 	// 100% Switch to using the fragment shader for the PBR model
 	std::string fragmentShaderSource = ReadFileIntoString("../Shaders/OverlayFragment.hlsl");
@@ -236,7 +238,7 @@ void Overlay::CompileFragmentShader(const shaderc_compiler_t& compiler, const sh
 }
 
 // Cleanup
-void Overlay::Cleanup()
+inline void Overlay::Cleanup()
 {
 	if (shutdown) {
 		// lock for synchronous writes
@@ -274,7 +276,7 @@ void Overlay::Cleanup()
 }
 
 // check the presentation style for valid flag combinations
-bool Overlay::ValidatePresentFlags()
+inline bool Overlay::ValidatePresentFlags()
 {
 	unsigned int testFlags = 0;
 	// validate x alignment flags
@@ -319,7 +321,7 @@ bool Overlay::ValidatePresentFlags()
 }
 
 // compute the overlay scale and offset based on the present style flags
-void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _scissor)
+inline void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _scissor)
 {
 	// grab current window dimensions
 	unsigned int client_width = 0;
@@ -426,7 +428,7 @@ void Overlay::ComputeOverlayScaleAndOffset(VkViewport& _viewport, VkRect2D& _sci
 }
 
 // public implementation
-Overlay::Overlay(unsigned int _width, unsigned int _height,
+inline Overlay::Overlay(unsigned int _width, unsigned int _height,
 	GW::SYSTEM::GWindow _window, GW::GRAPHICS::GVulkanSurface _surface,
 	unsigned int _presentStyle) : width(_width), height(_height),
 		windowHandle(_window), surfaceHandle(_surface), presentStyle(_presentStyle)
@@ -752,7 +754,7 @@ Overlay::Overlay(unsigned int _width, unsigned int _height,
 }
 
 // render implementation
-bool Overlay::LockForUpdate(unsigned int _pixelCount, unsigned int** _outARGBPixels)
+inline bool Overlay::LockForUpdate(unsigned int _pixelCount, unsigned int** _outARGBPixels)
 {
 	// ensure pixel count is correct
 	if (_pixelCount != width * height) {
@@ -774,7 +776,7 @@ bool Overlay::LockForUpdate(unsigned int _pixelCount, unsigned int** _outARGBPix
 	return true;
 }
 
-bool Overlay::Unlock()
+inline bool Overlay::Unlock()
 {
 	if (shutdown == nullptr) {
 		lock.UnlockSyncWrite();
@@ -792,7 +794,7 @@ bool Overlay::Unlock()
 }
 
 // transfer implementation
-bool Overlay::TransferOverlay()
+inline bool Overlay::TransferOverlay()
 {
 	if (shutdown == nullptr) {
 		return false;
@@ -878,7 +880,7 @@ bool Overlay::TransferOverlay()
 }
 
 // render implementation
-bool Overlay::RenderOverlay()
+inline bool Overlay::RenderOverlay()
 {
 	// find the overlay image to draw
 	unsigned int currentImageIndex;
@@ -916,7 +918,7 @@ bool Overlay::RenderOverlay()
 }
 
 // free all resources
-Overlay::~Overlay()
+inline Overlay::~Overlay()
 {
 	Cleanup();
 }

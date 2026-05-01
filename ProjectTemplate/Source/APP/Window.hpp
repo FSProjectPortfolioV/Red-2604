@@ -31,7 +31,7 @@ namespace APP
 
 		// If we get a close window event, emplace a WindowClosed component
 		auto& win = registry.get<GW::SYSTEM::GWindow>(entity);
-		if (-win.ProcessWindowEvents()) {
+		if (registry.ctx().contains<GAME::QuitRequested>() || -win.ProcessWindowEvents()) {
 			registry.emplace_or_replace<WindowClosed>(entity);
 		}
 		// update any 3D graphics surfaces that are attached to this window

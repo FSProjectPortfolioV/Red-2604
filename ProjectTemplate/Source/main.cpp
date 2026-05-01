@@ -17,6 +17,7 @@
 #include "GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
 #include "GAME/LevelLoader.h"
 #include "GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
+#include "DRAW/Overlay.h"
 
 
 // Local routines for specific application behavior
@@ -57,6 +58,31 @@ int main()
 	// clear all entities and components from the registry
 	// invokes on_destroy() for all components that have it
 	// registry will still be intact while this is happening
+
+	// Clean up Overlay components first while device is still valid
+	auto overlayView = registry.view<Overlay>();
+	for (auto entity : overlayView)
+		registry.remove<Overlay>(entity);
+
+	// Clean up context overlay
+	if (registry.ctx().contains<Overlay>())
+		registry.ctx().erase<Overlay>();
+
+	// Then Vulkan resources
+	auto rendererView = registry.view<DRAW::VulkanRenderer>();
+	for (auto entity : rendererView)
+	{
+		registry.remove<DRAW::VulkanVertexBuffer>(entity);
+		registry.remove<DRAW::VulkanIndexBuffer>(entity);
+		registry.remove<DRAW::VulkanGPUInstanceBuffer>(entity);
+		registry.remove<DRAW::VulkanUniformBuffer>(entity);
+		registry.remove<DRAW::VulkanRenderer>(entity);
+	}
+
+	registry.clear<DRAW::Starfield>();
+	registry.clear<DRAW::StarfieldGPU>();
+	registry.clear<DRAW::VulkanVertexBuffer>();
+
 	registry.clear();
 
 	return 0; // now destructors will be called for all components

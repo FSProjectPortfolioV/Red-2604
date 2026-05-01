@@ -297,4 +297,6 @@ namespace GAME
 	{
 		int charges = 3;            // how many times the player can roll
 	};
+
+	struct QuitRequested {};
 }// namespace GAME

@@ -13,6 +13,7 @@
 #include "../GAME/GameManager.h"
 #include "../GAME/LevelLoader.h"
 #include "../GAME/Gameplay/PowerUps/PowerUps.h"
+#include "../APP/Window.hpp"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -695,7 +696,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				}
 			}
 
-			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) {
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) 
+			{
 				switch (volIndex) {
 				case 3:
 					masterVol -= volChange;
@@ -713,6 +715,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			gameMusic.SetVolume(musicVol);
 			for (int i = 0; i < soundStorage.sounds.size(); i++) {
 				soundStorage.sounds[i].SetVolume(sfxVol);
+			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_ESCAPE 
+				&& !registry.ctx().contains<GAME::QuitRequested>() && (OverlayIndex == 3 || OverlayIndex == 5))
+			{
+				// Close the window
+				registry.ctx().emplace<GAME::QuitRequested>();
 			}
 		}
 	}
@@ -917,9 +926,10 @@ void TypeVictoryLines(entt::registry& registry, BLIT_Font& font, int W, int H, s
 }
 
 void RegularOptions(BLIT_Font& font, int W, int H) {
-	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
-	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
-	RenderOnScreen(font, (W / 2) - 150, H - 200, MenuOptions[MenuOptions.size() - 2]);
+	RenderOnScreen(font, (W / 4) - 90, H - 75, MenuOptions[0]);
+	RenderOnScreen(font, (W / 2) - 90, H - 75, "QUIT [ESC]");
+	RenderOnScreen(font, (W / 4) * 3 - 90, H - 75, MenuOptions[1]);
+	RenderOnScreen(font, (W / 2) - 130, H - 150, MenuOptions[MenuOptions.size() - 2]);
 }
 
 std::string ShowVolume(float volume) {
