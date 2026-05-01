@@ -7,6 +7,7 @@
 #include "./BLIT_Font.h"
 #include "../UTIL/Utilities.h"
 #include "../GAME/Gameplay/ScoreSystem/ScoreSystem.h"
+#include "../GAME/Gameplay/ScoreSystem/InitialsEntrySystem.h"
 #include "../GAME/GamePlay/ScoreSystem/LeaderboardSystem.h"
 #include "../GAME/GamePlay/ScoreSystem/HighscoreScreenController.h"
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
@@ -457,6 +458,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	GW::GEvent event;
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
+	auto& Initials = registry.ctx().get<InitialsEntrySystem>();
 	GW::INPUT::GBufferedInput::Events inputEvent;
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
@@ -474,8 +476,17 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 
 			if (+event.Read(inputEvent, inputData))
 			{
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data != G_KEY_ENTER) {
-					forTyping[forTyping.size() - 1] += (char)inputData.data;
+				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT)) {
+					Initials.MoveRight();
+				}
+				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT)) {
+					Initials.MoveLeft();
+				}
+				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_8 || inputData.data == G_KEY_UP)) {
+					Initials.MoveUp();
+				}
+				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_2 || inputData.data == G_KEY_DOWN)) {
+					Initials.MoveDown();
 				}
 				else if (inputData.data == G_KEY_ENTER) {
 					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
