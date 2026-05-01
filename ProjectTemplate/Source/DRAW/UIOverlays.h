@@ -46,7 +46,8 @@ int volIndex = 0;
 int levelIndex = 0;
 int totalKilled = 0;
 int totalSpawned = 0;
-bool gameWon;
+bool gameWon = false;
+bool namedScore = false;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -483,40 +484,18 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	if (!leaderboard.IsLoaded())
 		leaderboard.Begin(registry); // Making sure this gets called only once when entering highscore screen. Otherwise, it runs every frame which gets very expensive.
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
-	auto& Initials = registry.ctx().get<InitialsEntrySystem>();
 	GW::INPUT::GBufferedInput::Events inputEvent;
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
 	bltr.ClearColor(0x00000000);
-	if (leaderboard.IsNewHighscore()) {
+	if (leaderboard.IsNewHighscore() && !namedScore) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 150, "New Highscore!");
-		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, "Input Initials (Ex. \"ABC\")");
-		forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
-		forTyping[forTyping.size() - 1].resize(3);
-		RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, forTyping[forTyping.size() - 1]);
-		while (+pressEvents.Pop(event))
-		{
-			auto gameManager = registry.view<GAME::GameManager>();
-
-			if (+event.Read(inputEvent, inputData))
-			{
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT)) {
-					Initials.MoveRight();
-				}
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT)) {
-					Initials.MoveLeft();
-				}
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_8 || inputData.data == G_KEY_UP)) {
-					Initials.MoveUp();
-				}
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_2 || inputData.data == G_KEY_DOWN)) {
-					Initials.MoveDown();
-				}
-				else if (inputData.data == G_KEY_ENTER) {
-					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
-				}
-			}
+		RenderOnScreen(font, (W / 4) - 45, (H / 2) - 75, "INPUT INITIALS WITH ARROWS (Ex. \"ABC\")");
+		if (forTyping.empty()) {
+			forTyping.push_back("");
 		}
+		forTyping[forTyping.size() - 1].resize(3);
+		RenderOnScreen(font, (W / 2) - 30, (H / 2) + 25, forTyping[forTyping.size() - 1]);
 	}
 	else {
 		if (!leaderboard.GetEntries().empty())
@@ -815,6 +794,32 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			{
 				// Close the window
 				registry.ctx().emplace<GAME::QuitRequested>();
+			}
+
+
+			auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
+			auto& Initials = registry.ctx().get<InitialsEntrySystem>();
+
+			if (!namedScore && OverlayIndex == 7)
+			{
+				forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
+			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT)) {
+				Initials.MoveRight();
+			}
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT)) {
+				Initials.MoveLeft();
+			}
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_8 || inputData.data == G_KEY_UP)) {
+				Initials.MoveUp();
+			}
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_2 || inputData.data == G_KEY_DOWN)) {
+				Initials.MoveDown();
+			}
+			else if (inputData.data == G_KEY_ENTER) {
+				leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
+				namedScore = true;
 			}
 		}
 	}
