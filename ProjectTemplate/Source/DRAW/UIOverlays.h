@@ -609,7 +609,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		if (+event.Read(inputEvent, inputData))
 		{
 			//Press P or Start to pause, press again to unpause
-			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P) {
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
+				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7)) {
 
 				if (OverlayIndex == 3) {
 					OverlayIndex = PrevOverlayIndex;
@@ -636,7 +637,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 
 			// Reset button. Completely reset game state.
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_Y
-				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
+				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7)) {
 
 				// Reset level manager back to level 1
 				auto lmView = registry.view<GAME::LevelManager>();
