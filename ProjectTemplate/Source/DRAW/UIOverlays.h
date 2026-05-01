@@ -491,6 +491,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	if (leaderboard.IsNewHighscore()) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 150, "New Highscore!");
 		RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, "Input Initials (Ex. \"ABC\")");
+		forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
 		forTyping[forTyping.size() - 1].resize(3);
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, forTyping[forTyping.size() - 1]);
 		while (+pressEvents.Pop(event))
@@ -510,9 +511,6 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				}
 				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_2 || inputData.data == G_KEY_DOWN)) {
 					Initials.MoveDown();
-				}
-				if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_LEFTSHIFT)) {
-					forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
 				}
 				else if (inputData.data == G_KEY_ENTER) {
 					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
