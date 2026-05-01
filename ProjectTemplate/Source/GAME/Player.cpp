@@ -49,6 +49,15 @@ void Update_Player(entt::registry& registry, entt::entity self)
     if (input.immediateInput.GetState(G_KEY_A, state) == GW::GReturn::SUCCESS && state > 0.0f)
         x -= 1.0f;
 
+    // Controller left stick input
+    float leftX = 0.0f;
+    float leftY = 0.0f;
+
+    if (input.gamePads.GetState(0, G_LX_AXIS, leftX) == GW::GReturn::SUCCESS)
+        x += leftX;
+
+    if (input.gamePads.GetState(0, G_LY_AXIS, leftY) == GW::GReturn::SUCCESS)
+        z += leftY;
 
     // Normalize diagonal movement
     float mag = sqrtf(x * x + z * z);
@@ -95,7 +104,11 @@ void Update_Player(entt::registry& registry, entt::entity self)
 
     // Roll input
     float rollState = 0.0f;
-    if (input.immediateInput.GetState(G_KEY_LEFTSHIFT, rollState) == GW::GReturn::SUCCESS && rollState > 0.0f)
+    float bButton = 0.0f;
+
+    input.gamePads.GetState(0, G_EAST_BTN, bButton);
+
+    if ((input.immediateInput.GetState(G_KEY_LEFTSHIFT, rollState) == GW::GReturn::SUCCESS && rollState > 0.0f) || bButton > 0.0f)
     {
         if (!registry.all_of<GAME::Roll>(self) && !registry.all_of<GAME::Invuln>(self))
         {
@@ -159,10 +172,14 @@ void Update_Player(entt::registry& registry, entt::entity self)
     GW::MATH::GVECTORF dir = { 0, 0, 0, 0 };
 
     float fireState = 0.0f;
-
+    float aButton = 0.0f;
+    
     bool firePressed = false;
 
-    if (input.immediateInput.GetState(G_KEY_UP, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f)
+    // Controller
+    input.gamePads.GetState(0, G_SOUTH_BTN, aButton);
+
+    if ((input.immediateInput.GetState(G_KEY_UP, fireState) == GW::GReturn::SUCCESS && fireState > 0.0f) || aButton > 0.0f)
     {
         dir.z += 1.0f;
         firePressed = true;
