@@ -35,7 +35,7 @@ int FinaleIdx2 = 1;
 int FinaleIdx3 = 1;
 bool settingsOpen = false;
 bool levelStart = false;
-int OverlayIndex = 0;
+int OverlayIndex = 7;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
 float sfxVol = 0.07f;
@@ -450,7 +450,7 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 
 void NumberOnePlayer(Overlay& ctxovl, GW::GRAPHICS::GBlitter& ctxbltr, BLIT_Font& font, int W, int H, std::string text) {
 	ctxbltr.ClearColor(0x00000000);
-	RenderOnScreen(font, (W / 2) - 100, H + 100, text);
+	RenderOnScreen(font, (W / 2) - 10, (H / 2) - 50, text);
 	unsigned int* titlePixels;
 	ctxovl.LockForUpdate(W * H, &titlePixels);
 	ctxbltr.ExportResult(false, W, H, 0, 0, titlePixels, nullptr, nullptr);
@@ -506,7 +506,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		if (!leaderboard.GetEntries().empty())
 		{
 			NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
-			RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
+			RenderOnScreen(font, (W / 2) + 100, (H / 2) - 50, std::to_string(leaderboard.GetEntries()[0].score));
 			for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
 				RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
 				RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
@@ -517,11 +517,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 			RenderOnScreen(font, (W / 2) - 100, (H / 2), "No scores yet!");
 		}
 	}
-	RenderOnScreen(font, W / 8, 25, UI[0]);
-	RenderOnScreen(font, (W / 2) - 100, 25, UI[2]);
-	RenderOnScreen(font, W - (W / 6), 25, UI[1]);
-	RenderOnScreen(font, (W / 2), 60, std::to_string(score));
-	RenderOnScreen(font, (W / 8) + 15, 60, std::to_string(score));
+	SetRegularUI(registry, font, W, H);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
