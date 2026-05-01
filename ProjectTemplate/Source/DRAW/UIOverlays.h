@@ -396,7 +396,7 @@ static void LoseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlit
 	}
 	TypeLines(registry, font, W/3 - 100, H/4, FinalStats, ScreenTimers, KeyCounters, FinaleIdx3);
 	if(KeyCounters[2] >= FinalStats[2].length()) {
-		RenderOnScreen(font, W / 3 - 100, (H/4) + 200, CalculateTodaysTop());
+		//RenderOnScreen(font, W / 3 - 100, (H/4) + 200, CalculateTodaysTop()); <-- Disabling for now... Not sure how to fix as idk what "Today's Top" represents.
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) + 100, EndGame[5]);
 		RegularOptions(font, W, H);
 	}
@@ -456,6 +456,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
+	if (!leaderboard.IsLoaded())
+		leaderboard.Begin(registry); // Making sure this gets called only once when entering highscore screen. Otherwise, it runs every frame which gets very expensive.
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
 	GW::INPUT::GBufferedInput::Events inputEvent;
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
@@ -484,11 +486,18 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		}
 	}
 	else {
-		NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
-		RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
-		for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
-			RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
-			RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+		if (!leaderboard.GetEntries().empty())
+		{
+			NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
+			RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
+			for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
+				RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+				RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
+			}
+		}
+		else
+		{
+			RenderOnScreen(font, (W / 2) - 100, (H / 2), "No scores yet!");
 		}
 	}
 	RenderOnScreen(font, W / 8, 25, UI[0]);
