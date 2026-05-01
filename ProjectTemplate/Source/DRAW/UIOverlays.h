@@ -265,6 +265,11 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(LevelProficiency(lm.enemyTotal, lm.enemyKilled)) + " PTS");
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(2));
 		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[2]);
+
+		if (lm.levelIndex == 0 && lm.loops > 0)
+		{
+			FlashingEffect(registry, font, (W / 2) - 190, (H / 2) + 100, "DIFFICULTY INCREASED!");
+		}
 		if (screenTimer < screenTransition) {
 			screenTimer += deltaTime;
 		}
@@ -311,7 +316,7 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		break;
 	}
 	RenderOnScreen(font, rankX, (H / 2) - 200, LevelBegin[lm.levelIndex]);
-	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, "LAST 0" + std::to_string(lm.levelIndex) + " STAGE");
+	RenderOnScreen(font, (W / 2) - 63, (H / 2) - 125, "STAGE " + std::to_string(lm.levelIndex + 1));
 	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[3]);
 	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[4]);
 	unsigned int* pixels;
