@@ -191,6 +191,11 @@ void ExtraLifePU(entt::registry& registry, entt::entity player, int livesAmount)
 	auto& playerLives = registry.get<GAME::Lives>(player);
 
 	playerLives.count += livesAmount;
+
+    if (playerLives.count > 5)
+    {
+        playerLives.count = 5;
+    }
 }
 
 void BonusPointsPU(entt::registry& registry)

@@ -79,7 +79,7 @@ std::vector<std::string> GameStart{
 	"CRIMSON ",
 	"MILLENIA",
 	"2851",
-	"PRESS SPACEBAR"
+	"PRESS SPACEBAR OR A"
 };
 
 std::vector<std::string> EndGame{
@@ -235,7 +235,7 @@ static void StartMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	RenderOnScreen(font, (W / 2) - 150, H - 25, GameStart[0]);
 	RenderOnScreen(font, leftStart, H - 70, GameStart[1]);
 	RenderOnScreen(font, rightStart, H - 70, GameStart[2]);
-	FlashingEffect(registry, font, (W / 2) - 120, (H / 2) + 200, GameStart[4]);
+	FlashingEffect(registry, font, (W / 2) - 150, (H / 2) + 200, GameStart[4]);
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr); 
@@ -560,13 +560,76 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		}
 	}
 
+	// Controller
+	auto& input = registry.ctx().get<UTIL::Input>();
+	static bool startHeld = false;
+	float startButton = 0.0f;
+	input.gamePads.GetState(0, G_START_BTN, startButton);
+	bool controllerStartPressed = false;
+
+	if (startButton > 0.0f && !startHeld)
+	{
+		controllerStartPressed = true;
+	}
+
+	startHeld = startButton > 0.0f;
+
+	if (controllerStartPressed)
+	{
+		auto gameManager = registry.view<GAME::GameManager>();
+
+		if (OverlayIndex == 3)
+		{
+			OverlayIndex = PrevOverlayIndex;
+
+			for (auto entt : gameManager)
+			{
+				registry.remove<GAME::Paused>(entt);
+			}
+			gameMusic.Resume();
+		}
+		else
+		{
+			PrevOverlayIndex = OverlayIndex;
+			OverlayIndex = 3;
+
+			soundStorage.soundCues[3] = true;
+
+			for (auto entt : gameManager)
+			{
+				registry.emplace_or_replace<GAME::Paused>(entt);
+			}
+			gameMusic.Pause();
+		}
+	}
+
+	// Start the game with A on Controller
+	static bool aHeld = false;
+	float aButton = 0.0f;
+	input.gamePads.GetState(0, G_SOUTH_BTN, aButton);
+	bool controllerAPressed = false;
+
+	if (aButton > 0.0f && !aHeld)
+	{
+		controllerAPressed = true;
+	}
+
+	aHeld = aButton > 0.0f;
+
+	if (controllerAPressed && OverlayIndex == 0)
+	{
+		OverlayIndex = 1;
+		menuMusic.Stop();
+		gameMusic.Play(true);
+	}
+
 	while (+pressEvents.Pop(event))
 	{
 		auto gameManager = registry.view<GAME::GameManager>();
 
 		if (+event.Read(inputEvent, inputData))
 		{
-			//Press P to pause, press again to unpause
+			//Press P or Start to pause, press again to unpause
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P) {
 
 				if (OverlayIndex == 3) {

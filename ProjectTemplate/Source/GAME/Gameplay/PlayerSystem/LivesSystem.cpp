@@ -7,6 +7,7 @@
 #include "../ScoreSystem/InitialsEntrySystem.h"
 #include "../ScoreSystem/LocalHighscoreSystem.h"
 #include "../ScoreSystem/ScoreSystem.h"
+#include "../PowerUps/PowerUps.h"
 
 namespace GAME
 {
@@ -34,6 +35,7 @@ namespace GAME
 
 		health.HP = 0;
 		lives.count--;
+		ClearPowerUPs(registry, player);
 
 		// Player death explosion
 		auto& playerTransform = registry.get<Transform>(player);
