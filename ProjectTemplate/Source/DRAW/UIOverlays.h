@@ -14,6 +14,7 @@
 #include "../GAME/GameManager.h"
 #include "../GAME/LevelLoader.h"
 #include "../GAME/Gameplay/PowerUps/PowerUps.h"
+#include "../APP/Window.hpp"
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -265,6 +266,11 @@ static void EndOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBl
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(LevelProficiency(lm.enemyTotal, lm.enemyKilled)) + " PTS");
 		RenderOnScreen(font, (W / 2) - 75, (H / 2) - 75, std::to_string(2));
 		RenderOnScreen(font, (W / 3) + 25, (H / 2), LevelStats[2]);
+
+		if (lm.levelIndex == 0 && lm.loops > 0)
+		{
+			FlashingEffect(registry, font, (W / 2) - 190, (H / 2) + 100, "DIFFICULTY INCREASED!");
+		}
 		if (screenTimer < screenTransition) {
 			screenTimer += deltaTime;
 		}
@@ -311,7 +317,7 @@ static void StartOfLevel(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		break;
 	}
 	RenderOnScreen(font, rankX, (H / 2) - 200, LevelBegin[lm.levelIndex]);
-	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 125, "LAST 0" + std::to_string(lm.levelIndex) + " STAGE");
+	RenderOnScreen(font, (W / 2) - 63, (H / 2) - 125, "STAGE " + std::to_string(lm.levelIndex + 1));
 	RenderOnScreen(font, (W / 2) - 50, (H / 2) - 50, LevelBegin[3]);
 	RenderOnScreen(font, (W / 2) - 75, (H / 2) + 25, LevelBegin[4]);
 	unsigned int* pixels;
@@ -397,7 +403,7 @@ static void LoseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlit
 	}
 	TypeLines(registry, font, W/3 - 100, H/4, FinalStats, ScreenTimers, KeyCounters, FinaleIdx3);
 	if(KeyCounters[2] >= FinalStats[2].length()) {
-		RenderOnScreen(font, W / 3 - 100, (H/4) + 200, CalculateTodaysTop());
+		//RenderOnScreen(font, W / 3 - 100, (H/4) + 200, CalculateTodaysTop()); <-- Disabling for now... Not sure how to fix as idk what "Today's Top" represents.
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) + 100, EndGame[5]);
 		RegularOptions(font, W, H);
 	}
@@ -457,6 +463,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	auto& pressEvents = registry.ctx().get<GW::CORE::GEventCache>();
 	GW::GEvent event;
 	auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
+	if (!leaderboard.IsLoaded())
+		leaderboard.Begin(registry); // Making sure this gets called only once when entering highscore screen. Otherwise, it runs every frame which gets very expensive.
 	auto score = registry.ctx().get<ScoreSystem>().GetScore();
 	auto& Initials = registry.ctx().get<InitialsEntrySystem>();
 	GW::INPUT::GBufferedInput::Events inputEvent;
@@ -495,11 +503,18 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		}
 	}
 	else {
-		NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
-		RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
-		for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
-			RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
-			RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+		if (!leaderboard.GetEntries().empty())
+		{
+			NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
+			RenderOnScreen(font, ((W / 2) + 25), H + 200, std::to_string(leaderboard.GetEntries()[0].score));
+			for (int i = 1; i < leaderboard.GetEntries().size(); i++) {
+				RenderOnScreen(font, (W / 3) + 75, (H / 2) + (i * 50), leaderboard.GetEntries()[i].initials);
+				RenderOnScreen(font, (W / 2) + 25, (H / 2) + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
+			}
+		}
+		else
+		{
+			RenderOnScreen(font, (W / 2) - 100, (H / 2), "No scores yet!");
 		}
 	}
 	RenderOnScreen(font, W / 8, 25, UI[0]);
@@ -697,7 +712,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				}
 			}
 
-			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) {
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) 
+			{
 				switch (volIndex) {
 				case 3:
 					masterVol -= volChange;
@@ -716,6 +732,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			for (int i = 0; i < soundStorage.sounds.size(); i++) {
 				soundStorage.sounds[i].SetVolume(sfxVol);
 			}
+
+			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_ESCAPE 
+				&& !registry.ctx().contains<GAME::QuitRequested>() && (OverlayIndex == 3 || OverlayIndex == 5))
+			{
+				// Close the window
+				registry.ctx().emplace<GAME::QuitRequested>();
+			}
 		}
 	}
 	auto& displayOvl = registry.ctx().get<Overlay>();
@@ -725,7 +748,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 	auto lmView = registry.view<GAME::LevelManager>();
 	auto lmEntity = lmView.front();
 	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
-	if (lm.levelIndex > levelIndex) {
+	if (lm.levelIndex > levelIndex || (lm.levelIndex == 0 && levelIndex == 2)) {
 		levelIndex = lm.levelIndex;
 		auto gameManager = registry.view<GAME::GameManager>();
 		for (auto ent : gameManager) {
@@ -919,9 +942,10 @@ void TypeVictoryLines(entt::registry& registry, BLIT_Font& font, int W, int H, s
 }
 
 void RegularOptions(BLIT_Font& font, int W, int H) {
-	RenderOnScreen(font, (W / 3) - 100, H - 100, MenuOptions[0]);
-	RenderOnScreen(font, (W / 2) + 100, H - 100, MenuOptions[1]);
-	RenderOnScreen(font, (W / 2) - 150, H - 200, MenuOptions[MenuOptions.size() - 2]);
+	RenderOnScreen(font, (W / 4) - 90, H - 75, MenuOptions[0]);
+	RenderOnScreen(font, (W / 2) - 90, H - 75, "QUIT [ESC]");
+	RenderOnScreen(font, (W / 4) * 3 - 90, H - 75, MenuOptions[1]);
+	RenderOnScreen(font, (W / 2) - 130, H - 150, MenuOptions[MenuOptions.size() - 2]);
 }
 
 std::string ShowVolume(float volume) {

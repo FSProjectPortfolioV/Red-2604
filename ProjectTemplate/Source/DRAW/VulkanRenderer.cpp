@@ -753,8 +753,21 @@ namespace DRAW
 	void Destroy_VulkanRenderer(entt::registry& registry, entt::entity entity)
 	{
 		auto& vulkanRenderer = registry.get<VulkanRenderer>(entity);
-		// wait till everything has completed
 		vkDeviceWaitIdle(vulkanRenderer.device);
+
+		// Destroy starfield buffers first since they look up renderer via view
+		auto starView = registry.view<DRAW::StarfieldGPU, DRAW::VulkanVertexBuffer>();
+		for (auto starEnt : starView)
+		{
+			auto& vb = registry.get<DRAW::VulkanVertexBuffer>(starEnt);
+			if (vb.buffer != VK_NULL_HANDLE) {
+				vkDestroyBuffer(vulkanRenderer.device, vb.buffer, nullptr);
+				vkFreeMemory(vulkanRenderer.device, vb.memory, nullptr);
+				vb.buffer = VK_NULL_HANDLE;
+				vb.memory = VK_NULL_HANDLE;
+			}
+		}
+
 		// Remove Buffer compontents
 		registry.remove<VulkanIndexBuffer>(entity);
 		registry.remove<VulkanVertexBuffer>(entity);
