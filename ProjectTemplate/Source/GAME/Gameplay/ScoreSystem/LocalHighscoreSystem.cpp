@@ -9,15 +9,17 @@
 
 #endif // __EMSCRIPTEN__
 
-// EXE save path using AppData
+// EXE save path
 #ifndef __EMSCRIPTEN__
 static std::string GetSaveFilePath()
 {
-	const char* localAppData = std::getenv("LOCALAPPDATA");
-	std::filesystem::path folder = std::filesystem::path(localAppData) / "2851";
-	std::filesystem::create_directories(folder);
+	char buffer[MAX_PATH];
+	GetModuleFileNameA(NULL, buffer, MAX_PATH);
 
-	return (folder / "local_highscore.txt").string();
+	std::filesystem::path exePath = std::filesystem::path(buffer).parent_path();
+	std::filesystem::path savePath = exePath / "local_highscore.txt";
+
+	return savePath.string();
 }
 #endif // __EMSCRIPTEN__
 
