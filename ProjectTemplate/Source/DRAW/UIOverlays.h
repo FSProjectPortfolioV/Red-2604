@@ -102,7 +102,7 @@ std::vector<std::string> EndGame{
 std::vector<std::string> MenuOptions{
 	"RESET [Y]",
 	"SETTINGS [O]",
-	"CREDITS [K]",
+	//"CREDITS [K]",
 	"MASTER VOLUME",
 	"MUSIC VOLUME",
 	"SFX VOLUME",
@@ -478,7 +478,7 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 	int widthOffset = 300;
 	int heightOffset = 25;
 	if (settingsOpen) {
-		for (int i = 5; i > 1; i--) {
+		for (int i = 4; i > 1; i--) {
 			RenderOnScreen(font, (W / 3) - 100, 80 + (i * 75), MenuOptions[i]);
 			if (mouseX >= (W / 3) - 100 && mouseX <= ((W / 3) - 100 + widthOffset) &&
 				mouseY >= 80 + (i * 75) && mouseY <= (80 + (i * 75) + heightOffset)) {
@@ -532,6 +532,8 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		RenderOnScreen(font, (W / 2) - 30, (H / 2) + 25, forTyping[forTyping.size() - 1]);
 	}
 	else {
+		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 25, "LEADER BOARD");
+		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 75 + 250, "PRESS P FOR RESET OPTION");
 		if (!leaderboard.GetEntries().empty())
 		{
 			//NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
