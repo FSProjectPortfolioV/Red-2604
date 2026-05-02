@@ -777,6 +777,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				OverlayIndex = 0;
 				totalKilled = 0;
 				totalSpawned = 0;
+				namedScore = false;
 			}
 			
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_L
@@ -860,8 +861,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				Initials.MoveDown();
 			}
 			else if (inputData.data == G_KEY_ENTER) {
-				leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
-				namedScore = true;
+				if (!Initials.HaveOneLetter()) {
+					forTyping[forTyping.size() - 1] = "MUST HAVE AT LEAST 1 LETTER";
+				}
+				else {
+					leaderboard.SubmitInitials(registry, forTyping[forTyping.size() - 1]);
+					namedScore = true;
+				}
 			}
 		}
 	}
