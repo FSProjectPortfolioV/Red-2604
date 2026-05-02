@@ -251,70 +251,21 @@ namespace GAME
 		auto& initials = registry.ctx().get<InitialsEntrySystem>();
 		auto& input = registry.ctx().get<UTIL::Input>();
 
-		static bool wDown = false;
-		static bool aDown = false;
-		static bool sDown = false;
-		static bool dDown = false;
 		static bool enterDown = false;
-
 		float state = 0.0f;
 
-		if (input.immediateInput.GetState(G_KEY_W, state) == GW::GReturn::SUCCESS && state > 0.0f)
-		{
-			if (!wDown)
-			{
-				initials.MoveUp();
-			}
-			wDown = true;
-		}
-		else
-		{
-			wDown = false;
-		}
-
-		if (input.immediateInput.GetState(G_KEY_A, state) == GW::GReturn::SUCCESS && state > 0.0f)
-		{
-			if (!aDown)
-			{
-				initials.MoveLeft();
-			}
-			aDown = true;
-		}
-		else
-		{
-			aDown = false;
-		}
-
-		if (input.immediateInput.GetState(G_KEY_S, state) == GW::GReturn::SUCCESS && state > 0.0f)
-		{
-			if (!sDown)
-			{
-				initials.MoveDown();
-			}
-			sDown = true;
-		}
-		else
-		{
-			sDown = false;
-		}
-
-		if (input.immediateInput.GetState(G_KEY_D, state) == GW::GReturn::SUCCESS && state > 0.0f)
-		{
-			if (!dDown)
-			{
-				initials.MoveRight();
-			}
-			dDown = true;
-		}
-		else
-		{
-			dDown = false;
-		}
-
+		// Arrow keys keybind inside UIOveray line 782-867
 		if (input.immediateInput.GetState(G_KEY_ENTER, state) == GW::GReturn::SUCCESS && state > 0.0f)
 		{
 			if (!enterDown)
 			{
+				if (!initials.HaveOneLetter())
+				{
+					std::cout << "Initials can't be empty\n";
+					enterDown = true;
+					return;
+				}
+
 				std::string entered = initials.GetInitials();
 
 				if (highscore.SubmitInitials(registry, entered))
