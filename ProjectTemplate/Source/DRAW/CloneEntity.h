@@ -124,6 +124,12 @@
         GW::MATH::GMatrix::ScaleGlobalF(enemyTransform.matrix,scaler, enemyTransform.matrix);
         enemyTransform.matrix.row4.y = 0;
 
+        GW::MATH::GVECTORF scalerDown = { 1/cfg.Scale, 1/cfg.Scale, 1/cfg.Scale, 1 };
+        vel.direction.x *= scalerDown.x;
+        vel.direction.y *= scalerDown.y;
+        vel.direction.z *= scalerDown.z;
+
+
         // Scale up hitbox (for enemies too short for bullets to actually hit the model)
         collection.collider.extent.y *= 10.0f;
 
