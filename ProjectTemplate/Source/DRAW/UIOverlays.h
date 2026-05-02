@@ -53,6 +53,7 @@ int totalKilled = 0;
 int totalSpawned = 0;
 bool gameWon = false;
 bool namedScore = false;
+bool justLooking = false;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -522,7 +523,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
 	bltr.ClearColor(0x00000000);
-	if (leaderboard.IsNewHighscore() && !namedScore) {
+	if (leaderboard.IsNewHighscore() && !namedScore && !justLooking) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 150, "New Highscore!");
 		RenderOnScreen(font, (W / 4) - 45, (H / 2) - 75, "INPUT INITIALS WITH ARROWS (Ex. \"ABC\")");
 		if (forTyping.empty()) {
@@ -647,7 +648,12 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					OverlayIndex = PrevOverlayIndex;
+					if (PrevOverlayIndex == 2) {
+						OverlayIndex = PrevOverlayIndex;
+					}
+					else {
+						OverlayIndex = 2;
+					}
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
@@ -775,6 +781,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_L
 				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
+				justLooking = true;
 				OverlayIndex = 7;
 			}
 
@@ -835,7 +842,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 			auto& Initials = registry.ctx().get<InitialsEntrySystem>();
 
-			if (!namedScore && OverlayIndex == 7)
+			if (!namedScore && !justLooking && OverlayIndex == 7)
 			{
 				forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
 			}
