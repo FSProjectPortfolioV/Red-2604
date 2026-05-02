@@ -526,14 +526,17 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	if (leaderboard.IsNewHighscore() && !namedScore && !justLooking) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 150, "New Highscore!");
 		RenderOnScreen(font, (W / 4) - 45, (H / 2) - 75, "INPUT INITIALS WITH ARROWS (Ex. \"ABC\")");
-		if (forTyping.empty()) {
-			forTyping.push_back("");
+
+		if (registry.ctx().contains<InitialsEntrySystem>())
+		{
+			auto& initials = registry.ctx().get<InitialsEntrySystem>();
+			std::string currentInitials = initials.GetInitials();
+			RenderOnScreen(font, (W / 2) - 30, (H / 2) + 25, currentInitials);
 		}
-		RenderOnScreen(font, (W / 2) - 30, (H / 2) + 25, forTyping[forTyping.size() - 1]);
 	}
 	else {
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 25, "LEADER BOARD");
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 75 + 250, "PRESS P FOR RESET OPTION");
+		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 150, "LEADER BOARD");
+		RenderOnScreen(font, (W / 2) - 90, H - 75, "BACK [P]");
 		if (!leaderboard.GetEntries().empty())
 		{
 			//NumberOnePlayer(ctxovl, ctxbltr, ctxfont, W, H, leaderboard.GetEntries()[0].initials);
@@ -847,6 +850,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 
 			if (!namedScore && !justLooking && OverlayIndex == 7)
 			{
+				// Ensure forTyping has an entry and it's 3 characters long
+				if (forTyping.empty())
+					forTyping.push_back("   "); // 3 spaces
+
+				if (forTyping[forTyping.size() - 1].size() < 3)
+					forTyping[forTyping.size() - 1].resize(3, ' ');
+
 				forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
 			}
 
@@ -980,10 +990,13 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 		for (int i = 0; i < hitpoints; i++) {
 			hits += '^';
 		}
-		if(hitpoints == 0) {
+		if (hitpoints == 0) {
 			hits = "Vessel Destroyed";
-			if (!leaderboard.IsNewHighscore() && !justLooking) {
-				OverlayIndex = 5;
+			if (leaderboard.IsNewHighscore() && !justLooking) {
+				OverlayIndex = 7; // route to highscore entry
+			}
+			else if (!justLooking) {
+				OverlayIndex = 5; // route to lose menu
 			}
 		}
 	}

@@ -197,7 +197,7 @@
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
-          "fireRate": 3.0,
+          "fireRate": 5.0,
           "movement": "ArrowHeadRight"
         }
       }
@@ -217,7 +217,7 @@
           "hitpoints": 4,
           "scale": 1.2,
           "score": 200,
-          "fireRate": 3.0,
+          "fireRate": 5.0,
           "movement": "ArrowHeadDown"
         }
       }
