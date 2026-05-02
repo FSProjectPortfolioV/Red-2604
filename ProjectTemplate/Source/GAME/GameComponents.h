@@ -1,5 +1,6 @@
 #pragma once
 #include "../../gateware-main/Gateware.h"
+#include <unordered_map>
 
 namespace GAME
 {
@@ -12,6 +13,8 @@ namespace GAME
 	struct Obstacle {};
 	struct ToDestroy {};
 	struct GameOver {};
+	struct ShootingEnemy {};
+	struct PlayerDeathExplosion {};
 
 	///*** Components ***///
 
@@ -42,6 +45,7 @@ namespace GAME
 		int Score;
 		float fireRate;
 		bool isPUCarrier = false;
+		float time = 0;
 	};
 
 	struct FORMATIONS {
@@ -53,7 +57,6 @@ namespace GAME
 		EnemyConfig Enemy;
 		float SpawnRate;
 		FormationStyle Style;
-		int UsageCost;
 		Transform SpawnLocation;
 		float SpeedMult;
 	};
@@ -62,6 +65,7 @@ namespace GAME
 	{
 		float triggerTime;
 		EnemyToken token;
+		int EnemyNumber;
 	};
 
 	struct LevelData
@@ -69,7 +73,6 @@ namespace GAME
 		std::vector<Wave> waves;
 		float duration;
 		std::vector<EnemyToken> spawnQueue;
-		int tokensAvailable = 0;
 	};
 
 	struct LevelEvent
@@ -82,8 +85,14 @@ namespace GAME
 	{
 		float time = 0.0f;
 		bool levelComplete = false;
+		bool readyForNextLevel = false;
 		LevelData level;
 		int nextWaveIndex = 0;
+		int levelIndex = 0; // 0 = level 1, 1 = level 2, 2 = level 3
+		int difMultiplier = 1;
+		int loops = 0;
+		int enemyTotal = 0; //Total Spawned
+		int enemyKilled = 0;//killed by player
 	};
 
 
@@ -120,6 +129,22 @@ namespace GAME
 	struct Invuln 
 	{
 		float cooldown;
+		bool isRoll = false; // if true, skip blink logic
+	};
+
+	struct SpriteAnimation
+	{
+		int currentFrame = 0;
+		int totalFrames = 16;
+		int columns = 4;
+		int rows = 4;
+		float frameTime = 0.05f;
+		float timer = 0.0f;
+	};
+
+	struct Lifetime
+	{
+		float timeRemaining = 1.0f;
 	};
 
 	struct BackgroundObject
@@ -182,6 +207,7 @@ namespace GAME
 	{
 		bool leftAlive = false;
 		bool rightAlive = false;
+		float timer = 0.0f;
 	};
 
 	struct SideFighter 
@@ -192,6 +218,7 @@ namespace GAME
 		GW::MATH::GVECTORF currentOffset;
 
 		bool canShoot = false;
+		bool isLeaving = false;
 		float lerpSpeed = 4.0f;
 	};
 
@@ -202,6 +229,8 @@ namespace GAME
 		GW::MATH::GVECTORF{ 0, 0, 1, 0 },
 		GW::MATH::GVECTORF{ 1, 0, 1, 0 }
 		};
+
+		float timer = 0.0f;
 	};
 
 	struct PUCarrier 
@@ -219,6 +248,12 @@ namespace GAME
 	struct Paused
 	{
 
+	};
+
+	struct SoundStorage
+	{
+		std::vector<bool> soundCues;
+		std::vector<GW::AUDIO::GSound> sounds;
 	};
 
 	// This is defined based on the player's visible screen space.
@@ -255,4 +290,18 @@ namespace GAME
 		}
 	}
 
+	struct Roll
+	{
+		float duration = 1.0f;      // how long the roll lasts
+		float timeRemaining = 1.0f; // countdown
+		float totalDuration = 1.0f; // stored for rotation calculation
+		GW::MATH::GMATRIXF startMatrix; // save pre-roll orientation
+	};
+
+	struct RollCharges
+	{
+		int charges = 3;            // how many times the player can roll
+	};
+
+	struct QuitRequested {};
 }// namespace GAME

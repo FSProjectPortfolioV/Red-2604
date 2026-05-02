@@ -20,6 +20,9 @@ void HurtPlayer(entt::registry& registry, entt::entity player)
 	auto& health = registry.get<GAME::Health>(player);
 	health.HP -= 1;
 
+	auto& soundCues = registry.ctx().get<GAME::SoundStorage>().soundCues;
+	soundCues[1] = true;
+
 	std::cout << "Player HP: " << health.HP << "\n";
 
 	// Add invulnerability
@@ -138,12 +141,23 @@ void Physics::Collision(entt::registry& registry)
 					
 				}
 
+				auto& soundCues = registry.ctx().get<GAME::SoundStorage>().soundCues;
+
 				// Case: Bullet to Enemy - Enemy takes damage, bullet gets destroyed
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Bullet>(*b))
 				{
 						auto& health = registry.get<Health>(*a);
 						auto& cfg = registry.get<EnemyConfig>(*a);
 						health.HP -= 1;
+
+						if (health.HP == 0)
+						{
+							soundCues[5] = true;
+						}
+						else
+						{
+							soundCues[4] = true;
+						}
 
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*b);
@@ -154,6 +168,15 @@ void Physics::Collision(entt::registry& registry)
 						auto& health = registry.get<Health>(*b);
 						auto& cfg = registry.get<EnemyConfig>(*b);
 						health.HP -= 1;
+
+						if (health.HP == 0)
+						{
+							soundCues[5] = true;
+						}
+						else
+						{
+							soundCues[4] = true;
+						}
 						
 						Gameplay::EnemyDeath(registry, cfg, GAME::DamageType::PlayerBullet);
 						registry.emplace_or_replace<ToDestroy>(*a);
@@ -168,18 +191,21 @@ void Physics::Collision(entt::registry& registry)
 					break;
 				}
 
+				// Case: Enemy to Player - Hurt the player
 				if (registry.all_of<Enemy>(*a) && registry.all_of<Player>(*b))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*b))
 					{
-						GAME::KillPlayer(registry, *b, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
 					}
 				}
 				if (registry.all_of<Enemy>(*b) && registry.all_of<Player>(*a))
 				{
-					if (gameManager != entt::null)
+					if (!registry.all_of<GAME::Invuln>(*a))
 					{
-						GAME::KillPlayer(registry, *a, gameManager);
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
 					}
 				}
 
@@ -223,18 +249,42 @@ void Physics::Collision(entt::registry& registry)
 					registry.emplace_or_replace<GAME::ToDestroy>(*b);
 				}
 
+				//Case: Enemy to SideFighter - SideFighter gets destroyed, Enemy gets destroyed
+				if (registry.all_of<Enemy>(*a) && registry.all_of<SideFighter>(*b))
+				{
+					std::cout << "Side Fighter Hit!" << std::endl;
+
+					OnSideFighterDeath(registry, *b);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+				}
+				if (registry.all_of<Enemy>(*b) && registry.all_of<SideFighter>(*a))
+				{
+					std::cout << "Side Fighter Hit!" << std::endl;
+
+					OnSideFighterDeath(registry, *a);
+
+					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+				}
+
 				//Case: Enemy Bullet to Player - Player gets hurt, bullet gets destroyed
 				if (registry.all_of<EnemyBullets>(*a) && registry.all_of<Player>(*b))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *b);
-					registry.emplace_or_replace<GAME::ToDestroy>(*a);
+					if (!registry.all_of<GAME::Invuln>(*b))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *b, gameManager);
+					}
 				}
 				if (registry.all_of<EnemyBullets>(*b) && registry.all_of<Player>(*a))
 				{
-					std::cout << "Player Hit!" << std::endl;
-					HurtPlayer(registry, *a);
-					registry.emplace_or_replace<GAME::ToDestroy>(*b);
+					if (!registry.all_of<GAME::Invuln>(*a))
+					{
+						if (gameManager != entt::null)
+							GAME::KillPlayer(registry, *a, gameManager);
+					}
 				}
 			}
 		}
@@ -282,6 +332,18 @@ void Physics::WorldLimit(entt::registry& registry) {
 		// Enemy bullets bounds check
 		auto& EnemyBulletTrans = registry.view<GAME::EnemyBullets, GAME::Transform>();
 		for (auto& entity : EnemyBulletTrans) {
+			auto& entTrans = registry.get<GAME::Transform>(entity);
+			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+			else if (entTrans.matrix.row4.z > bounds.top + offset || entTrans.matrix.row4.z < bounds.bottom - offset) {
+				registry.emplace_or_replace<GAME::ToDestroy>(entity);
+			}
+		}
+
+		//PowerUp bounds check
+		auto& PowerUpTrans = registry.view<GAME::PowerUp, GAME::Transform>();
+		for (auto& entity : PowerUpTrans) {
 			auto& entTrans = registry.get<GAME::Transform>(entity);
 			if (entTrans.matrix.row4.x < bounds.left - offset || entTrans.matrix.row4.x > bounds.right + offset) {
 				registry.emplace_or_replace<GAME::ToDestroy>(entity);

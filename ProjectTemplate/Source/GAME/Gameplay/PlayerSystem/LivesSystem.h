@@ -6,4 +6,5 @@ namespace GAME
 	void KillPlayer(entt::registry& registry, entt::entity player, entt::entity gameManager);
 	void RespawnPlayer(entt::registry& registry, float deltaTime);
 	void UpdateHighscoreEntry(entt::registry& registry);
+	void PlayerExplosion(entt::registry& registry, float deltaTime);
 }

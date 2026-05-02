@@ -10,30 +10,30 @@ public:
 	// Call this when player loses
 	bool Begin(entt::registry& registry);
 
-	// Decide if initials input should appear on UI
 	bool NeedsInitialsEntry() const;
 
-	// Calls this after the player confirms initials
 	bool SubmitInitials(entt::registry& registry, const std::string& initials);
 
-	// UI should read leaderboard entries from here
-	const std::vector<LeaderboardEntry>& GetEntries() const;
-
-	// Show player score to UI
-	int GetPlayerScore() const;
-
-	// Check if player got a highscore in UI
 	bool IsNewHighscore() const;
 
 	// Check if leaderboard is loaded
 	bool IsLoaded() const;
 
+	// Read leaderboard entries from here
+	const std::vector<LeaderboardEntry>& GetEntries() const;
+
+	int GetFinalScore() const;
+
+	int GetLocalHighScore() const;
+
+	void UpdateLocalHighScore(int liveScore);
+
 	void Reset();
 
 private:
 	std::vector<LeaderboardEntry> visibleEntries;
-	int playerScore = 0;
-
+	int finalScore = 0;
+	int localHighScore = 0;
 	bool loaded = false;
 	bool newHighscore = false;
 	bool submitted = false;

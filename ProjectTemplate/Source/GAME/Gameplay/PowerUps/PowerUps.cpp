@@ -7,6 +7,11 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
 {
     entt::entity powerUp = registry.create();
     auto& vel = registry.emplace<GAME::Velocity>(powerUp);
+    registry.emplace<GAME::Collidable>(powerUp);
+
+    auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
+    auto& manager = registry.ctx().get<DRAW::ModelManager>();
+    auto& powerUpCollection = registry.emplace<DRAW::MeshCollection>(powerUp);
 
     GW::MATH::GVECTORF powerUpDir = { 0, 0, -1, 0 };
     powerUpDir.z *= 5.0f;
@@ -24,12 +29,6 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
     {
         powerUpComponent = &registry.emplace<GAME::PowerUp>(powerUp, type);
     }
-    
-    registry.emplace<GAME::Collidable>(powerUp);
-
-    auto& powerUpTransform = registry.emplace<GAME::Transform>(powerUp);
-    auto& manager = registry.ctx().get<DRAW::ModelManager>();
-    auto& powerUpCollection = registry.emplace<DRAW::MeshCollection>(powerUp);
 
     CloneModelToEntity(
         registry,
@@ -38,11 +37,21 @@ void SpawnPowerUp(entt::registry& registry, const GW::MATH::GMATRIXF& transform,
         powerUpTransform
     );
 
-    GW::MATH::GMatrix::TranslateGlobalF(
+    auto player = registry.view<GAME::Player, GAME::Transform>().front();
+	auto& playerTrans = registry.get<GAME::Transform>(player);
+
+    GW::MATH::GMatrix::TranslateLocalF(
         powerUpTransform.matrix,
-        GW::MATH::GVECTORF{ transform.row4.x, 0.0f, transform.row4.z, 0.0f },
+        GW::MATH::GVECTORF{ transform.row4.x, playerTrans.matrix.row4.y, transform.row4.z, 0.0f },
         powerUpTransform.matrix
     );
+
+	std::cout << "Player position: (" << playerTrans.matrix.row4.x << ", " << playerTrans.matrix.row4.y << ", " << playerTrans.matrix.row4.z << ")" << std::endl;
+
+    std::cout << "Spawned Power-Up of type: " << powerUpComponent->modelName << " at position: (" 
+              << powerUpTransform.matrix.row4.x << ", " 
+              << powerUpTransform.matrix.row4.y << ", " 
+		<< powerUpTransform.matrix.row4.z << ")" << std::endl;
 }
 
 void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpType type)
@@ -76,9 +85,12 @@ void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpT
 
 void SideFighterPU(entt::registry& registry, entt::entity player)
 {
+    auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+	float duration = config->at("PowerUps").at("duration").as<float>();
+    
     if (!registry.any_of<GAME::HasSideFighters>(player))
     {
-        registry.emplace<GAME::HasSideFighters>(player, GAME::HasSideFighters{ true, true });
+        registry.emplace<GAME::HasSideFighters>(player, GAME::HasSideFighters{ true, true, duration });
 
         SpawnSideFighter(registry, player, "LEFT");
         SpawnSideFighter(registry, player, "RIGHT");
@@ -86,6 +98,7 @@ void SideFighterPU(entt::registry& registry, entt::entity player)
     else
     {
         auto& sideFighterData = registry.get<GAME::HasSideFighters>(player);
+		sideFighterData.timer = duration;
 
         if (!sideFighterData.leftAlive || !sideFighterData.rightAlive)
         {
@@ -152,8 +165,22 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 
 void MultiShotPU(entt::registry& registry, entt::entity player)
 {
-	registry.emplace_or_replace<GAME::MultiShot>(player);
+
+    auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+    float duration = config->at("PowerUps").at("duration").as<float>();
+
+    // If they already have it, just refresh the timer
+    if (registry.any_of<GAME::MultiShot>(player)) 
+    {
+        registry.get<GAME::MultiShot>(player).timer = duration;
+    }
+    else 
+    {
+        auto& ms = registry.emplace<GAME::MultiShot>(player);
+        ms.timer = duration;
+    }
 }
+
 void ScreenWipePU(entt::registry& registry)
 {
 	auto& allEnemies = registry.view<GAME::Enemy>();
@@ -182,6 +209,11 @@ void ExtraLifePU(entt::registry& registry, entt::entity player, int livesAmount)
 	auto& playerLives = registry.get<GAME::Lives>(player);
 
 	playerLives.count += livesAmount;
+
+    if (playerLives.count > 5)
+    {
+        playerLives.count = 5;
+    }
 }
 
 void BonusPointsPU(entt::registry& registry)
@@ -191,9 +223,42 @@ void BonusPointsPU(entt::registry& registry)
 
 void Update_SideFighter(entt::registry& registry, entt::entity self)
 {
+    if(registry.any_of<GAME::ToDestroy>(self))
+    {
+        return;
+    }
+    
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
-
     double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+    auto& myTransform = registry.get<GAME::Transform>(self);
+
+    if (sideFighter.isLeaving)
+    {
+        // Adjust this speed if you want them to fly away faster/slower
+        float speed = 50.0f * deltaTime;
+        GW::MATH::GVECTORF moveDir = { 0, 0, 0, 0 };
+
+        moveDir.z = -speed;
+
+        // Translate the Wingman from its CURRENT spot, ignoring the player
+        GW::MATH::GMatrix::TranslateGlobalF(myTransform.matrix, moveDir, myTransform.matrix);
+
+        if (registry.ctx().contains<GAME::Bounds>()) 
+        {
+            auto& bounds = registry.ctx().get<GAME::Bounds>();
+
+            if (myTransform.matrix.row4.x < bounds.left - 10 ||
+                myTransform.matrix.row4.x > bounds.right + 10 ||
+                myTransform.matrix.row4.z < bounds.bottom - 10 ||
+                myTransform.matrix.row4.z > bounds.top + 10)
+            {
+                registry.emplace_or_replace<GAME::ToDestroy>(self);
+            }
+        }
+        
+
+        return;
+    }
 
     if (registry.valid(sideFighter.player))
     {
@@ -219,6 +284,8 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
         {
 			sideFighter.canShoot = true;
         }
+
+        
     }
 };
 
@@ -237,6 +304,156 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
             sideFighterData.rightAlive = false;
         }
     }
+
+    //Play Explosion Animation
+    auto& fighterTrans = registry.get<GAME::Transform>(self);
+    auto& modelManager = registry.ctx().get<DRAW::ModelManager>();
+
+    auto found = modelManager.collections.find("ExplosionQuad");
+
+    if (found != modelManager.collections.end())
+    {
+        entt::entity explosion = registry.create();
+		registry.emplace_or_replace<GAME::Transform>(explosion, fighterTrans);
+		registry.emplace_or_replace<GAME::Velocity>(explosion, GAME::Velocity{ GW::MATH::GVECTORF{0, 0, -15, 0} });
+
+        DRAW::MeshCollection explosionMeshes;
+        explosionMeshes.parent = explosion;
+
+        for (auto sourceMesh : found->second.meshEntities)
+        {
+            if (!registry.valid(sourceMesh))
+            {
+                continue;
+            }
+
+            entt::entity clonedMesh = registry.create();
+
+            if (registry.all_of<DRAW::GeometryData>(sourceMesh))
+            {
+                registry.emplace<DRAW::GeometryData>(clonedMesh, registry.get<DRAW::GeometryData>(sourceMesh));
+            }
+
+            if (registry.all_of<DRAW::GPUInstance>(sourceMesh))
+            {
+                auto gpu = registry.get<DRAW::GPUInstance>(sourceMesh);
+                gpu.transform = fighterTrans.matrix;
+
+                GW::MATH::GVECTORF scale = { 1.0f, 1.0f, 1.0f, 0.0f };
+                GW::MATH::GMatrix::ScaleGlobalF(gpu.transform, scale, gpu.transform);
+
+                registry.emplace<DRAW::GPUInstance>(clonedMesh, gpu);
+            }
+
+            registry.emplace_or_replace<GAME::Visible>(clonedMesh).show = true;
+            explosionMeshes.meshEntities.push_back(clonedMesh);
+        }
+
+        registry.emplace<DRAW::MeshCollection>(explosion, explosionMeshes);
+
+        auto& texture = modelManager.textures["Textures/PlayerDeath/Explosion_0.png"];
+        for (auto meshEntity : explosionMeshes.meshEntities)
+        {
+            if (registry.all_of<DRAW::GeometryData>(meshEntity))
+            {
+                auto& geo = registry.get<DRAW::GeometryData>(meshEntity);
+                geo.textureDescriptor = texture.descriptorSet;
+            }
+        }
+
+        auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+
+        registry.emplace<GAME::SpriteAnimation>(explosion);
+        auto& animate = registry.get<GAME::SpriteAnimation>(explosion);
+        animate.currentFrame = 0;
+        animate.totalFrames = config->at("Explosion").at("totalFrames").as<int>();
+        animate.frameTime = config->at("Explosion").at("frameTime").as<float>();
+
+        registry.emplace<GAME::Lifetime>(explosion).timeRemaining =
+            config->at("Explosion").at("lifeTime").as<float>();
+
+        registry.emplace<GAME::PlayerDeathExplosion>(explosion);
+    }
+
+}
+
+void UpdatePowerUpTimers(entt::registry& registry)
+{
+    float dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
+    // 1. Update SideFighter Timer
+    auto sideFighterView = registry.view<GAME::Player, GAME::HasSideFighters>();
+    for (auto entity : sideFighterView)
+    {
+        auto& sf = registry.get<GAME::HasSideFighters>(entity);
+        sf.timer -= dt;
+
+        if (sf.timer <= 0.0f)
+        {
+            auto sfEntities = registry.view<GAME::SideFighter>();
+
+            for (auto sfEnt : sfEntities) {
+                auto& sfComp = registry.get<GAME::SideFighter>(sfEnt);
+
+				
+                // Fighter stop shooting
+                sfComp.isLeaving = true;
+                sfComp.canShoot = false;
+
+                sfComp.targetOffset.z -= 100.0f;
+
+                // Remove their collider so they don't block bullets while flying away
+                //registry.remove<GAME::Collidable>(sfEnt);
+            }
+
+            // Remove the power-up capability from the player
+            registry.remove<GAME::HasSideFighters>(entity);
+            std::cout << "SideFighter Power-Up Expired" << std::endl;
+        }
+    }
+
+    // 2. Update MultiShot Timer
+    auto multiShotView = registry.view<GAME::Player, GAME::MultiShot>();
+    for (auto entity : multiShotView)
+    {
+        auto& ms = registry.get<GAME::MultiShot>(entity);
+        ms.timer -= dt;
+
+        if (ms.timer <= 0.0f)
+        {
+            registry.remove<GAME::MultiShot>(entity);
+            std::cout << "MultiShot Power-Up Expired" << std::endl;
+        }
+    }
+}
+
+void ClearPowerUPs(entt::registry& registry, entt::entity player)
+{
+	//Removes PowerUps on the field
+    auto powerUpView = registry.view<GAME::PowerUp>();
+    for (auto PU : powerUpView)
+    {
+        registry.destroy(PU);
+    }
+    
+	//Removes SideFighters if player has them
+    if (registry.any_of<GAME::HasSideFighters>(player))
+    {
+        auto& SFView = registry.view<GAME::SideFighter>();
+
+        for (auto entity : SFView)
+        {
+            registry.destroy(entity);
+        }
+
+        registry.remove<GAME::HasSideFighters>(player);
+    }
+
+	//Removes MultiShot if player has it
+    if (registry.any_of<GAME::MultiShot>(player))
+    {
+        registry.remove<GAME::MultiShot>(player);
+	}
 }
 
 struct DropChance
