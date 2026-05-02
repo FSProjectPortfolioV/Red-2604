@@ -85,9 +85,12 @@ void PowerUpEffect(entt::registry& registry, entt::entity player, GAME::PowerUpT
 
 void SideFighterPU(entt::registry& registry, entt::entity player)
 {
+    auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+	float duration = config->at("PowerUps").at("duration").as<float>();
+    
     if (!registry.any_of<GAME::HasSideFighters>(player))
     {
-        registry.emplace<GAME::HasSideFighters>(player, GAME::HasSideFighters{ true, true });
+        registry.emplace<GAME::HasSideFighters>(player, GAME::HasSideFighters{ true, true, duration });
 
         SpawnSideFighter(registry, player, "LEFT");
         SpawnSideFighter(registry, player, "RIGHT");
@@ -95,6 +98,7 @@ void SideFighterPU(entt::registry& registry, entt::entity player)
     else
     {
         auto& sideFighterData = registry.get<GAME::HasSideFighters>(player);
+		sideFighterData.timer = duration;
 
         if (!sideFighterData.leftAlive || !sideFighterData.rightAlive)
         {
@@ -161,8 +165,22 @@ void SpawnSideFighter(entt::registry& registry, entt::entity player, std::string
 
 void MultiShotPU(entt::registry& registry, entt::entity player)
 {
-	registry.emplace_or_replace<GAME::MultiShot>(player);
+
+    auto config = registry.ctx().get<UTIL::Config>().gameConfig;
+    float duration = config->at("PowerUps").at("duration").as<float>();
+
+    // If they already have it, just refresh the timer
+    if (registry.any_of<GAME::MultiShot>(player)) 
+    {
+        registry.get<GAME::MultiShot>(player).timer = duration;
+    }
+    else 
+    {
+        auto& ms = registry.emplace<GAME::MultiShot>(player);
+        ms.timer = duration;
+    }
 }
+
 void ScreenWipePU(entt::registry& registry)
 {
 	auto& allEnemies = registry.view<GAME::Enemy>();
@@ -237,6 +255,15 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
         if (sideFighter.currentOffset.z >= sideFighter.targetOffset.z - 0.1f) 
         {
 			sideFighter.canShoot = true;
+        }
+
+        if (sideFighter.isLeaving)
+        {
+            if(std::abs(sideFighter.currentOffset.x - sideFighter.targetOffset.x) < 3.0f &&
+               std::abs(sideFighter.currentOffset.z - sideFighter.targetOffset.z) < 3.0f)
+            {
+                registry.emplace<GAME::ToDestroy>(self);
+			}
         }
     }
 };
@@ -327,6 +354,68 @@ void OnSideFighterDeath(entt::registry& registry, entt::entity self)
         registry.emplace<GAME::PlayerDeathExplosion>(explosion);
     }
 
+}
+
+void UpdatePowerUpTimers(entt::registry& registry)
+{
+    float dt = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
+    // 1. Update SideFighter Timer
+    auto sideFighterView = registry.view<GAME::Player, GAME::HasSideFighters>();
+    for (auto entity : sideFighterView)
+    {
+        auto& sf = registry.get<GAME::HasSideFighters>(entity);
+        sf.timer -= dt;
+
+        if (sf.timer <= 0.0f)
+        {
+            auto sfEntities = registry.view<GAME::SideFighter>();
+
+            for (auto sfEnt : sfEntities) {
+                auto& sfComp = registry.get<GAME::SideFighter>(sfEnt);
+
+                // Fighter stop shooting
+                sfComp.isLeaving = true;
+                sfComp.canShoot = false;
+
+                sfComp.lerpSpeed *= 0.5f;
+
+                // Set new target offsets way off to the sides
+                if (sfComp.side == "LEFT") 
+                {
+                    sfComp.targetOffset.x -= 100.0f;
+                }
+
+                if (sfComp.side == "RIGHT")
+                {
+                    sfComp.targetOffset.x += 100.0f;
+                }
+
+                sfComp.targetOffset.z -= 100.0f;
+
+                // Remove their collider so they don't block bullets while flying away
+                //registry.remove<GAME::Collidable>(sfEnt);
+            }
+
+            // Remove the power-up capability from the player
+            registry.remove<GAME::HasSideFighters>(entity);
+            std::cout << "SideFighter Power-Up Expired" << std::endl;
+        }
+    }
+
+    // 2. Update MultiShot Timer
+    auto multiShotView = registry.view<GAME::Player, GAME::MultiShot>();
+    for (auto entity : multiShotView)
+    {
+        auto& ms = registry.get<GAME::MultiShot>(entity);
+        ms.timer -= dt;
+
+        if (ms.timer <= 0.0f)
+        {
+            registry.remove<GAME::MultiShot>(entity);
+            std::cout << "MultiShot Power-Up Expired" << std::endl;
+        }
+    }
 }
 
 void ClearPowerUPs(entt::registry& registry, entt::entity player)

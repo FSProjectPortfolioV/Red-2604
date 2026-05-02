@@ -22,6 +22,8 @@ void BonusPointsPU(entt::registry& registry);
 void Update_SideFighter(entt::registry& registry, entt::entity self);
 void OnSideFighterDeath(entt::registry& registry, entt::entity self);
 
+void UpdatePowerUpTimers(entt::registry& registry);
+
 void ClearPowerUPs(entt::registry& registry, entt::entity player);
 
 GAME::PowerUpType GetRandomPowerUpType(entt::registry& registry);
