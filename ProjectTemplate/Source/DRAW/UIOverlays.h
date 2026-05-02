@@ -53,6 +53,7 @@ int totalKilled = 0;
 int totalSpawned = 0;
 bool gameWon = false;
 bool namedScore = false;
+bool justLooking = false;
 
 std::vector<std::string> FinalStats{
 	"TERMINATING CRAFTS",
@@ -363,14 +364,20 @@ void TypeFinalStats(entt::registry& registry, BLIT_Font& font, int W, int H, std
 	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
 	TypeLines(registry, font, W, H, texts, timers, keyIndices, lineCount);
 	if (forTyping[0] == FinalStats[0]) {
-		RenderOnScreen(font, W + 200, H, std::to_string(totalKilled));
+		RenderOnScreen(font, W + 400, H, std::to_string(totalKilled));
 	}
 	if (forTyping[1] == FinalStats[1]) {
-		int totalPercentage = (totalKilled / totalSpawned) * 100;
-		RenderOnScreen(font, W + 200, H + LineSpace, std::to_string(totalPercentage));
+		int totalPercentage;
+		if (totalKilled == 0 || totalSpawned == 0) {
+			totalPercentage = 0;
+		}
+		else {
+			totalPercentage == (totalKilled / totalSpawned) * 100;
+		} 
+		RenderOnScreen(font, W + 400, H + LineSpace, std::to_string(totalPercentage) + '%');
 	}
 	if (forTyping[2] == FinalStats[2]) {
-		RenderOnScreen(font, W + 200, H + (LineSpace * 2), CalculateTodaysTop());
+		RenderOnScreen(font, W + 400, H + (LineSpace * 2), CalculateTodaysTop());
 	}
 }
 
@@ -516,7 +523,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 	GW::INPUT::GBufferedInput::EVENT_DATA inputData;
 
 	bltr.ClearColor(0x00000000);
-	if (leaderboard.IsNewHighscore() && !namedScore) {
+	if (leaderboard.IsNewHighscore() && !namedScore && !justLooking) {
 		FlashingEffect(registry, font, (W / 2) - 100, (H / 2) - 150, "New Highscore!");
 		RenderOnScreen(font, (W / 4) - 45, (H / 2) - 75, "INPUT INITIALS WITH ARROWS (Ex. \"ABC\")");
 		if (forTyping.empty()) {
@@ -638,10 +645,15 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		{
 			//Press P or Start to pause, press again to unpause
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
-				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7)) {
+				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					OverlayIndex = PrevOverlayIndex;
+					if (PrevOverlayIndex == 2) {
+						OverlayIndex = PrevOverlayIndex;
+					}
+					else {
+						OverlayIndex = 2;
+					}
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
@@ -769,6 +781,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_L
 				&& (OverlayIndex == 3 || OverlayIndex == 5)) {
+				justLooking = true;
 				OverlayIndex = 7;
 			}
 
@@ -829,7 +842,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			auto& leaderboard = registry.ctx().get<HighscoreScreenController>();
 			auto& Initials = registry.ctx().get<InitialsEntrySystem>();
 
-			if (!namedScore && OverlayIndex == 7)
+			if (!namedScore && !justLooking && OverlayIndex == 7)
 			{
 				forTyping[forTyping.size() - 1][Initials.GetSelectedIdx()] = Initials.GetCharAt(Initials.GetSelectedIdx());
 			}
@@ -1112,6 +1125,9 @@ int LevelProficiency (float spawned, float killed) {
 }
 
 std::string CalculateTodaysTop() {
+	if (ElimPercentages.empty()) {
+		return std::to_string(0) + '%';
+	}
 	std::sort(ElimPercentages.begin(), ElimPercentages.end(), [](int a, int b) {
 		return a > b;
 	});
