@@ -338,7 +338,13 @@ void TypeFinalStats(entt::registry& registry, BLIT_Font& font, int W, int H, std
 		RenderOnScreen(font, W + 200, H, std::to_string(totalKilled));
 	}
 	if (forTyping[1] == FinalStats[1]) {
-		int totalPercentage = (totalKilled / totalSpawned) * 100;
+		int totalPercentage;
+		if (totalKilled == 0 || totalSpawned == 0) {
+			totalPercentage = 0;
+		}
+		else {
+			totalPercentage == (totalKilled / totalSpawned) * 100;
+		} 
 		RenderOnScreen(font, W + 200, H + LineSpace, std::to_string(totalPercentage));
 	}
 	if (forTyping[2] == FinalStats[2]) {
@@ -610,7 +616,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		{
 			//Press P or Start to pause, press again to unpause
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && inputData.data == G_KEY_P
-				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7)) {
+				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
 					OverlayIndex = PrevOverlayIndex;
