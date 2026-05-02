@@ -229,8 +229,36 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
     }
     
     auto& sideFighter = registry.get<GAME::SideFighter>(self);
-
     double deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+    auto& myTransform = registry.get<GAME::Transform>(self);
+
+    if (sideFighter.isLeaving)
+    {
+        // Adjust this speed if you want them to fly away faster/slower
+        float speed = 50.0f * deltaTime;
+        GW::MATH::GVECTORF moveDir = { 0, 0, 0, 0 };
+
+        moveDir.z = -speed;
+
+        // Translate the Wingman from its CURRENT spot, ignoring the player
+        GW::MATH::GMatrix::TranslateGlobalF(myTransform.matrix, moveDir, myTransform.matrix);
+
+        if (registry.ctx().contains<GAME::Bounds>()) 
+        {
+            auto& bounds = registry.ctx().get<GAME::Bounds>();
+
+            if (myTransform.matrix.row4.x < bounds.left - 10 ||
+                myTransform.matrix.row4.x > bounds.right + 10 ||
+                myTransform.matrix.row4.z < bounds.bottom - 10 ||
+                myTransform.matrix.row4.z > bounds.top + 10)
+            {
+                registry.emplace_or_replace<GAME::ToDestroy>(self);
+            }
+        }
+        
+
+        return;
+    }
 
     if (registry.valid(sideFighter.player))
     {
@@ -257,14 +285,7 @@ void Update_SideFighter(entt::registry& registry, entt::entity self)
 			sideFighter.canShoot = true;
         }
 
-        if (sideFighter.isLeaving)
-        {
-            if(std::abs(sideFighter.currentOffset.x - sideFighter.targetOffset.x) < 3.0f &&
-               std::abs(sideFighter.currentOffset.z - sideFighter.targetOffset.z) < 3.0f)
-            {
-                registry.emplace<GAME::ToDestroy>(self);
-			}
-        }
+        
     }
 };
 
@@ -374,22 +395,10 @@ void UpdatePowerUpTimers(entt::registry& registry)
             for (auto sfEnt : sfEntities) {
                 auto& sfComp = registry.get<GAME::SideFighter>(sfEnt);
 
+				
                 // Fighter stop shooting
                 sfComp.isLeaving = true;
                 sfComp.canShoot = false;
-
-                sfComp.lerpSpeed *= 0.5f;
-
-                // Set new target offsets way off to the sides
-                if (sfComp.side == "LEFT") 
-                {
-                    sfComp.targetOffset.x -= 100.0f;
-                }
-
-                if (sfComp.side == "RIGHT")
-                {
-                    sfComp.targetOffset.x += 100.0f;
-                }
 
                 sfComp.targetOffset.z -= 100.0f;
 
