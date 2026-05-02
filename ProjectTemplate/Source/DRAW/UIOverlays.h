@@ -1118,6 +1118,9 @@ int LevelProficiency (float spawned, float killed) {
 }
 
 std::string CalculateTodaysTop() {
+	if (ElimPercentages.empty()) {
+		return std::to_string(0) + '%';
+	}
 	std::sort(ElimPercentages.begin(), ElimPercentages.end(), [](int a, int b) {
 		return a > b;
 	});
