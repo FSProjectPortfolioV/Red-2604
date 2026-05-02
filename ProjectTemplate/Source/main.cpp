@@ -315,29 +315,6 @@ void MainLoopBehavior(entt::registry& registry)
 		GAME::UpdateHighscoreEntry(registry);
 		UpdatePowerUpTimers(registry);
 
-
-		auto& input = registry.ctx().get<UTIL::Input>();
-
-		static bool tDown = false;
-		float state = 0.0f;
-
-		if (input.immediateInput.GetState(G_KEY_T, state) == GW::GReturn::SUCCESS && state > 0.0f)
-		{
-			if (!tDown)
-			{
-				auto& localHighscore = registry.ctx().get<LocalHighscoreSystem>();
-				localHighscore.Update(10000);
-
-				std::cout << "Test highscore update ran\n";
-			}
-
-			tDown = true;
-		}
-		else
-		{
-			tDown = false;
-		}
-
 		// Update Game and Level
 		auto lmView = registry.view<GAME::LevelManager>();
 		auto gmView = registry.view<GAME::GameManager>();
