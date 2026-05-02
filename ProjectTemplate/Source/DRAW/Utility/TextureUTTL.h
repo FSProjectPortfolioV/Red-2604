@@ -10,13 +10,39 @@
 
 #include "stb_image.h"
 
+// FOR UI
+// A universal struct to hold any 2D UI Image
+struct UIIcon {
+    unsigned int* pixels = nullptr;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+};
+// This dictionary will store all loaded UI icons by a string name!
+inline std::unordered_map<std::string, UIIcon> activeUIIcons;
+
+// Loads an image file into a UIIcon struct and saves it to the activeUIIcons dictionary with the given name
+inline void LoadUIIcon(const std::string& name, const std::string& filepath) {
+    UIIcon newIcon;
+    newIcon.pixels = (unsigned int*)stbi_load(filepath.c_str(), &newIcon.width, &newIcon.height, &newIcon.channels, 4);
+
+    if (newIcon.pixels == nullptr) {
+        std::cout << "WARNING: UI Icon Failed to load: " << filepath << std::endl;
+    }
+    else {
+        // Save it to the dictionary
+        activeUIIcons[name] = newIcon;
+    }
+}
+
+
 // A lightweight struct to hold raw pixel data
 struct RawImage {
     int width, height, component, bits;
     std::vector<unsigned char> image;
 };
 
-// 1. THE MISSING FUNCTION: This does the actual Vulkan memory allocation and buffer copying
+// 1. This does the actual Vulkan memory allocation and buffer copying
 inline void UploadTextureToGPU(GW::GRAPHICS::GVulkanSurface _surface, const RawImage& _img,
     VkDeviceMemory& _outTextureMemory, VkImage& _outTextureImage,
     VkImageView& _outTextureImageView, bool _linearColorSpace = true)

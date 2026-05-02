@@ -1,4 +1,7 @@
 #pragma once
+#include <iomanip>
+#include <sstream>
+
 #include "../GAME/GameComponents.h"
 #include "./Utility/FileIntoString.h"
 #include "shaderc/shaderc.h"
@@ -12,8 +15,10 @@
 #include "../GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 #include "../GAME/GameManager.h"
 #include "../GAME/LevelLoader.h"
+#include "../DRAW/Utility/TextureUTTL.h"
 #include "../GAME/Gameplay/PowerUps/PowerUps.h"
 #include "../APP/Window.hpp"
+
 
 float flashEnd = 1.1f;
 float flashTimer = 0.0f;
@@ -119,6 +124,15 @@ std::string BuildRollCharges(int charges);
 int LevelProficiency(int spawned, int killed);
 std::string CalculateTodaysTop();
 
+// Show PowerUps Timer
+void QueuePowerUpText(entt::registry& registry, BLIT_Font& font, int W, int H);
+void DrawPowerUpImages(entt::registry& registry, int W, int H, unsigned int* screenPixels);
+
+void DrawImageToOverlay(unsigned int* screenPixels, int screenW, int screenH,
+	unsigned int* imgPixels, int imgW, int imgH,
+	int startX, int startY);
+
+
 void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 	int windowWidth = (*config).at("Window").at("width").as<int>();
@@ -181,14 +195,28 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	const char* enemyDead = (*config).at("Sounds").at("edeath").as<const char*>();
 	soundstorage.sounds[5].Create(enemyDead, gAudio);
+
+	//Power Ups
+	std::string sfIcoPath = (*config).at("PowerUps").at("SideFighterIcon_Path").as<std::string>();
+	std::string msIcoPath = (*config).at("PowerUps").at("MultiShotIcon_Path").as<std::string>();
+
+	LoadUIIcon("SideFighter", sfIcoPath);
+	LoadUIIcon("MultiShot", msIcoPath);
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
 	bltr.ClearColor(0x00000000);
 	SetRegularUI(registry, font, W, H);
+
+	QueuePowerUpText(registry, font, W, H);
+
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
+
 	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+
+	DrawPowerUpImages(registry, W, H, pixels);
+
 	ovl.Unlock();
 	ovl.TransferOverlay();
 }
@@ -996,4 +1024,129 @@ void FlashingUnderLine(entt::registry& registry, BLIT_Font& font, int W, int H, 
 		underline += '_';
 	}
 	RenderOnScreen(font, W, H + 10, underline);
+}
+
+// QUEUES THE TEXT
+void QueuePowerUpText(entt::registry& registry, BLIT_Font& font, int W, int H)
+{
+	auto playerView = registry.view<GAME::Player>();
+	if (playerView.empty()) return;
+	auto player = playerView.front();
+
+	int yOffset = H/2 + 10;
+
+	// 1. Queue SideFighter
+	if (registry.any_of<GAME::HasSideFighters>(player))
+	{
+		auto& sf = registry.get<GAME::HasSideFighters>(player);
+		std::stringstream stream;
+		stream << std::fixed << std::setprecision(1) << sf.timer;
+
+		if (sf.timer > 3.0f || (static_cast<int>(sf.timer * 10) % 2 == 0))
+		{
+			int textX = 5; // Default starting position
+
+			// Ask the dictionary for the width!
+			if (activeUIIcons.count("SideFighter") > 0 && activeUIIcons["SideFighter"].pixels != nullptr) {
+				textX = 5 + activeUIIcons["SideFighter"].width + 5;
+			}
+
+			RenderOnScreen(font, textX, yOffset, " " + stream.str() + "s");
+		}
+		yOffset -= 45;
+	}
+
+	// 2. Queue Multi-Shot
+	if (registry.any_of<GAME::MultiShot>(player))
+	{
+		auto& ms = registry.get<GAME::MultiShot>(player);
+		std::stringstream stream; stream << std::fixed << std::setprecision(1) << ms.timer;
+
+		if (ms.timer > 3.0f || (static_cast<int>(ms.timer * 10) % 2 == 0))
+		{
+			int textX = 5; // Default starting position
+
+			if (activeUIIcons.count("MultiShot") > 0 && activeUIIcons["MultiShot"].pixels != nullptr) {
+				textX = 5 + activeUIIcons["MultiShot"].width + 5;
+			}
+
+			RenderOnScreen(font, textX, yOffset, " " + stream.str() + "s");
+		}
+		yOffset -= 45;
+	}
+}
+
+// DRAWS THE IMAGE
+void DrawPowerUpImages(entt::registry& registry, int W, int H, unsigned int* screenPixels)
+{
+	auto playerView = registry.view<GAME::Player>();
+	if (playerView.empty()) return;
+	auto player = playerView.front();
+
+	int yOffset = H/2;
+
+	// 1. Draw SideFighter Image
+	if (registry.any_of<GAME::HasSideFighters>(player))
+	{
+		auto& sf = registry.get<GAME::HasSideFighters>(player);
+		if (sf.timer > 3.0f || (static_cast<int>(sf.timer * 10) % 2 == 0))
+		{
+			// Grab the icon bundle from the dictionary
+			UIIcon& icon = activeUIIcons["SideFighter"];
+			if (icon.pixels != nullptr) {
+				DrawImageToOverlay(screenPixels, W, H, icon.pixels, icon.width, icon.height, 5, yOffset - 15);
+			}
+		}
+		yOffset -= 45;
+	}
+
+	// 2. Draw Multi-Shot Image
+	if (registry.any_of<GAME::MultiShot>(player))
+	{
+		auto& ms = registry.get<GAME::MultiShot>(player);
+		if (ms.timer > 3.0f || (static_cast<int>(ms.timer * 10) % 2 == 0))
+		{
+			UIIcon& icon = activeUIIcons["MultiShot"];
+			if (icon.pixels != nullptr) {
+				DrawImageToOverlay(screenPixels, W, H, icon.pixels, icon.width, icon.height, 5, yOffset - 15);
+			}
+		}
+		yOffset -= 45;
+	}
+}
+
+void DrawImageToOverlay(unsigned int* screenPixels, int screenW, int screenH,
+	unsigned int* imgPixels, int imgW, int imgH,
+	int startX, int startY)
+{
+	if (!imgPixels || !screenPixels) return;
+
+	for (int y = 0; y < imgH; ++y)
+	{
+		for (int x = 0; x < imgW; ++x)
+		{
+			int screenX = startX + x;
+			int screenY = startY + y;
+
+			if (screenX >= 0 && screenX < screenW && screenY >= 0 && screenY < screenH)
+			{
+				unsigned int color = imgPixels[y * imgW + x];
+
+				// stb_image loads as RGBA. On Windows, this reads backwards as ABGR.
+				// We need to extract the channels and re-pack them as ARGB!
+				unsigned char r = (color & 0xFF);
+				unsigned char g = ((color >> 8) & 0xFF);
+				unsigned char b = ((color >> 16) & 0xFF);
+				unsigned char a = ((color >> 24) & 0xFF);
+
+				// Only draw if it's mostly solid (Alpha > 10)
+				if (a > 10)
+				{
+					// Re-pack the bytes in the correct Gateware order (AARRGGBB)
+					unsigned int fixedColor = (a << 24) | (r << 16) | (g << 8) | b;
+					screenPixels[screenY * screenW + screenX] = fixedColor;
+				}
+			}
+		}
+	}
 }

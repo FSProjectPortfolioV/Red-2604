@@ -1,5 +1,6 @@
 #pragma once
 #include "../../gateware-main/Gateware.h"
+#include <unordered_map>
 
 namespace GAME
 {
@@ -206,6 +207,7 @@ namespace GAME
 	{
 		bool leftAlive = false;
 		bool rightAlive = false;
+		float timer = 0.0f;
 	};
 
 	struct SideFighter 
@@ -216,6 +218,7 @@ namespace GAME
 		GW::MATH::GVECTORF currentOffset;
 
 		bool canShoot = false;
+		bool isLeaving = false;
 		float lerpSpeed = 4.0f;
 	};
 
@@ -226,6 +229,8 @@ namespace GAME
 		GW::MATH::GVECTORF{ 0, 0, 1, 0 },
 		GW::MATH::GVECTORF{ 1, 0, 1, 0 }
 		};
+
+		float timer = 0.0f;
 	};
 
 	struct PUCarrier 

@@ -18,6 +18,7 @@
 #include "GAME/LevelLoader.h"
 #include "GAME/Gameplay/ScoreSystem/LocalHighscoreSystem.h"
 #include "DRAW/Overlay.h"
+#include "GAME/Gameplay/PowerUps/PowerUps.h"
 
 
 // Local routines for specific application behavior
@@ -312,6 +313,8 @@ void MainLoopBehavior(entt::registry& registry)
 		GAME::RespawnPlayer(registry, (float)deltaTime);
 		GAME::PlayerExplosion(registry, (float)deltaTime);
 		GAME::UpdateHighscoreEntry(registry);
+		UpdatePowerUpTimers(registry);
+
 
 		auto& input = registry.ctx().get<UTIL::Input>();
 
