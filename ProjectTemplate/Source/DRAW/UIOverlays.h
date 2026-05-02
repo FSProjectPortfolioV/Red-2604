@@ -529,7 +529,6 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		if (forTyping.empty()) {
 			forTyping.push_back("");
 		}
-		forTyping[forTyping.size() - 1].resize(3);
 		RenderOnScreen(font, (W / 2) - 30, (H / 2) + 25, forTyping[forTyping.size() - 1]);
 	}
 	else {
@@ -653,6 +652,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 					}
 					else {
 						OverlayIndex = 2;
+						justLooking = false;
 					}
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
@@ -980,11 +980,8 @@ void countLives(entt::registry& registry, BLIT_Font& font, int W, int H) {
 		}
 		if(hitpoints == 0) {
 			hits = "Vessel Destroyed";
-			if (!leaderboard.IsNewHighscore()) {
+			if (!leaderboard.IsNewHighscore() && !justLooking) {
 				OverlayIndex = 5;
-			}
-			else {
-				OverlayIndex = 7;
 			}
 		}
 	}
