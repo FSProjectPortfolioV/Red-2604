@@ -237,8 +237,8 @@ static void SplashScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 		return;
 	}
 
-	bltr.ClearColor(0xFFFFFFFF);
-	RenderOnScreen(font, (W / 2) - 200, (H / 2) - 120, "CRIMSON MILLENIA");
+	bltr.ClearColor(0xFF000000);
+	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 120, "CRIMSON MILLENIA");
 
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -248,9 +248,9 @@ static void SplashScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::G
 	UIIcon& gateware = activeUIIcons["Gateware_logo"];
 	UIIcon& vulkan = activeUIIcons["Vulkan_logo"];
 
-	DrawImageToOverlay(pixels, W, H, entt.pixels, entt.width, entt.height, (W / 2) - 220, (H / 2) + 40);	
-	DrawImageToOverlay(pixels, W, H, gateware.pixels, gateware.width, gateware.height, (W / 2) - 40, (H / 2) + 40);
-	DrawImageToOverlay(pixels, W, H, vulkan.pixels, vulkan.width, vulkan.height, (W / 2) + 140, (H / 2) + 40);
+	DrawImageToOverlay(pixels, W, H, entt.pixels, entt.width, entt.height, (W / 2) - 240, (H / 2) + 40);	
+	DrawImageToOverlay(pixels, W, H, gateware.pixels, gateware.width, gateware.height, (W / 2) - 50, (H / 2) + 40);
+	DrawImageToOverlay(pixels, W, H, vulkan.pixels, vulkan.width, vulkan.height, (W / 2) + 130, (H / 2) + 40);
 
 	ovl.Unlock();
 	ovl.TransferOverlay();
