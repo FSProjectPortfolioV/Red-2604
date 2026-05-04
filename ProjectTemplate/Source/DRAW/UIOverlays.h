@@ -528,18 +528,18 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 		for (int i = 4; i > 1; i--) {
 			RenderOnScreen(font, (W / 3) - 100, 80 + (i * 75), MenuOptions[i]);
 			if (mouseX >= (W / 3) - 100 && mouseX <= ((W / 3) - 100 + widthOffset) &&
-				mouseY >= 80 + (i * 75) && mouseY <= (80 + (i * 75) + heightOffset)) {
+				mouseY >= 60 + (i * 75) && mouseY <= (60 + (i * 75) + heightOffset)) {
 				FlashingUnderLine(registry, font, (W / 3) - 100, 80 + (i * 75), MenuOptions[i]);
 				float leftMouse = 0.0f;
 				input.immediateInput.GetState(G_BUTTON_LEFT, leftMouse);
-				if (leftMouse > 0.0f && (i == 5 || i == 4 || i == 3)) {
+				if (leftMouse > 0.0f && (i == 4 || i == 3 || i == 2)) {
 					volIndex = i;
 				}
 			}
 		}
-		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(masterVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(musicVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (5 * 75), ShowVolume(sfxVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (2 * 75), ShowVolume(masterVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(musicVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(sfxVol));
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -582,7 +582,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		}
 	}
 	else {
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 150, "LEADER BOARD");
+		RenderOnScreen(font, (W / 3) + 50, (H / 2) - 150, "LEADER BOARD");
 		RenderOnScreen(font, (W / 2) - 90, H - 75, "BACK [P]");
 		if (!leaderboard.GetEntries().empty())
 		{
@@ -592,6 +592,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				RenderOnScreen(font, (W / 3) + 75, (H / 2) - 75 + (i * 50), leaderboard.GetEntries()[i].initials);
 				RenderOnScreen(font, (W / 2) + 25, (H / 2) - 75 + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
 			}
+			justLooking = true;
 		}
 		else
 		{
@@ -699,7 +700,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					if (PrevOverlayIndex == 2) {
+					if (PrevOverlayIndex == 2 || PrevOverlayIndex == 7) {
 						OverlayIndex = PrevOverlayIndex;
 					}
 					else {
@@ -851,13 +852,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT) && settingsOpen) {
 				switch (volIndex) {
-				case 3:
+				case 2:
 					masterVol += volChange;
 					break;
-				case 4:
+				case 3:
 					musicVol += volChange;
 					break;
-				case 5:
+				case 4:
 					sfxVol += volChange;
 					break;
 				}
@@ -866,13 +867,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) 
 			{
 				switch (volIndex) {
-				case 3:
+				case 2:
 					masterVol -= volChange;
 					break;
-				case 4:
+				case 3:
 					musicVol -= volChange;
 					break;
-				case 5:
+				case 4:
 					sfxVol -= volChange;
 					break;
 				}
