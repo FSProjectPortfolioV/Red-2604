@@ -537,9 +537,9 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 				}
 			}
 		}
-		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(masterVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(musicVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (5 * 75), ShowVolume(sfxVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (2 * 75), ShowVolume(masterVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(musicVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(sfxVol));
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
