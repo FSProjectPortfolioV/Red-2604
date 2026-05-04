@@ -700,13 +700,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					if (PrevOverlayIndex == 2 || PrevOverlayIndex == 7) {
-						OverlayIndex = PrevOverlayIndex;
-					}
-					else {
-						OverlayIndex = 2;
-						justLooking = false;
-					}
+					OverlayIndex = 2;
+					justLooking = false;
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
