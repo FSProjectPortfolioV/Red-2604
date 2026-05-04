@@ -136,7 +136,9 @@ void Update_Player(entt::registry& registry, entt::entity self)
     static int scoreupdate = 7000;
     int highscore = registry.ctx().get<ScoreSystem>().GetScore();
     if ( highscore > (scoreupdate + (lm.loops *4000))) {
-        charges.charges++;
+        if (charges.charges < 5) {
+            charges.charges++;
+        }
         scoreupdate += 7000;
     }
     
