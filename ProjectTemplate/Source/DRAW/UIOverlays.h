@@ -582,7 +582,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		}
 	}
 	else {
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 150, "LEADER BOARD");
+		RenderOnScreen(font, (W / 3) + 50, (H / 2) - 150, "LEADER BOARD");
 		RenderOnScreen(font, (W / 2) - 90, H - 75, "BACK [P]");
 		if (!leaderboard.GetEntries().empty())
 		{
@@ -592,6 +592,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				RenderOnScreen(font, (W / 3) + 75, (H / 2) - 75 + (i * 50), leaderboard.GetEntries()[i].initials);
 				RenderOnScreen(font, (W / 2) + 25, (H / 2) - 75 + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
 			}
+			justLooking = true;
 		}
 		else
 		{
@@ -699,7 +700,7 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					if (PrevOverlayIndex == 2) {
+					if (PrevOverlayIndex == 2 || PrevOverlayIndex == 7) {
 						OverlayIndex = PrevOverlayIndex;
 					}
 					else {
