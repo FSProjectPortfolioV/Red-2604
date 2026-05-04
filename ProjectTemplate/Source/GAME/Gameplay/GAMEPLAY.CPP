@@ -140,39 +140,35 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 	auto& EnView = registry.view<GAME::Enemy>();
 	for (auto& entity : EnView) {
 		auto& Ecfg = registry.get<GAME::EnemyConfig>(entity);
-		if (!((Ecfg.Movement == GAME::FormationStyle::BigGuy) || (Ecfg.Movement == GAME::FormationStyle::TheFinal))) {
-			return;
-		}
-		else {
+		if ((Ecfg.Movement == GAME::FormationStyle::BigGuy) || (Ecfg.Movement == GAME::FormationStyle::TheFinal)) {
 			auto& Ev = registry.get<GAME::Velocity>(entity);
 			auto& Etrans = registry.get<GAME::Transform>(entity);
-			if (Ecfg.Movement == GAME::FormationStyle::BigGuy) { 
+			if (Ecfg.Movement == GAME::FormationStyle::BigGuy) {
 				if (Etrans.matrix.row4.x > 15) {
-					if (-Ev.direction.x > 0) {
-						return;
+					if (Ev.direction.x < 0) {
+						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 				else if (Etrans.matrix.row4.x < -15) {
-					if (-Ev.direction.x < 0) {
-						return;
+					if (Ev.direction.x > 0) {
+						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 			}
 			else if (Ecfg.Movement == GAME::FormationStyle::TheFinal) {
-
-				if (Etrans.matrix.row4.x > 20 ){
-					if (-Ev.direction.x < 0) {
-						return;
+				if (Etrans.matrix.row4.x > 20) {
+					if (Ev.direction.x < 0) {
+						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 				else if (Etrans.matrix.row4.x < -20) {
-					if (-Ev.direction.x < 0) {
-						return;
+					if (Ev.direction.x > 0) {
+						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 			}
 		}
@@ -218,8 +214,10 @@ void Gameplay::EnemyShoot(entt::registry& registry, entt::entity TheEnemy, int b
 {
 	std::shared_ptr<const GameConfig> config = registry.ctx().get<UTIL::Config>().gameConfig;
 	auto& ETrans = registry.get<GAME::Transform>(TheEnemy);
-
-	float BulletSpeed = (*config).at("EnemyBullet").at("speed").as<float>();
+	auto lmView = registry.view<GAME::LevelManager>();
+	auto lmEntity = lmView.front();
+	auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+	float BulletSpeed = (*config).at("EnemyBullet").at("speed").as<float>() + lm.loops;
 	if (bulletcount == 1) {
 		entt::entity enemyBullet1 = registry.create(); 
 													//^

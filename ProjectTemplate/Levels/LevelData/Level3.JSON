@@ -1,5 +1,5 @@
 {
-  "duration": 90.0,
+  "duration": 69.0,
   "tokensAvailable": 10,
   "waves": [
     {
@@ -21,8 +21,7 @@
           "movement": "WaveLeft"
         }
       }
-    },
-    {
+    },{
       "triggerTime": 6.0,
 	  "enemyCount": 5,
       "token": {
@@ -41,8 +40,7 @@
           "movement": "WaveRight"
         }
       }
-    },
-    {
+    },{
       "triggerTime": 10.0,
 	  "enemyCount": 9,
       "token": {
@@ -53,16 +51,15 @@
         "spawnLocation": { "x": 0.0, "y": -4.0, "z": 27.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
+          "speed": 34.0,
+          "hitpoints": 2,
           "scale": 1.3,
           "score": 350,
           "fireRate": 20.0,
           "movement": "ArrowHeadDown"
         }
       }
-    },
-    {
+    },{
       "triggerTime": 15.0,
 	  "enemyCount": 5,
       "token": {
@@ -81,145 +78,27 @@
           "movement": "WaveLeft"
         }
       }
-    },
-    {
-      "triggerTime": 20.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadLeft",
-        "usageCost": 2,
-        "spawnRate": 0.5,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 15.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 3.0,
-          "movement": "ArrowHeadLeft"
-        }
-      }
-    },
-    {
-      "triggerTime": 21.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadRight",
-        "usageCost": 2,
-        "spawnRate": 0.5,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 15.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 3.0,
-          "movement": "ArrowHeadRight"
-        }
-      }
-    },
-    {
-      "triggerTime": 22.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadDown",
-        "usageCost": 2,
-        "spawnRate": 0.5,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 27.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 3.0,
-          "movement": "ArrowHeadDown"
-        }
-      }
-    },
-    {
-      "triggerTime": 28.0,
+    },{
+      "triggerTime": 18.0,
 	  "enemyCount": 1,
       "token": {
         "style": "BigGuy",
         "usageCost": 3,
         "spawnRate": 1.0,
         "speedMult": 0.7,
-        "spawnLocation": { "x": 0.0, "y": -4.0, "z": 15.0 },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 15.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 14.0,
-          "hitpoints": 50,
-          "scale": 1.5,
+          "hitpoints": 20,
+          "scale": 1.7,
           "score": 1500,
           "fireRate": 2.7,
           "movement": "BigGuy"
         }
       }
     },{
-      "triggerTime": 34.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadLeft",
-        "usageCost": 2,
-        "spawnRate": 0.4,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 15.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 2.9,
-          "movement": "ArrowHeadLeft"
-        }
-      }
-    },{
-      "triggerTime": 38.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadLeft",
-        "usageCost": 2,
-        "spawnRate": 0.4,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": -35.0, "y": -4.0, "z": 5.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 2.9,
-          "movement": "ArrowHeadLeft"
-        }
-      }
-    },{
-      "triggerTime": 41.0,
-	  "enemyCount": 5,
-      "token": {
-        "style": "ArrowHeadRight",
-        "usageCost": 2,
-        "spawnRate": 0.4,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": 35.0, "y": -4.0, "z": -5.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
-          "scale": 1.0,
-          "score": 350,
-          "fireRate": 2.9,
-          "movement": "ArrowHeadLeft"
-        }
-      }
-    },{
-      "triggerTime": 49.0,
+      "triggerTime": 19.0,
 	  "enemyCount": 5,
       "token": {
         "style": "ArrowHeadRight",
@@ -229,17 +108,16 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": -15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 3,
+          "speed": 17.0,
+          "hitpoints": 1,
           "scale": 1.0,
           "score": 350,
           "fireRate": 2.9,
-          "movement": "ArrowHeadLeft"
+          "movement": "ArrowHeadRight"
         }
       }
-    },
-    {
-      "triggerTime": 50.0,
+    },{
+      "triggerTime": 20.0,
 	  "enemyCount": 5,
       "token": {
         "style": "ArrowHeadLeft",
@@ -249,7 +127,7 @@
         "spawnLocation": { "x": -35.0, "y": -4.0, "z": 15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 17.0,
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
@@ -257,9 +135,8 @@
           "movement": "ArrowHeadLeft"
         }
       }
-    },
-    {
-      "triggerTime": 51.0,
+    },{
+      "triggerTime": 24.0,
 	  "enemyCount": 5,
       "token": {
         "style": "ArrowHeadRight",
@@ -269,7 +146,7 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": 15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 17.0,
           "hitpoints": 3,
           "scale": 1.0,
           "score": 350,
@@ -277,10 +154,9 @@
           "movement": "ArrowHeadRight"
         }
       }
-    },
-    {
-      "triggerTime": 52.0,
-	  "enemyCount": 5,
+    },{
+      "triggerTime": 28.0,
+	  "enemyCount": 6,
       "token": {
         "style": "WaveLeft",
         "usageCost": 1,
@@ -289,17 +165,16 @@
         "spawnLocation": { "x": -35.0, "y": -4.0, "z": 15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 17.0,
           "hitpoints": 3,
-          "scale": 1.0,
+          "scale": 1.3,
           "score": 200,
           "fireRate": 2.9,
           "movement": "WaveLeft"
         }
       }
-    },
-    {
-      "triggerTime": 53.0,
+    },{
+      "triggerTime": 33.0,
 	  "enemyCount": 5,
       "token": {
         "style": "WaveRight",
@@ -309,7 +184,7 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": 15.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 17.0,
           "hitpoints": 3,
           "scale": 1.0,
           "score": 200,
@@ -317,9 +192,8 @@
           "movement": "WaveRight"
         }
       }
-    }
-	,{
-      "triggerTime": 57.0,
+    },{
+      "triggerTime": 37.0,
 	  "enemyCount": 1,
       "token": {
         "style": "WaveRight",
@@ -329,7 +203,7 @@
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": 19.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 34.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 2000,
@@ -337,19 +211,18 @@
           "movement": "WaveRight"
         }
       }
-    }
-	,{
-      "triggerTime": 57.4,
+    },{
+      "triggerTime": 37.4,
 	  "enemyCount": 1,
       "token": {
         "style": "WaveRight",
         "usageCost": 1,
         "spawnRate": 0.4,
-        "speedMult": 1.0,
+        "speedMult": 1.3,
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": -5.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 27.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -358,17 +231,17 @@
         }
       }
     },{
-      "triggerTime": 57.8,
+      "triggerTime": 37.8,
 	  "enemyCount": 1,
       "token": {
         "style": "WaveRight",
         "usageCost": 1,
         "spawnRate": 0.4,
-        "speedMult": 1.0,
+        "speedMult": 1.3,
         "spawnLocation": { "x": 35.0, "y": -4.0, "z": -10.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 27.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -377,26 +250,7 @@
         }
       }
     },{
-      "triggerTime": 58.2,
-	  "enemyCount": 5,
-      "token": {
-        "style": "WaveRight",
-        "usageCost": 1,
-        "spawnRate": 0.3,
-        "speedMult": 1.0,
-        "spawnLocation": { "x": 35.0, "y": -4.0, "z": -15.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 2,
-          "scale": 1.0,
-          "score": 200,
-          "fireRate": 20,
-          "movement": "BigGuy"
-        }
-      }
-    },{
-      "triggerTime": 63.0,
+      "triggerTime": 40.0,
 	  "enemyCount": 7,
       "token": {
         "style": "ArrowHeadDown",
@@ -406,7 +260,7 @@
         "spawnLocation": { "x": 0.0, "y": -4.0, "z": 20.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 17.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -414,9 +268,8 @@
           "movement": "ArrowHeadDown"
         }
       }
-    }
-	,{
-      "triggerTime": 67.0,
+    },{
+      "triggerTime": 44.0,
 	  "enemyCount": 7,
       "token": {
         "style": "ArrowHeadLeft",
@@ -426,7 +279,7 @@
         "spawnLocation": { "x": -35.0, "y": -4.0, "z": 0.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 18.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -434,28 +287,27 @@
           "movement": "ArrowHeadLeft"
         }
       }
-    },
-    {
-      "triggerTime": 72.0,
+    },{
+      "triggerTime": 48.0,
 	  "enemyCount": 2,
       "token": {
         "style": "TheFinal",
         "usageCost": 2,
         "spawnRate": 0.4,
         "speedMult": 0.95,
-        "spawnLocation": { "x": 37.0, "y": -4.0, "z": 13.0 },
+        "spawnLocation": { "x": 35.0, "y": -4.0, "z": 18.0 },
         "enemy": {
           "modelName": "UFO",
           "speed": 15.0,
-          "hitpoints": 70,
+          "hitpoints": 55,
           "scale": 3.0,
           "score": 3500,
-          "fireRate": 2.4,
+          "fireRate": 3.4,
           "movement": "TheFinal"
         }
       }
     },{
-      "triggerTime": 75.0,
+      "triggerTime": 50.0,
 	  "enemyCount": 3,
       "token": {
         "style": "ArrowHeadDown",
@@ -465,7 +317,7 @@
         "spawnLocation": { "x": 20, "y": -4.0, "z": 20.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 43.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -474,7 +326,7 @@
         }
       }
     },{
-      "triggerTime": 78.5,
+      "triggerTime": 51.5,
 	  "enemyCount": 3,
       "token": {
         "style": "ArrowHeadDown",
@@ -484,7 +336,7 @@
         "spawnLocation": { "x": -20, "y": -4.0, "z": 20.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 43.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
@@ -493,26 +345,7 @@
         }
       }
     },{
-      "triggerTime": 80.0,
-	  "enemyCount": 3,
-      "token": {
-        "style": "ArrowHeadDown",
-        "usageCost": 1,
-        "spawnRate": 0.2,
-        "speedMult": 1.5,
-        "spawnLocation": { "x": 0, "y": -4.0, "z": 20.0 },
-        "enemy": {
-          "modelName": "UFO",
-          "speed": 20.0,
-          "hitpoints": 2,
-          "scale": 1.0,
-          "score": 200,
-          "fireRate": 20,
-          "movement": "ArrowHeadDown"
-        }
-      }
-    },{
-      "triggerTime": 84.0,
+      "triggerTime": 53.0,
 	  "enemyCount": 7,
       "token": {
         "style": "ArrowHeadDown",
@@ -522,12 +355,50 @@
         "spawnLocation": { "x": 0, "y": -4.0, "z": 20.0 },
         "enemy": {
           "modelName": "UFO",
-          "speed": 20.0,
+          "speed": 43.0,
           "hitpoints": 2,
           "scale": 1.0,
           "score": 200,
           "fireRate": 20,
           "movement": "ArrowHeadDown"
+        }
+      }
+    },{
+      "triggerTime": 54.0,
+	  "enemyCount": 3,
+      "token": {
+        "style": "ArrowHeadLeft",
+        "usageCost": 1,
+        "spawnRate": 0.2,
+        "speedMult": 1.5,
+        "spawnLocation": { "x": -35, "y": -4.0, "z": 0.0 },
+        "enemy": {
+          "modelName": "UFO",
+          "speed": 43.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 20,
+          "movement": "ArrowHeadLeft"
+        }
+      }
+    },{
+      "triggerTime": 55.0,
+	  "enemyCount": 3,
+      "token": {
+        "style": "ArrowHeadRight",
+        "usageCost": 1,
+        "spawnRate": 0.2,
+        "speedMult": 1.5,
+        "spawnLocation": { "x": 35, "y": -4.0, "z": 0.0 },
+        "enemy": {
+          "modelName": "UFO",
+          "speed": 43.0,
+          "hitpoints": 2,
+          "scale": 1.0,
+          "score": 200,
+          "fireRate": 20,
+          "movement": "ArrowHeadRight"
         }
       }
     }

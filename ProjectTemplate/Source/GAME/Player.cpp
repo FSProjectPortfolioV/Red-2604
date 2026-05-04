@@ -126,7 +126,22 @@ void Update_Player(entt::registry& registry, entt::entity self)
             }
         }
     }
-
+    //Regain charge if you get a certain score! Scales on difficulty!
+    auto lmView = registry.view<GAME::LevelManager>();
+    auto lmEntity = lmView.front();
+    auto& lm = registry.get<GAME::LevelManager>(lmEntity);
+    auto& charges = registry.get<GAME::RollCharges>(self);
+    registry.ctx().get<ScoreSystem>().GetScore();
+    float chargeRegencoolDown = 2; //to prevent more than one addition
+    static int scoreupdate = 7000;
+    int highscore = registry.ctx().get<ScoreSystem>().GetScore();
+    if ( highscore > (scoreupdate + (lm.loops *4000))) {
+        if (charges.charges < 5) {
+            charges.charges++;
+        }
+        scoreupdate += 7000;
+    }
+    
     // Update roll visual tilt
     if (registry.all_of<GAME::Roll>(self))
     {

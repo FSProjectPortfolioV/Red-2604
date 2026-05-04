@@ -40,7 +40,7 @@ int FinaleIdx2 = 1;
 int FinaleIdx3 = 1;
 bool settingsOpen = false;
 bool levelStart = false;
-int OverlayIndex = 0;
+int OverlayIndex = 8;
 int PrevOverlayIndex = 0;
 int finalScreenCounter = 1;
 float sfxVol = 0.07f;
@@ -208,6 +208,52 @@ void InitializeUIOverlays(entt::registry& registry, entt::entity entity) {
 
 	LoadUIIcon("SideFighter", sfIcoPath);
 	LoadUIIcon("MultiShot", msIcoPath);
+
+	LoadUIIcon("Entt_logo", "../Models/Textures/Logos/Entt_logo.png");
+	LoadUIIcon("Gateware_logo", "../Models/Textures/Logos/Gateware_logo.png");
+	LoadUIIcon("Vulkan_logo", "../Models/Textures/Logos/Vulkan_logo.png");
+}
+
+static void SplashScreen(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H)
+{
+	auto gameManager = registry.view<GAME::GameManager>();
+	for (auto ent : gameManager) 
+	{
+		registry.emplace_or_replace<GAME::Paused>(ent);
+	}
+
+	float deltaTime = registry.ctx().get<UTIL::DeltaTime>().dtSec;
+
+	static float splashTimer = 0.0f;
+	const float splashDuration = 3.5f;
+
+	splashTimer += deltaTime;
+
+	// switch to start screen
+	if (splashTimer >= splashDuration)
+	{
+		OverlayIndex = 0;
+		splashTimer = 0.0f;
+		return;
+	}
+
+	bltr.ClearColor(0xFF000000);
+	RenderOnScreen(font, (W / 2) - 125, (H / 2) - 120, "CRIMSON MILLENIA");
+
+	unsigned int* pixels;
+	ovl.LockForUpdate(W * H, &pixels);
+	bltr.ExportResult(false, W, H, 0, 0, pixels, nullptr, nullptr);
+
+	UIIcon& entt = activeUIIcons["Entt_logo"];
+	UIIcon& gateware = activeUIIcons["Gateware_logo"];
+	UIIcon& vulkan = activeUIIcons["Vulkan_logo"];
+
+	DrawImageToOverlay(pixels, W, H, entt.pixels, entt.width, entt.height, (W / 2) - 240, (H / 2) + 40);	
+	DrawImageToOverlay(pixels, W, H, gateware.pixels, gateware.width, gateware.height, (W / 2) - 50, (H / 2) + 40);
+	DrawImageToOverlay(pixels, W, H, vulkan.pixels, vulkan.width, vulkan.height, (W / 2) + 130, (H / 2) + 40);
+
+	ovl.Unlock();
+	ovl.TransferOverlay();
 }
 
 static void GameplayUI(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBlitter& bltr, BLIT_Font& font, int W, int H) {
@@ -482,18 +528,18 @@ static void PauseMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::GBli
 		for (int i = 4; i > 1; i--) {
 			RenderOnScreen(font, (W / 3) - 100, 80 + (i * 75), MenuOptions[i]);
 			if (mouseX >= (W / 3) - 100 && mouseX <= ((W / 3) - 100 + widthOffset) &&
-				mouseY >= 80 + (i * 75) && mouseY <= (80 + (i * 75) + heightOffset)) {
+				mouseY >= 60 + (i * 75) && mouseY <= (60 + (i * 75) + heightOffset)) {
 				FlashingUnderLine(registry, font, (W / 3) - 100, 80 + (i * 75), MenuOptions[i]);
 				float leftMouse = 0.0f;
 				input.immediateInput.GetState(G_BUTTON_LEFT, leftMouse);
-				if (leftMouse > 0.0f && (i == 5 || i == 4 || i == 3)) {
+				if (leftMouse > 0.0f && (i == 4 || i == 3 || i == 2)) {
 					volIndex = i;
 				}
 			}
 		}
-		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(masterVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(musicVol));
-		RenderOnScreen(font, (W / 3) + 280, 80 + (5 * 75), ShowVolume(sfxVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (2 * 75), ShowVolume(masterVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (3 * 75), ShowVolume(musicVol));
+		RenderOnScreen(font, (W / 3) + 280, 80 + (4 * 75), ShowVolume(sfxVol));
 	}
 	unsigned int* pixels;
 	ovl.LockForUpdate(W * H, &pixels);
@@ -536,7 +582,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 		}
 	}
 	else {
-		RenderOnScreen(font, (W / 3) + 25, (H / 2) - 150, "LEADER BOARD");
+		RenderOnScreen(font, (W / 3) + 50, (H / 2) - 150, "LEADER BOARD");
 		RenderOnScreen(font, (W / 2) - 90, H - 75, "BACK [P]");
 		if (!leaderboard.GetEntries().empty())
 		{
@@ -546,6 +592,7 @@ static void HighScoreMenu(entt::registry& registry, Overlay& ovl, GW::GRAPHICS::
 				RenderOnScreen(font, (W / 3) + 75, (H / 2) - 75 + (i * 50), leaderboard.GetEntries()[i].initials);
 				RenderOnScreen(font, (W / 2) + 25, (H / 2) - 75 + (i * 50), std::to_string(leaderboard.GetEntries()[i].score));
 			}
+			justLooking = true;
 		}
 		else
 		{
@@ -653,13 +700,8 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 				&& (OverlayIndex == 3 || OverlayIndex == 5 || OverlayIndex == 7 || OverlayIndex == 2)) {
 
 				if (OverlayIndex == 3) {
-					if (PrevOverlayIndex == 2) {
-						OverlayIndex = PrevOverlayIndex;
-					}
-					else {
-						OverlayIndex = 2;
-						justLooking = false;
-					}
+					OverlayIndex = 2;
+					justLooking = false;
 					for (auto ent : gameManager) {
 						registry.remove<GAME::Paused>(ent);
 					}
@@ -805,13 +847,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_6 || inputData.data == G_KEY_RIGHT) && settingsOpen) {
 				switch (volIndex) {
-				case 3:
+				case 2:
 					masterVol += volChange;
 					break;
-				case 4:
+				case 3:
 					musicVol += volChange;
 					break;
-				case 5:
+				case 4:
 					sfxVol += volChange;
 					break;
 				}
@@ -820,13 +862,13 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 			if (inputEvent == GW::INPUT::GBufferedInput::Events::KEYPRESSED && (inputData.data == G_KEY_NUMPAD_4 || inputData.data == G_KEY_LEFT) && settingsOpen) 
 			{
 				switch (volIndex) {
-				case 3:
+				case 2:
 					masterVol -= volChange;
 					break;
-				case 4:
+				case 3:
 					musicVol -= volChange;
 					break;
-				case 5:
+				case 4:
 					sfxVol -= volChange;
 					break;
 				}
@@ -942,6 +984,9 @@ void UpdateUIOverlays(entt::registry& registry, entt::entity entity, Overlay& ov
 		break;
 	case 7:
 		HighScoreMenu(registry, ovl, bltr, font, W, H, displayOvl, ctxBltr, ctxFont);
+		break;
+	case 8:
+		SplashScreen(registry, ovl, bltr, font, W, H);
 		break;
 	}
 }
