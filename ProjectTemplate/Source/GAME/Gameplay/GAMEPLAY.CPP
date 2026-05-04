@@ -148,13 +148,13 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 					if (Ev.direction.x < 0) {
 						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 				else if (Etrans.matrix.row4.x < -15) {
 					if (Ev.direction.x > 0) {
 						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 			}
 			else if (Ecfg.Movement == GAME::FormationStyle::TheFinal) {
@@ -162,13 +162,13 @@ void Gameplay::EnemyMovementUpdates(entt::registry& registry)
 					if (Ev.direction.x < 0) {
 						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 				else if (Etrans.matrix.row4.x < -20) {
 					if (Ev.direction.x > 0) {
 						continue;
 					}
-					Ev.direction = { -Ev.direction.x ,Ev.direction.y ,Ev.direction.z ,Ev.direction.w };
+					Ev.direction = { -Ev.direction.x ,0 ,0 ,Ev.direction.w };
 				}
 			}
 		}
