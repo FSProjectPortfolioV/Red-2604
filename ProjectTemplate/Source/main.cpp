@@ -315,6 +315,10 @@ void MainLoopBehavior(entt::registry& registry)
 		GAME::UpdateHighscoreEntry(registry);
 		UpdatePowerUpTimers(registry);
 
+		auto& scoreSystem = registry.ctx().get<ScoreSystem>();
+		auto& localHighscore = registry.ctx().get<LocalHighscoreSystem>();
+		localHighscore.Update(scoreSystem.GetScore());
+
 		// Update Game and Level
 		auto lmView = registry.view<GAME::LevelManager>();
 		auto gmView = registry.view<GAME::GameManager>();
