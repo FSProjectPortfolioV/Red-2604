@@ -418,7 +418,7 @@ void TypeFinalStats(entt::registry& registry, BLIT_Font& font, int W, int H, std
 			totalPercentage = 0;
 		}
 		else {
-			totalPercentage == (totalKilled / totalSpawned) * 100;
+			totalPercentage = (totalKilled / totalSpawned) * 100;
 		} 
 		RenderOnScreen(font, W + 400, H + LineSpace, std::to_string(totalPercentage) + '%');
 	}
